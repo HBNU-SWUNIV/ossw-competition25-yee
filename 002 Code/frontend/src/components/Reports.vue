@@ -1,115 +1,151 @@
 <template>
-  <div class="reports">
-    <div class="page-header">
-      <h2>리포트</h2>
-      <div class="header-actions">
-        <div class="date-filters">
-          <select v-model="selectedYear" @change="onYearChange" class="date-select">
+  <div class="space-y-8">
+    <!-- 페이지 헤더 -->
+    <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+      <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">리포트</h2>
+      <div class="flex flex-col xl:flex-row gap-4">
+        <!-- 날짜 필터 -->
+        <div class="flex flex-col sm:flex-row gap-3">
+          <select v-model="selectedYear" @change="onYearChange" class="input-field w-full sm:w-32">
             <option value="">연도 선택</option>
             <option v-for="year in availableYears" :key="year" :value="year">{{ year }}년</option>
           </select>
-
-          <select v-model="selectedMonth" @change="onMonthChange" class="date-select" :disabled="!selectedYear">
+          <select v-model="selectedMonth" @change="onMonthChange" class="input-field w-full sm:w-32" :disabled="!selectedYear">
             <option value="">월 선택</option>
             <option v-for="month in availableMonths" :key="month.value" :value="month.value">{{ month.label }}</option>
           </select>
-
-          <select v-model="selectedDay" @change="onDayChange" class="date-select" :disabled="!selectedMonth">
+          <select v-model="selectedDay" @change="onDayChange" class="input-field w-full sm:w-32" :disabled="!selectedMonth">
             <option value="">일 선택</option>
             <option v-for="day in availableDays" :key="day" :value="day">{{ day }}일</option>
           </select>
         </div>
 
-        <div class="category-filter">
-          <select v-model="selectedCategory" @change="onCategoryChange" class="category-select">
-            <option value="">전체 카테고리</option>
-            <option v-for="category in availableCategories" :key="category" :value="category">{{ category }}</option>
-          </select>
-        </div>
+        <!-- 카테고리 필터 -->
+        <select v-model="selectedCategory" @change="onCategoryChange" class="input-field w-full sm:w-48">
+          <option value="">전체 카테고리</option>
+          <option v-for="category in availableCategories" :key="category" :value="category">{{ category }}</option>
+        </select>
 
-        <div class="export-dropdown" :class="{ active: showExportMenu }">
-          <button class="export-btn" @click="toggleExportMenu">
-            📊 {{ getExportButtonText() }}
-            <span class="dropdown-arrow" :class="{ rotated: showExportMenu }">▼</span>
+        <!-- 내보내기 드롭다운 -->
+        <div class="relative" :class="{ 'z-50': showExportMenu }">
+          <button 
+            class="btn-primary flex items-center gap-2 w-full sm:w-auto"
+            @click="toggleExportMenu"
+          >
+            <span class="text-lg">📊</span>
+            {{ getExportButtonText() }}
+            <span class="text-sm transition-transform duration-200" :class="{ 'rotate-180': showExportMenu }">▼</span>
           </button>
 
-          <div class="export-menu" v-if="showExportMenu">
-            <div class="export-option" @click="exportAsPDF">
-              <span class="option-icon">📄</span>
-              <div class="option-content">
-                <span class="option-title">PDF 리포트</span>
-                <span class="option-desc">완전한 시각적 리포트</span>
-              </div>
-            </div>
+          <div v-if="showExportMenu" class="absolute top-full left-0 right-0 mt-2 bg-white border-2 border-primary-500 rounded-lg shadow-strong overflow-hidden">
+            <div class="p-2 space-y-1">
+              <button 
+                class="w-full flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors duration-200"
+                @click="exportAsPDF"
+              >
+                <span class="text-xl">📄</span>
+                <div class="text-left">
+                  <div class="font-semibold text-gray-900">PDF 리포트</div>
+                  <div class="text-sm text-gray-600">완전한 시각적 리포트</div>
+                </div>
+              </button>
 
-            <div class="export-option" @click="exportAsExcelCSV">
-              <span class="option-icon">📊</span>
-              <div class="option-content">
-                <span class="option-title">Excel 호환 CSV</span>
-                <span class="option-desc">Excel에서 한글 깨짐 없음</span>
-              </div>
-            </div>
+              <button 
+                class="w-full flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors duration-200"
+                @click="exportAsExcelCSV"
+              >
+                <span class="text-xl">📊</span>
+                <div class="text-left">
+                  <div class="font-semibold text-gray-900">Excel 호환 CSV</div>
+                  <div class="text-sm text-gray-600">Excel에서 한글 깨짐 없음</div>
+                </div>
+              </button>
 
-            <div class="export-option" @click="exportAsCSV">
-              <span class="option-icon">📋</span>
-              <div class="option-content">
-                <span class="option-title">일반 CSV</span>
-                <span class="option-desc">범용적인 데이터 형식</span>
-              </div>
+              <button 
+                class="w-full flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors duration-200"
+                @click="exportAsCSV"
+              >
+                <span class="text-xl">📋</span>
+                <div class="text-left">
+                  <div class="font-semibold text-gray-900">일반 CSV</div>
+                  <div class="text-sm text-gray-600">범용적인 데이터 형식</div>
+                </div>
+              </button>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="report-info">
-      <div class="current-period">
-        <h3>{{ getCurrentPeriodTitle() }}</h3>
-        <p class="period-description">{{ getPeriodDescription() }}</p>
+    <!-- 리포트 정보 -->
+    <div class="card p-6">
+      <div class="text-center">
+        <h3 class="text-xl font-semibold text-gray-900 mb-2">{{ getCurrentPeriodTitle() }}</h3>
+        <p class="text-gray-600">{{ getPeriodDescription() }}</p>
       </div>
     </div>
 
-    <div class="report-overview">
-      <div class="overview-card">
-        <div class="card-icon">💰</div>
-        <div class="card-content">
-          <h3>총 지출</h3>
-          <p class="amount">₩{{ currentData.totalExpense.toLocaleString() }}</p>
-          <span class="trend"
-            :class="{ 'trend-up': currentData.expenseChange > 0, 'trend-down': currentData.expenseChange < 0 }">
-            {{ currentData.expenseChange > 0 ? '+' : '' }}{{ currentData.expenseChange }}% {{ getPreviousPeriodText() }}
-            대비
-          </span>
+    <!-- 요약 카드 -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div class="card p-6 hover:shadow-medium transition-shadow duration-200">
+        <div class="flex items-center gap-4">
+          <div class="text-4xl">💰</div>
+          <div class="flex-1">
+            <h3 class="text-sm font-medium text-gray-600 mb-1">총 지출</h3>
+            <p class="text-2xl font-bold text-gray-900">₩{{ currentData.totalExpense.toLocaleString() }}</p>
+            <span 
+              class="text-sm"
+              :class="{ 
+                'text-red-600': currentData.expenseChange > 0, 
+                'text-green-600': currentData.expenseChange < 0,
+                'text-gray-600': currentData.expenseChange === 0
+              }"
+            >
+              {{ currentData.expenseChange > 0 ? '+' : '' }}{{ currentData.expenseChange }}% {{ getPreviousPeriodText() }} 대비
+            </span>
+          </div>
         </div>
       </div>
 
-      <div class="overview-card">
-        <div class="card-icon">📊</div>
-        <div class="card-content">
-          <h3>평균 {{ getAverageText() }}</h3>
-          <p class="amount">₩{{ currentData.averageExpense.toLocaleString() }}</p>
-          <span class="trend">{{ getAverageDescription() }}</span>
+      <div class="card p-6 hover:shadow-medium transition-shadow duration-200">
+        <div class="flex items-center gap-4">
+          <div class="text-4xl">📊</div>
+          <div class="flex-1">
+            <h3 class="text-sm font-medium text-gray-600 mb-1">평균 {{ getAverageText() }}</h3>
+            <p class="text-2xl font-bold text-gray-900">₩{{ currentData.averageExpense.toLocaleString() }}</p>
+            <span class="text-sm text-gray-600">{{ getAverageDescription() }}</span>
+          </div>
         </div>
       </div>
 
-      <div class="overview-card">
-        <div class="card-icon">📈</div>
-        <div class="card-content">
-          <h3>지출 건수</h3>
-          <p class="amount">{{ currentData.transactionCount }}건</p>
-          <span class="trend">{{ getTransactionDescription() }}</span>
+      <div class="card p-6 hover:shadow-medium transition-shadow duration-200">
+        <div class="flex items-center gap-4">
+          <div class="text-4xl">📈</div>
+          <div class="flex-1">
+            <h3 class="text-sm font-medium text-gray-600 mb-1">지출 건수</h3>
+            <p class="text-2xl font-bold text-gray-900">{{ currentData.transactionCount }}건</p>
+            <span class="text-sm text-gray-600">{{ getTransactionDescription() }}</span>
+          </div>
         </div>
       </div>
 
-      <div class="overview-card">
-        <div class="card-icon">🎯</div>
-        <div class="card-content">
-          <h3>예산 대비</h3>
-          <p class="amount">{{ currentData.budgetUsage }}%</p>
-          <span class="trend"
-            :class="{ 'trend-up': currentData.budgetUsage > 80, 'trend-down': currentData.budgetUsage < 50 }">
-            {{ getBudgetStatusText() }}
-          </span>
+      <div class="card p-6 hover:shadow-medium transition-shadow duration-200">
+        <div class="flex items-center gap-4">
+          <div class="text-4xl">🎯</div>
+          <div class="flex-1">
+            <h3 class="text-sm font-medium text-gray-600 mb-1">예산 대비</h3>
+            <p class="text-2xl font-bold text-gray-900">{{ currentData.budgetUsage }}%</p>
+            <span 
+              class="text-sm"
+              :class="{ 
+                'text-red-600': currentData.budgetUsage > 80, 
+                'text-green-600': currentData.budgetUsage < 50,
+                'text-gray-600': currentData.budgetUsage >= 50 && currentData.budgetUsage <= 80
+              }"
+            >
+              {{ getBudgetStatusText() }}
+            </span>
+          </div>
         </div>
       </div>
     </div>
@@ -962,681 +998,3 @@ export default {
   }
 }
 </script>
-
-<style scoped>
-.reports {
-  padding: 0;
-}
-
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 2rem;
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-
-.page-header h2 {
-  color: #2c3e50;
-  font-size: 1.8rem;
-  margin: 0;
-}
-
-.header-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 1.2rem;
-  align-items: flex-end;
-}
-
-.date-filters {
-  display: flex;
-  gap: 0.8rem;
-  flex-wrap: wrap;
-  align-items: center;
-}
-
-.date-filters::before {
-  content: '📅';
-  font-size: 1.2rem;
-  margin-right: 0.5rem;
-}
-
-.date-select,
-.category-select {
-  padding: 10px 14px;
-  border: 2px solid #ddd;
-  border-radius: 8px;
-  background: white;
-  color: #2c3e50;
-  font-size: 1rem;
-  font-weight: 500;
-  min-width: 140px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.date-select:hover,
-.category-select:hover {
-  border-color: #1976d2;
-  box-shadow: 0 2px 4px rgba(25, 118, 210, 0.1);
-}
-
-.date-select:focus,
-.category-select:focus {
-  outline: none;
-  border-color: #1976d2;
-  box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
-}
-
-.date-select:disabled {
-  background: #f8f9fa;
-  color: #6c757d;
-  border-color: #e9ecef;
-  cursor: not-allowed;
-}
-
-.date-select option,
-.category-select option {
-  color: #2c3e50;
-  background: white;
-  padding: 8px;
-}
-
-.category-filter {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.category-filter::before {
-  content: '🏷️';
-  font-size: 1.2rem;
-}
-
-.export-dropdown {
-  position: relative;
-  display: inline-block;
-}
-
-.export-btn {
-  background: #4caf50;
-  color: white;
-  border: none;
-  padding: 12px 20px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  white-space: nowrap;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 200px;
-  justify-content: space-between;
-}
-
-.export-btn:hover {
-  background: #45a049;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(76, 175, 80, 0.3);
-}
-
-.export-dropdown.active .export-btn {
-  background: #45a049;
-  border-radius: 8px 8px 0 0;
-}
-
-.dropdown-arrow {
-  font-size: 0.8rem;
-  transition: transform 0.3s ease;
-}
-
-.dropdown-arrow.rotated {
-  transform: rotate(180deg);
-}
-
-.export-menu {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  background: white;
-  border: 2px solid #4caf50;
-  border-top: none;
-  border-radius: 0 0 8px 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  z-index: 1000;
-  overflow: hidden;
-}
-
-.export-option {
-  display: flex;
-  align-items: center;
-  padding: 12px 16px;
-  cursor: pointer;
-  transition: background 0.2s ease;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.export-option:last-child {
-  border-bottom: none;
-}
-
-.export-option:hover {
-  background: #f8f9fa;
-}
-
-.option-icon {
-  font-size: 1.2rem;
-  margin-right: 12px;
-  width: 24px;
-  text-align: center;
-}
-
-.option-content {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-}
-
-.option-title {
-  font-weight: 600;
-  color: #2c3e50;
-  font-size: 0.95rem;
-  margin-bottom: 2px;
-}
-
-.option-desc {
-  font-size: 0.8rem;
-  color: #666;
-  line-height: 1.2;
-}
-
-.report-info {
-  background: white;
-  border-radius: 12px;
-  padding: 1.5rem;
-  margin-bottom: 2rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.current-period h3 {
-  color: #2c3e50;
-  margin: 0 0 0.5rem 0;
-  font-size: 1.3rem;
-}
-
-.period-description {
-  color: #666;
-  margin: 0;
-  font-size: 1rem;
-}
-
-.report-overview {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2rem;
-}
-
-.overview-card {
-  background: white;
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  display: flex;
-  align-items: center;
-  transition: transform 0.2s ease;
-}
-
-.overview-card:hover {
-  transform: translateY(-2px);
-}
-
-.card-icon {
-  font-size: 2.5rem;
-  margin-right: 1rem;
-}
-
-.card-content h3 {
-  color: #666;
-  font-size: 0.9rem;
-  margin: 0 0 0.5rem 0;
-  font-weight: 500;
-}
-
-.amount {
-  font-size: 1.8rem;
-  font-weight: bold;
-  margin: 0 0 0.25rem 0;
-  color: #2c3e50;
-}
-
-.trend {
-  font-size: 0.8rem;
-  color: #666;
-}
-
-.trend.trend-up {
-  color: #f44336;
-}
-
-.trend.trend-down {
-  color: #4caf50;
-}
-
-.charts-section {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-  gap: 2rem;
-  margin-bottom: 2rem;
-}
-
-.chart-container {
-  background: white;
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.chart-container h3 {
-  color: #2c3e50;
-  margin: 0 0 1.5rem 0;
-  font-size: 1.2rem;
-}
-
-.department-chart {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.dept-bar {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.dept-info {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.dept-name {
-  font-weight: 500;
-  color: #2c3e50;
-}
-
-.dept-amount {
-  font-weight: 600;
-  color: #1976d2;
-}
-
-.progress-bar {
-  width: 100%;
-  height: 8px;
-  background: #e0e0e0;
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.progress {
-  height: 100%;
-  background: #1976d2;
-  transition: width 0.3s ease;
-}
-
-.trend-chart {
-  height: 200px;
-  display: flex;
-  align-items: end;
-}
-
-.chart-bars {
-  display: flex;
-  align-items: end;
-  justify-content: space-between;
-  width: 100%;
-  height: 100%;
-  gap: 0.5rem;
-}
-
-.trend-bar {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  flex: 1;
-  height: 100%;
-  max-width: 60px;
-}
-
-.bar {
-  width: 100%;
-  background: linear-gradient(to top, #1976d2, #42a5f5);
-  border-radius: 4px 4px 0 0;
-  margin-bottom: 0.5rem;
-  transition: height 0.3s ease;
-  min-height: 4px;
-}
-
-.period-label {
-  font-size: 0.8rem;
-  color: #666;
-  font-weight: 500;
-  margin-bottom: 0.25rem;
-}
-
-.amount-label {
-  font-size: 0.7rem;
-  color: #999;
-}
-
-.detailed-reports {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-  gap: 2rem;
-}
-
-.report-section {
-  background: white;
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.report-section h3 {
-  color: #2c3e50;
-  margin: 0 0 1.5rem 0;
-  font-size: 1.2rem;
-}
-
-.category-analysis {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.category-item {
-  padding: 1rem;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-}
-
-.category-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.5rem;
-}
-
-.category-name {
-  font-weight: 500;
-  color: #2c3e50;
-}
-
-.category-amount {
-  font-weight: 600;
-  color: #f44336;
-}
-
-.category-details {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 0.5rem;
-}
-
-.category-details .progress-bar {
-  flex: 1;
-}
-
-.percentage {
-  font-size: 0.9rem;
-  color: #666;
-  font-weight: 500;
-  min-width: 40px;
-}
-
-.category-trend {
-  text-align: right;
-}
-
-.trend-indicator {
-  font-size: 0.8rem;
-  font-weight: 600;
-}
-
-.trend-indicator.trend-up {
-  color: #f44336;
-}
-
-.trend-indicator.trend-down {
-  color: #4caf50;
-}
-
-.detail-list {
-  max-height: 400px;
-  overflow-y: auto;
-}
-
-.detail-header {
-  display: grid;
-  grid-template-columns: 100px 100px 120px 1fr 120px;
-  gap: 1rem;
-  padding: 1rem;
-  background: #f8f9fa;
-  font-weight: 600;
-  color: #2c3e50;
-  border-bottom: 1px solid #e0e0e0;
-  position: sticky;
-  top: 0;
-}
-
-.detail-body {
-  display: flex;
-  flex-direction: column;
-}
-
-.detail-row {
-  display: grid;
-  grid-template-columns: 100px 100px 120px 1fr 120px;
-  gap: 1rem;
-  padding: 1rem;
-  border-bottom: 1px solid #f0f0f0;
-  align-items: center;
-  transition: background 0.2s ease;
-}
-
-.detail-row:hover {
-  background: #f8f9fa;
-}
-
-.col-date {
-  font-size: 0.9rem;
-  color: #666;
-}
-
-.category-tag {
-  display: inline-block;
-  padding: 4px 8px;
-  border-radius: 12px;
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: white;
-}
-
-.category-tag.식비 {
-  background: #ff9800;
-}
-
-.category-tag.교통비 {
-  background: #2196f3;
-}
-
-.category-tag.사무용품 {
-  background: #4caf50;
-}
-
-.category-tag.마케팅 {
-  background: #9c27b0;
-}
-
-.category-tag.인건비 {
-  background: #f44336;
-}
-
-.category-tag.임대료 {
-  background: #795548;
-}
-
-.category-tag.기타 {
-  background: #607d8b;
-}
-
-.col-department {
-  color: #666;
-  font-size: 0.9rem;
-}
-
-.col-description {
-  font-weight: 500;
-}
-
-.col-amount {
-  font-weight: 600;
-  color: #f44336;
-  text-align: right;
-}
-
-/* 반응형 디자인 */
-@media (max-width: 768px) {
-  .page-header {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .header-actions {
-    align-items: stretch;
-  }
-
-  .date-filters {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .date-filters::before {
-    align-self: flex-start;
-    margin-bottom: 0.5rem;
-  }
-
-  .date-select,
-  .category-select {
-    width: 100%;
-    padding: 12px 16px;
-    font-size: 1.1rem;
-  }
-
-  .export-dropdown {
-    width: 100%;
-  }
-
-  .export-btn {
-    width: 100%;
-    min-width: auto;
-  }
-
-  .export-menu {
-    position: fixed;
-    top: auto;
-    left: 15px;
-    right: 15px;
-    width: auto;
-    border-radius: 8px;
-    border: 2px solid #4caf50;
-  }
-
-  .export-dropdown.active .export-btn {
-    border-radius: 8px;
-  }
-
-  .report-overview {
-    grid-template-columns: 1fr;
-  }
-
-  .charts-section {
-    grid-template-columns: 1fr;
-  }
-
-  .detailed-reports {
-    grid-template-columns: 1fr;
-  }
-
-  .detail-header {
-    display: none;
-  }
-
-  .detail-row {
-    display: block;
-    padding: 1rem;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    margin-bottom: 0.5rem;
-  }
-
-  .detail-row>span {
-    display: block;
-    margin-bottom: 0.5rem;
-  }
-
-  .detail-row>span:before {
-    content: attr(class);
-    font-weight: 600;
-    color: #666;
-    font-size: 0.8rem;
-    display: inline-block;
-    width: 80px;
-  }
-
-  .col-date:before {
-    content: '날짜: ';
-  }
-
-  .col-category:before {
-    content: '카테고리: ';
-  }
-
-  .col-department:before {
-    content: '부서: ';
-  }
-
-  .col-description:before {
-    content: '내용: ';
-  }
-
-  .col-amount:before {
-    content: '금액: ';
-  }
-}
-
-@media (max-width: 480px) {
-  .overview-card {
-    flex-direction: column;
-    text-align: center;
-  }
-
-  .card-icon {
-    margin: 0 0 1rem 0;
-  }
-
-  .chart-container {
-    padding: 1rem;
-  }
-
-  .trend-chart {
-    height: 150px;
-  }
-}
-</style>
