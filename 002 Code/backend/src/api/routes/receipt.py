@@ -1,14 +1,18 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException, Query
+from fastapi import APIRouter, UploadFile, File, HTTPException, Query, Depends
 from typing import Optional, List
 from datetime import datetime
 from src.services.receipt_service import receipt_service
 from src.schemas.receipt import ReceiptResponse
+from src.api.dependencies import get_current_user
 
 router = APIRouter(prefix="/receipt", tags=["receipt"])
 
 
 @router.post("/upload")
-async def upload_receipt(file: UploadFile = File(...)):
+async def upload_receipt(
+    file: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user)
+):
     """
     영수증 이미지 업로드 및 전체 처리
 
@@ -25,8 +29,8 @@ async def upload_receipt(file: UploadFile = File(...)):
     6. Receipt 저장
     """
     try:
-        # TODO: 실제 사용자 ID는 인증 토큰에서 가져와야 함
-        user_id = "test_user"
+        # 인증된 사용자 ID 가져오기
+        user_id = current_user["user_id"]
 
         # 이미지 파일 읽기
         image_data = await file.read()
@@ -55,12 +59,13 @@ async def upload_receipt(file: UploadFile = File(...)):
 async def get_receipts(
     start_date: Optional[datetime] = Query(None, description="시작 날짜"),
     end_date: Optional[datetime] = Query(None, description="종료 날짜"),
-    limit: int = Query(100, ge=1, le=1000, description="최대 결과 수")
+    limit: int = Query(100, ge=1, le=1000, description="최대 결과 수"),
+    current_user: dict = Depends(get_current_user)
 ):
     """영수증 목록 조회"""
     try:
-        # TODO: 실제 사용자 ID는 인증 토큰에서 가져와야 함
-        user_id = "test_user"
+        # 인증된 사용자 ID 가져오기
+        user_id = current_user["user_id"]
 
         receipts = await receipt_service.get_receipts(
             user_id=user_id,

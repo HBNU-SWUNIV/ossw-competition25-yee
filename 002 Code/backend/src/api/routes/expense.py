@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Depends
 from typing import Optional, List
 from datetime import datetime
 from src.schemas.expense import (
@@ -8,20 +8,24 @@ from src.schemas.expense import (
     ExpenseSummary
 )
 from src.services.expense_service import expense_service
+from src.api.dependencies import get_current_user
 
 router = APIRouter(prefix="/expense", tags=["expense"])
 
 
 @router.post("/", response_model=ExpenseResponse)
-async def create_expense(expense_data: ExpenseCreate):
+async def create_expense(
+    expense_data: ExpenseCreate,
+    current_user: dict = Depends(get_current_user)
+):
     """
     지출 내역 생성
 
     - 카테고리가 지정되지 않으면 자동으로 분류됩니다
     """
     try:
-        # TODO: 실제 사용자 ID는 인증 토큰에서 가져와야 함
-        user_id = "test_user"
+        # 인증된 사용자 ID 가져오기
+        user_id = current_user["user_id"]
 
         expense = await expense_service.create_expense(
             user_id=user_id,
@@ -44,7 +48,8 @@ async def get_expenses(
     category: Optional[str] = Query(None, description="카테고리 필터"),
     start_date: Optional[datetime] = Query(None, description="시작 날짜"),
     end_date: Optional[datetime] = Query(None, description="종료 날짜"),
-    limit: int = Query(100, ge=1, le=1000, description="최대 결과 수")
+    limit: int = Query(100, ge=1, le=1000, description="최대 결과 수"),
+    current_user: dict = Depends(get_current_user)
 ):
     """
     지출 내역 목록 조회
@@ -52,8 +57,8 @@ async def get_expenses(
     - 카테고리, 날짜 범위로 필터링 가능
     """
     try:
-        # TODO: 실제 사용자 ID는 인증 토큰에서 가져와야 함
-        user_id = "test_user"
+        # 인증된 사용자 ID 가져오기
+        user_id = current_user["user_id"]
 
         expenses = await expense_service.get_expenses(
             user_id=user_id,
@@ -71,7 +76,8 @@ async def get_expenses(
 @router.get("/statistics", response_model=ExpenseSummary)
 async def get_expense_statistics(
     start_date: Optional[datetime] = Query(None, description="시작 날짜 (기본: 이번 달 1일)"),
-    end_date: Optional[datetime] = Query(None, description="종료 날짜 (기본: 오늘)")
+    end_date: Optional[datetime] = Query(None, description="종료 날짜 (기본: 오늘)"),
+    current_user: dict = Depends(get_current_user)
 ):
     """
     지출 통계 조회 (재무제표용)
@@ -79,8 +85,8 @@ async def get_expense_statistics(
     - 카테고리별 금액, 건수, 비율을 반환합니다
     """
     try:
-        # TODO: 실제 사용자 ID는 인증 토큰에서 가져와야 함
-        user_id = "test_user"
+        # 인증된 사용자 ID 가져오기
+        user_id = current_user["user_id"]
 
         statistics = await expense_service.get_statistics(
             user_id=user_id,
