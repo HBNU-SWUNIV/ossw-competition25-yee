@@ -63,7 +63,7 @@ export default {
   name: 'BudgetManagement',
   setup() {
     const showAddModal = ref(false)
-    
+
     const budgets = ref([
       { id: 1, department: '마케팅팀', period: '2024년 10월', allocated: 5000000, spent: 3200000 },
       { id: 2, department: '개발팀', period: '2024년 10월', allocated: 8000000, spent: 4500000 },
@@ -71,14 +71,14 @@ export default {
       { id: 4, department: '인사팀', period: '2024년 10월', allocated: 2000000, spent: 900000 }
     ])
 
-    const totalBudget = computed(() => 
+    const totalBudget = computed(() =>
       budgets.value.reduce((sum, budget) => sum + budget.allocated, 0)
     )
-    
-    const usedBudget = computed(() => 
+
+    const usedBudget = computed(() =>
       budgets.value.reduce((sum, budget) => sum + budget.spent, 0)
     )
-    
+
     const remainingBudget = computed(() => totalBudget.value - usedBudget.value)
 
     return {
@@ -225,7 +225,8 @@ export default {
   gap: 1rem;
 }
 
-.allocated, .spent {
+.allocated,
+.spent {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -262,23 +263,23 @@ export default {
     grid-template-columns: repeat(3, 1fr);
     gap: 2rem;
   }
-  
+
   .stat-card {
     padding: 2rem;
   }
-  
+
   .stat-icon {
     font-size: 3rem;
   }
-  
+
   .amount {
     font-size: 1.8rem;
   }
-  
+
   .budget-list {
     padding: 2rem;
   }
-  
+
   .budget-item {
     padding: 2rem;
   }
@@ -290,7 +291,7 @@ export default {
     grid-template-columns: repeat(2, 1fr);
     gap: 1.5rem;
   }
-  
+
   .page-header {
     gap: 1.5rem;
   }
@@ -303,41 +304,42 @@ export default {
     align-items: stretch;
     gap: 1rem;
   }
-  
+
   .add-btn {
     width: 100%;
     padding: 14px 20px;
     font-size: 1.1rem;
   }
-  
+
   .stats-overview {
     grid-template-columns: 1fr;
     gap: 1.2rem;
   }
-  
+
   .stat-card {
     padding: 1.5rem;
     flex-direction: row;
   }
-  
+
   .stat-icon {
     font-size: 2.2rem;
   }
-  
+
   .budget-list {
     padding: 1.5rem;
   }
-  
+
   .budget-item {
     padding: 1.5rem;
   }
-  
+
   .budget-amounts {
     flex-direction: column;
     gap: 1rem;
   }
-  
-  .allocated, .spent {
+
+  .allocated,
+  .spent {
     flex-direction: row;
     justify-content: space-between;
     padding: 0.5rem 0;
@@ -349,34 +351,34 @@ export default {
   .page-header h2 {
     font-size: 1.5rem;
   }
-  
+
   .add-btn {
     padding: 16px 20px;
   }
-  
+
   .stat-card {
     flex-direction: column;
     text-align: center;
     padding: 1.2rem;
   }
-  
+
   .stat-icon {
     margin: 0 0 1rem 0;
     font-size: 2.5rem;
   }
-  
+
   .budget-list {
     padding: 1rem;
   }
-  
+
   .budget-item {
     padding: 1.2rem;
   }
-  
+
   .budget-info h4 {
     font-size: 1rem;
   }
-  
+
   .budget-amounts .amount {
     font-size: 1rem;
   }
