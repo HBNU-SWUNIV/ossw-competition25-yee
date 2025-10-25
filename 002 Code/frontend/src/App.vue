@@ -1,5 +1,9 @@
 <template>
-  <div id="app" class="min-h-screen bg-gray-50">
+  <!-- 로그인 화면 -->
+  <Login v-if="!isLoggedIn" @login-success="handleLoginSuccess" />
+  
+  <!-- 메인 애플리케이션 -->
+  <div v-else id="app" class="min-h-screen bg-gray-50">
     <!-- 햄버거 메뉴 버튼 -->
     <button 
       class="fixed top-5 left-5 z-50 bg-primary-600 hover:bg-primary-700 text-white w-11 h-11 rounded-lg flex flex-col justify-center items-center gap-1 transition-all duration-300 shadow-lg hover:shadow-xl"
@@ -101,11 +105,28 @@
     <main class="min-h-screen transition-all duration-300" :class="{ 'ml-0': !sidebarOpen, 'lg:ml-80': sidebarOpen }">
       <header class="bg-white shadow-soft sticky top-0 z-30">
         <div class="px-4 sm:px-6 lg:px-8 py-6">
-          <div class="flex items-center gap-4">
-            <div class="w-14 h-14 bg-gradient-to-br from-primary-600 to-primary-700 rounded-xl flex items-center justify-center text-3xl shadow-lg">
-              🏢
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-4">
+              <div class="w-14 h-14 bg-gradient-to-br from-primary-600 to-primary-700 rounded-xl flex items-center justify-center text-3xl shadow-lg">
+                🏢
+              </div>
+              <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">{{ getPageTitle() }}</h1>
             </div>
-            <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">{{ getPageTitle() }}</h1>
+            
+            <!-- 사용자 정보 및 로그아웃 -->
+            <div class="flex items-center gap-4">
+              <div class="text-right">
+                <p class="text-sm font-medium text-gray-900">{{ userInfo?.name }}</p>
+                <p class="text-xs text-gray-500">{{ userInfo?.role === 'admin' ? '관리자' : '사용자' }}</p>
+              </div>
+              <button
+                @click="handleLogout"
+                class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors duration-200"
+              >
+                <span>🚪</span>
+                로그아웃
+              </button>
+            </div>
           </div>
         </div>
       </header>
@@ -128,7 +149,8 @@
 </template>
 
 <script>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import Login from './components/Login.vue'
 import BudgetManagement from './components/BudgetManagement.vue'
 import ExpenseHistory from './components/ExpenseHistory.vue'
 import Reports from './components/Reports.vue'
@@ -138,6 +160,7 @@ import Settings from './components/Settings.vue'
 export default {
   name: 'App',
   components: {
+    Login,
     BudgetManagement,
     ExpenseHistory,
     Reports,
@@ -147,6 +170,8 @@ export default {
   setup() {
     const sidebarOpen = ref(false)
     const activeMenu = ref('home')
+    const isLoggedIn = ref(false)
+    const userInfo = ref(null)
 
     const toggleSidebar = () => {
       sidebarOpen.value = !sidebarOpen.value
@@ -184,14 +209,52 @@ export default {
       return components[activeMenu.value] || 'BudgetManagement'
     })
 
+    // 로그인 상태 확인
+    const checkLoginStatus = () => {
+      const storedLoginStatus = localStorage.getItem('isLoggedIn')
+      const storedUserInfo = localStorage.getItem('userInfo')
+      
+      if (storedLoginStatus === 'true' && storedUserInfo) {
+        isLoggedIn.value = true
+        userInfo.value = JSON.parse(storedUserInfo)
+      }
+    }
+
+    // 로그인 성공 처리
+    const handleLoginSuccess = (user) => {
+      isLoggedIn.value = true
+      userInfo.value = user
+      activeMenu.value = 'home'
+      sidebarOpen.value = false
+    }
+
+    // 로그아웃 처리
+    const handleLogout = () => {
+      localStorage.removeItem('isLoggedIn')
+      localStorage.removeItem('userInfo')
+      isLoggedIn.value = false
+      userInfo.value = null
+      activeMenu.value = 'home'
+      sidebarOpen.value = false
+    }
+
+    // 컴포넌트 마운트 시 로그인 상태 확인
+    onMounted(() => {
+      checkLoginStatus()
+    })
+
     return {
       sidebarOpen,
       activeMenu,
+      isLoggedIn,
+      userInfo,
       toggleSidebar,
       closeSidebar,
       selectMenu,
       getPageTitle,
-      currentComponent
+      currentComponent,
+      handleLoginSuccess,
+      handleLogout
     }
   }
 }

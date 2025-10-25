@@ -6,6 +6,22 @@
     </div>
 
     <div class="settings-container">
+      <!-- 사용자 정보 -->
+      <div class="settings-section">
+        <h3>👤 사용자 정보</h3>
+        <div class="user-info-card">
+          <div class="user-avatar">
+            <span class="avatar-text">{{ userInfo?.name?.charAt(0) || 'U' }}</span>
+          </div>
+          <div class="user-details">
+            <h4>{{ userInfo?.name || '사용자' }}</h4>
+            <p class="user-email">{{ userInfo?.email || '이메일 없음' }}</p>
+            <p class="user-role">{{ userInfo?.role === 'admin' ? '관리자' : '일반 사용자' }}</p>
+            <p class="user-login-time">로그인 시간: {{ formatLoginTime(userInfo?.loginTime) }}</p>
+          </div>
+        </div>
+      </div>
+
       <!-- 일반 설정 -->
       <div class="settings-section">
         <h3>일반 설정</h3>
@@ -308,6 +324,33 @@ export default {
   setup() {
     const showPasswordModal = ref(false)
     
+    // 사용자 정보 가져오기
+    const userInfo = ref(null)
+    
+    // 로컬 스토리지에서 사용자 정보 로드
+    const loadUserInfo = () => {
+      const storedUserInfo = localStorage.getItem('userInfo')
+      if (storedUserInfo) {
+        userInfo.value = JSON.parse(storedUserInfo)
+      }
+    }
+    
+    // 로그인 시간 포맷팅
+    const formatLoginTime = (loginTime) => {
+      if (!loginTime) return '알 수 없음'
+      const date = new Date(loginTime)
+      return date.toLocaleString('ko-KR', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      })
+    }
+    
+    // 컴포넌트 마운트 시 사용자 정보 로드
+    loadUserInfo()
+    
     const settings = ref({
       general: {
         companyName: '우리회사',
@@ -389,6 +432,8 @@ export default {
 
     return {
       showPasswordModal,
+      userInfo,
+      formatLoginTime,
       settings,
       passwordForm,
       saveAllSettings,
@@ -457,6 +502,67 @@ export default {
   font-size: 1.3rem;
   padding-bottom: 0.5rem;
   border-bottom: 2px solid #e3f2fd;
+}
+
+/* 사용자 정보 카드 스타일 */
+.user-info-card {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  color: white;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.user-avatar {
+  width: 60px;
+  height: 60px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: bold;
+  backdrop-filter: blur(10px);
+}
+
+.avatar-text {
+  color: white;
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.user-details h4 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.user-details p {
+  margin: 0.25rem 0;
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+.user-email {
+  font-weight: 500;
+}
+
+.user-role {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  display: inline-block;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.user-login-time {
+  font-size: 0.8rem;
+  opacity: 0.8;
 }
 
 .setting-item {
