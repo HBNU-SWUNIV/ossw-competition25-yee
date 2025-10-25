@@ -58,7 +58,16 @@
       </header>
       
       <div class="content">
-        <component :is="currentComponent" />
+        <!-- 기본 메인 화면 -->
+        <div v-if="activeMenu === 'home'" class="home-screen">
+          <div class="welcome-message">
+            <h2>🏢 예산 관리 시스템</h2>
+            <p>사이드바 메뉴를 클릭하여 원하는 기능을 이용하세요.</p>
+          </div>
+        </div>
+        
+        <!-- 사이드바 메뉴 선택 시 컴포넌트 표시 -->
+        <component v-else :is="currentComponent" />
       </div>
     </main>
   </div>
@@ -83,7 +92,7 @@ export default {
   },
   setup() {
     const sidebarOpen = ref(false)
-    const activeMenu = ref('budget')
+    const activeMenu = ref('home')
 
     const toggleSidebar = () => {
       sidebarOpen.value = !sidebarOpen.value
@@ -100,13 +109,14 @@ export default {
 
     const getPageTitle = () => {
       const titles = {
+        home: '홈',
         budget: '예산관리',
         expenses: '지출내역',
         reports: '리포트',
         departments: '부서관리',
         settings: '설정'
       }
-      return titles[activeMenu.value] || '예산관리'
+      return titles[activeMenu.value] || '홈'
     }
 
     const currentComponent = computed(() => {
@@ -316,6 +326,39 @@ export default {
   margin: 0 auto;
 }
 
+/* 홈 화면 스타일 */
+.home-screen {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 60vh;
+}
+
+.welcome-message {
+  text-align: center;
+  padding: 60px 40px;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  max-width: 500px;
+  width: 100%;
+}
+
+.welcome-message h2 {
+  color: #2c3e50;
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 20px;
+  letter-spacing: -0.5px;
+}
+
+.welcome-message p {
+  color: #7f8c8d;
+  font-size: 1.2rem;
+  line-height: 1.6;
+  margin: 0;
+}
+
 /* PC 최적화 (1200px 이상) */
 @media (min-width: 1200px) {
   .main-header {
@@ -413,6 +456,19 @@ export default {
     padding: 25px 20px;
   }
   
+  .welcome-message {
+    padding: 40px 30px;
+    margin: 20px;
+  }
+  
+  .welcome-message h2 {
+    font-size: 2rem;
+  }
+  
+  .welcome-message p {
+    font-size: 1.1rem;
+  }
+  
   .sidebar {
     width: 85%;
     max-width: 320px;
@@ -465,6 +521,19 @@ export default {
     padding: 20px 15px;
   }
   
+  .welcome-message {
+    padding: 30px 20px;
+    margin: 15px;
+  }
+  
+  .welcome-message h2 {
+    font-size: 1.8rem;
+  }
+  
+  .welcome-message p {
+    font-size: 1rem;
+  }
+  
   .sidebar {
     width: 90%;
   }
@@ -512,6 +581,19 @@ export default {
   
   .content {
     padding: 15px 12px;
+  }
+  
+  .welcome-message {
+    padding: 25px 15px;
+    margin: 10px;
+  }
+  
+  .welcome-message h2 {
+    font-size: 1.6rem;
+  }
+  
+  .welcome-message p {
+    font-size: 0.95rem;
   }
   
   .sidebar {
