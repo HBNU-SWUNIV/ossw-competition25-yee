@@ -29,6 +29,11 @@ fastapi-cors==0.0.6
 # Utilities
 python-dateutil==2.8.2
 
+# AI Model (Apache 2.0 License - Commercial Use OK)
+transformers==4.36.2
+torch==2.1.2
+sentencepiece==0.1.99
+
 # Testing
 pytest==8.0.0
 pytest-asyncio==0.23.3
