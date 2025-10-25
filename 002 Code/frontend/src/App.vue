@@ -84,7 +84,7 @@
     <!-- 메인 콘텐츠 -->
     <main class="min-h-screen transition-all duration-300" :class="{ 'ml-0': !sidebarOpen, 'lg:ml-80': sidebarOpen }">
       <header class="bg-white shadow-soft sticky top-0 z-30">
-        <div class="px-4 sm:px-6 lg:px-8 py-6">
+        <div class="pl-20 pr-4 sm:pl-24 sm:pr-6 lg:pr-8 py-6">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-4">
               <button @click="selectMenu('home')"
