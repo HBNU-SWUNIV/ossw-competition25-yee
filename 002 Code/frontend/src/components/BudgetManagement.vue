@@ -102,7 +102,7 @@ export default {
   name: 'BudgetManagement',
   setup() {
     const showAddModal = ref(false)
-    
+
     const budgets = ref([
       { id: 1, department: '마케팅팀', period: '2024년 10월', allocated: 5000000, spent: 3200000 },
       { id: 2, department: '개발팀', period: '2024년 10월', allocated: 8000000, spent: 4500000 },
@@ -110,14 +110,14 @@ export default {
       { id: 4, department: '인사팀', period: '2024년 10월', allocated: 2000000, spent: 900000 }
     ])
 
-    const totalBudget = computed(() => 
+    const totalBudget = computed(() =>
       budgets.value.reduce((sum, budget) => sum + budget.allocated, 0)
     )
-    
-    const usedBudget = computed(() => 
+
+    const usedBudget = computed(() =>
       budgets.value.reduce((sum, budget) => sum + budget.spent, 0)
     )
-    
+
     const remainingBudget = computed(() => totalBudget.value - usedBudget.value)
 
     return {

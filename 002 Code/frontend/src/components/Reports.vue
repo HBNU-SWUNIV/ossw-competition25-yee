@@ -238,8 +238,7 @@
 </template>
 
 <script>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import jsPDF from 'jspdf'
+import { ref, computed } from 'vue'
 
 export default {
   name: 'Reports',
@@ -250,8 +249,7 @@ export default {
     const selectedDay = ref('')
     const selectedCategory = ref('')
 
-    // 내보내기 메뉴 상태
-    const showExportMenu = ref(false)
+
 
     // 사용 가능한 날짜 옵션들 (최신순)
     const availableYears = ref([2024, 2023, 2022])
@@ -496,10 +494,10 @@ export default {
     }
 
     const getExportButtonText = () => {
-      if (selectedDay.value) return '일별 리포트 내보내기 (PDF/CSV)'
-      if (selectedMonth.value) return '월별 리포트 내보내기 (PDF/CSV)'
-      if (selectedYear.value) return '연간 리포트 내보내기 (PDF/CSV)'
-      return '전체 리포트 내보내기 (PDF/CSV)'
+      if (selectedDay.value) return '일별 리포트 CSV 내보내기'
+      if (selectedMonth.value) return '월별 리포트 CSV 내보내기'
+      if (selectedYear.value) return '연간 리포트 CSV 내보내기'
+      return '전체 리포트 CSV 내보내기'
     }
 
     const getPreviousPeriodText = () => {
@@ -561,80 +559,19 @@ export default {
       })
     }
 
-    const toggleExportMenu = () => {
-      showExportMenu.value = !showExportMenu.value
-    }
-
-    const closeExportMenu = () => {
-      showExportMenu.value = false
-    }
-
-    // 외부 클릭 시 메뉴 닫기
-    const handleClickOutside = (event) => {
-      const exportDropdown = event.target.closest('.export-dropdown')
-      if (!exportDropdown && showExportMenu.value) {
-        closeExportMenu()
-      }
-    }
-
-    onMounted(() => {
-      document.addEventListener('click', handleClickOutside)
-    })
-
-    onUnmounted(() => {
-      document.removeEventListener('click', handleClickOutside)
-    })
-
-    const exportAsPDF = () => {
-      const reportType = selectedDay.value ? '일별' : selectedMonth.value ? '월별' : selectedYear.value ? '연간' : '전체'
-      const period = getCurrentPeriodTitle()
-
-      generatePDF(reportType, period)
-      closeExportMenu()
-
-      setTimeout(() => {
-        alert(`${reportType} PDF 리포트를 내보냈습니다.`)
-      }, 500)
-    }
-
-    const exportAsExcelCSV = () => {
-      const reportType = selectedDay.value ? '일별' : selectedMonth.value ? '월별' : selectedYear.value ? '연간' : '전체'
-      const period = getCurrentPeriodTitle()
-
-      const excelContent = generateExcelCSV()
-      downloadExcelCSV(excelContent, `${reportType}_리포트_${period}.csv`)
-      closeExportMenu()
-
-      setTimeout(() => {
-        alert(`${reportType} Excel 호환 CSV를 내보냈습니다.`)
-      }, 500)
-    }
-
     const exportAsCSV = () => {
       const reportType = selectedDay.value ? '일별' : selectedMonth.value ? '월별' : selectedYear.value ? '연간' : '전체'
       const period = getCurrentPeriodTitle()
 
-      const csvContent = generateCSV()
-      downloadCSV(csvContent, `${reportType}_리포트_${period}.csv`)
-      closeExportMenu()
+      const csvContent = generateExcelCSV() // Excel 호환 CSV 사용 (한글 깨짐 방지)
+      downloadExcelCSV(csvContent, `${reportType}_리포트_${period}.csv`)
 
       setTimeout(() => {
-        alert(`${reportType} 일반 CSV를 내보냈습니다.`)
+        alert(`${reportType} CSV 리포트를 내보냈습니다.`)
       }, 500)
     }
 
-    const generateCSV = () => {
-      const headers = ['날짜', '카테고리', '부서', '내용', '금액']
-      const rows = filteredDetailData.value.map(item => [
-        item.date,
-        item.category,
-        item.department,
-        `"${item.description}"`, // 쉼표가 포함된 내용을 위해 따옴표 추가
-        item.amount.toLocaleString()
-      ])
 
-      return [headers, ...rows].map(row => row.join(',')).join('\n')
-    }
 
     const generateExcelCSV = () => {
       // Excel에서 한글이 깨지지 않도록 특별히 처리
@@ -701,268 +638,13 @@ export default {
       URL.revokeObjectURL(url)
     }
 
-    const generatePDF = (reportType, period) => {
-      try {
-        // jsPDF 인스턴스 생성 (A4 세로)
-        const doc = new jsPDF('p', 'mm', 'a4')
 
-        let yPosition = 20
-        const pageWidth = doc.internal.pageSize.getWidth()
-        const margin = 20
-
-        // 한글을 영문으로 변환하는 함수
-        const translateToEnglish = (koreanText) => {
-          const translations = {
-            '일별': 'Daily',
-            '월별': 'Monthly',
-            '연간': 'Annual',
-            '전체': 'Total',
-            '리포트': 'Report',
-            '생성일': 'Generated',
-            '대상 기간': 'Period',
-            '총 지출': 'Total Expense',
-            '거래 건수': 'Transactions',
-            '요약 통계': 'Summary Statistics',
-            '평균': 'Average',
-            '일일 지출': 'Daily Expense',
-            '월별 지출': 'Monthly Expense',
-            '예산 사용률': 'Budget Usage',
-            '전일': 'Previous Day',
-            '전월': 'Previous Month',
-            '전년': 'Previous Year',
-            '대비': 'vs',
-            '부서별 지출 현황': 'Expense by Department',
-            '카테고리별 지출 분석': 'Expense by Category',
-            '상세 내역': 'Detailed Records',
-            '최신': 'Latest',
-            '건': 'items',
-            '날짜': 'Date',
-            '카테고리': 'Category',
-            '부서': 'Department',
-            '내용': 'Description',
-            '금액': 'Amount',
-            '마케팅팀': 'Marketing Team',
-            '개발팀': 'Development Team',
-            '영업팀': 'Sales Team',
-            '인사팀': 'HR Team',
-            '총무팀': 'General Affairs Team',
-            '전체': 'All',
-            '마케팅': 'Marketing',
-            '사무용품': 'Office Supplies',
-            '식비': 'Meals',
-            '교통비': 'Transportation',
-            '인건비': 'Personnel',
-            '임대료': 'Rent',
-            '기타': 'Others',
-            '온라인 광고비': 'Online Advertising',
-            '프린터 토너': 'Printer Toner',
-            '팀 회식': 'Team Dinner',
-            '출장비': 'Business Trip',
-            '외부 강사비': 'External Instructor',
-            '브로슈어 제작': 'Brochure Production',
-            '노트북 구매': 'Laptop Purchase',
-            '사무실 임대료': 'Office Rent',
-            '회사 워크샵': 'Company Workshop',
-            '고객 미팅': 'Client Meeting',
-            '전시회 참가비': 'Exhibition Fee',
-            '사무용 가구': 'Office Furniture',
-            '교육비': 'Training Fee',
-            '소셜미디어 광고': 'Social Media Ads',
-            '개발 장비': 'Development Equipment',
-            '연말 이벤트': 'Year-end Event'
-          }
-
-          let result = koreanText
-          Object.keys(translations).forEach(korean => {
-            result = result.replace(new RegExp(korean, 'g'), translations[korean])
-          })
-          return result
-        }
-
-        // 제목
-        doc.setFontSize(20)
-        doc.setFont('helvetica', 'bold')
-        const title = translateToEnglish(`${reportType} 리포트`)
-        const titleWidth = doc.getTextWidth(title)
-        doc.text(title, (pageWidth - titleWidth) / 2, yPosition)
-
-        yPosition += 15
-
-        // 리포트 정보
-        doc.setFontSize(12)
-        doc.setFont('helvetica', 'normal')
-        doc.text(translateToEnglish(`생성일: ${new Date().toLocaleDateString('en-US')}`), margin, yPosition)
-        yPosition += 7
-        doc.text(translateToEnglish(`대상 기간: ${period}`), margin, yPosition)
-        yPosition += 7
-        doc.text(`Total Expense: $${Math.round(currentData.value.totalExpense / 1300).toLocaleString()}`, margin, yPosition)
-        yPosition += 7
-        doc.text(`Transactions: ${currentData.value.transactionCount} items`, margin, yPosition)
-        yPosition += 15
-
-        // 구분선
-        doc.setLineWidth(0.5)
-        doc.line(margin, yPosition, pageWidth - margin, yPosition)
-        yPosition += 10
-
-        // 요약 통계
-        doc.setFontSize(14)
-        doc.setFont('helvetica', 'bold')
-        doc.text('Summary Statistics', margin, yPosition)
-        yPosition += 10
-
-        doc.setFontSize(10)
-        doc.setFont('helvetica', 'normal')
-
-        const stats = [
-          `Average ${translateToEnglish(getAverageText())}: $${Math.round(currentData.value.averageExpense / 1300).toLocaleString()}`,
-          `Budget Usage: ${currentData.value.budgetUsage}%`,
-          `vs ${translateToEnglish(getPreviousPeriodText())}: ${currentData.value.expenseChange > 0 ? '+' : ''}${currentData.value.expenseChange}%`
-        ]
-
-        stats.forEach(stat => {
-          doc.text(stat, margin, yPosition)
-          yPosition += 6
-        })
-
-        yPosition += 10
-
-        // 부서별 지출 현황
-        if (filteredDepartmentData.value.length > 0) {
-          doc.setFontSize(14)
-          doc.setFont('helvetica', 'bold')
-          doc.text('Expense by Department', margin, yPosition)
-          yPosition += 10
-
-          doc.setFontSize(10)
-          doc.setFont('helvetica', 'normal')
-
-          filteredDepartmentData.value.slice(0, 10).forEach(dept => {
-            const percentage = Math.round((dept.amount / maxDepartmentAmount.value) * 100)
-            const translatedDept = translateToEnglish(dept.name)
-            doc.text(`${translatedDept}: $${Math.round(dept.amount / 1300).toLocaleString()} (${percentage}%)`, margin, yPosition)
-            yPosition += 6
-
-            // 페이지 넘김 체크
-            if (yPosition > 250) {
-              doc.addPage()
-              yPosition = 20
-            }
-          })
-
-          yPosition += 10
-        }
-
-        // 카테고리별 지출 분석
-        if (filteredCategoryData.value.length > 0) {
-          // 페이지 넘김 체크
-          if (yPosition > 200) {
-            doc.addPage()
-            yPosition = 20
-          }
-
-          doc.setFontSize(14)
-          doc.setFont('helvetica', 'bold')
-          doc.text('Expense by Category', margin, yPosition)
-          yPosition += 10
-
-          doc.setFontSize(10)
-          doc.setFont('helvetica', 'normal')
-
-          filteredCategoryData.value.forEach(category => {
-            const percentage = Math.round((category.amount / totalFilteredCategoryAmount.value) * 100)
-            const changeText = category.change > 0 ? `+${category.change}%` : category.change < 0 ? `${category.change}%` : '0%'
-            const translatedCategory = translateToEnglish(category.name)
-            doc.text(`${translatedCategory}: $${Math.round(category.amount / 1300).toLocaleString()} (${percentage}%) ${changeText}`, margin, yPosition)
-            yPosition += 6
-
-            // 페이지 넘김 체크
-            if (yPosition > 250) {
-              doc.addPage()
-              yPosition = 20
-            }
-          })
-
-          yPosition += 10
-        }
-
-        // 상세 내역 (최대 20건)
-        if (filteredDetailData.value.length > 0) {
-          // 페이지 넘김 체크
-          if (yPosition > 180) {
-            doc.addPage()
-            yPosition = 20
-          }
-
-          doc.setFontSize(14)
-          doc.setFont('helvetica', 'bold')
-          doc.text('Detailed Records (Latest 20 items)', margin, yPosition)
-          yPosition += 10
-
-          // 테이블 헤더
-          doc.setFontSize(9)
-          doc.setFont('helvetica', 'bold')
-          doc.text('Date', margin, yPosition)
-          doc.text('Category', margin + 25, yPosition)
-          doc.text('Department', margin + 55, yPosition)
-          doc.text('Description', margin + 90, yPosition)
-          doc.text('Amount($)', margin + 140, yPosition)
-          yPosition += 5
-
-          // 구분선
-          doc.setLineWidth(0.3)
-          doc.line(margin, yPosition, pageWidth - margin, yPosition)
-          yPosition += 5
-
-          doc.setFont('helvetica', 'normal')
-
-          filteredDetailData.value.slice(0, 20).forEach(item => {
-            const date = item.date.substring(5) // MM-DD 형식
-            let description = translateToEnglish(item.description)
-            if (description.length > 20) {
-              description = description.substring(0, 20) + '...'
-            }
-
-            doc.text(date, margin, yPosition)
-            doc.text(translateToEnglish(item.category), margin + 25, yPosition)
-            doc.text(translateToEnglish(item.department), margin + 55, yPosition)
-            doc.text(description, margin + 90, yPosition)
-            doc.text(`$${Math.round(item.amount / 1300).toLocaleString()}`, margin + 140, yPosition)
-            yPosition += 5
-
-            // 페이지 넘김 체크
-            if (yPosition > 270) {
-              doc.addPage()
-              yPosition = 20
-            }
-          })
-        }
-
-        // 페이지 번호 추가
-        const pageCount = doc.internal.getNumberOfPages()
-        for (let i = 1; i <= pageCount; i++) {
-          doc.setPage(i)
-          doc.setFontSize(8)
-          doc.setFont('helvetica', 'normal')
-          doc.text(`${i} / ${pageCount}`, pageWidth - 30, 285)
-        }
-
-        // PDF 다운로드
-        const filename = `${translateToEnglish(reportType)}_Report_${new Date().toISOString().split('T')[0]}.pdf`
-        doc.save(filename)
-
-      } catch (error) {
-        console.error('PDF generation error:', error)
-        alert('PDF 생성 중 오류가 발생했습니다. 다시 시도해주세요.')
-      }
-    }
 
     return {
       selectedYear,
       selectedMonth,
       selectedDay,
       selectedCategory,
-      showExportMenu,
       availableYears,
       availableMonths,
       availableDays,
@@ -989,12 +671,604 @@ export default {
       getBudgetStatusText,
       getChartTitle,
       formatDate,
-      toggleExportMenu,
-      closeExportMenu,
-      exportAsPDF,
-      exportAsExcelCSV,
       exportAsCSV
     }
   }
 }
 </script>
+.reports {
+  padding: 0;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.page-header h2 {
+  color: #2c3e50;
+  font-size: 1.8rem;
+  margin: 0;
+}
+
+.header-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  align-items: flex-end;
+}
+
+.date-filters {
+  display: flex;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.date-filters::before {
+  content: '📅';
+  font-size: 1.2rem;
+  margin-right: 0.5rem;
+}
+
+.date-select,
+.category-select {
+  padding: 10px 14px;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  background: white;
+  color: #2c3e50;
+  font-size: 1rem;
+  font-weight: 500;
+  min-width: 140px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.date-select:hover,
+.category-select:hover {
+  border-color: #1976d2;
+  box-shadow: 0 2px 4px rgba(25, 118, 210, 0.1);
+}
+
+.date-select:focus,
+.category-select:focus {
+  outline: none;
+  border-color: #1976d2;
+  box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
+}
+
+.date-select:disabled {
+  background: #f8f9fa;
+  color: #6c757d;
+  border-color: #e9ecef;
+  cursor: not-allowed;
+}
+
+.date-select option,
+.category-select option {
+  color: #2c3e50;
+  background: white;
+  padding: 8px;
+}
+
+.category-filter {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.category-filter::before {
+  content: '🏷️';
+  font-size: 1.2rem;
+}
+
+.export-btn {
+  background: #4caf50;
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.export-btn:hover {
+  background: #45a049;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(76, 175, 80, 0.3);
+}
+
+.report-info {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.current-period h3 {
+  color: #2c3e50;
+  margin: 0 0 0.5rem 0;
+  font-size: 1.3rem;
+}
+
+.period-description {
+  color: #666;
+  margin: 0;
+  font-size: 1rem;
+}
+
+.report-overview {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.overview-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  transition: transform 0.2s ease;
+}
+
+.overview-card:hover {
+  transform: translateY(-2px);
+}
+
+.card-icon {
+  font-size: 2.5rem;
+  margin-right: 1rem;
+}
+
+.card-content h3 {
+  color: #666;
+  font-size: 0.9rem;
+  margin: 0 0 0.5rem 0;
+  font-weight: 500;
+}
+
+.amount {
+  font-size: 1.8rem;
+  font-weight: bold;
+  margin: 0 0 0.25rem 0;
+  color: #2c3e50;
+}
+
+.trend {
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.trend.trend-up {
+  color: #f44336;
+}
+
+.trend.trend-down {
+  color: #4caf50;
+}
+
+.charts-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.chart-container {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.chart-container h3 {
+  color: #2c3e50;
+  margin: 0 0 1.5rem 0;
+  font-size: 1.2rem;
+}
+
+.department-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.dept-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.dept-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.dept-name {
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+.dept-amount {
+  font-weight: 600;
+  color: #1976d2;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress {
+  height: 100%;
+  background: #1976d2;
+  transition: width 0.3s ease;
+}
+
+.trend-chart {
+  height: 200px;
+  display: flex;
+  align-items: end;
+}
+
+.chart-bars {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  width: 100%;
+  height: 100%;
+  gap: 0.5rem;
+}
+
+.trend-bar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  height: 100%;
+  max-width: 60px;
+}
+
+.bar {
+  width: 100%;
+  background: linear-gradient(to top, #1976d2, #42a5f5);
+  border-radius: 4px 4px 0 0;
+  margin-bottom: 0.5rem;
+  transition: height 0.3s ease;
+  min-height: 4px;
+}
+
+.period-label {
+  font-size: 0.8rem;
+  color: #666;
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+}
+
+.amount-label {
+  font-size: 0.7rem;
+  color: #999;
+}
+
+.detailed-reports {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 2rem;
+}
+
+.report-section {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.report-section h3 {
+  color: #2c3e50;
+  margin: 0 0 1.5rem 0;
+  font-size: 1.2rem;
+}
+
+.category-analysis {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.category-item {
+  padding: 1rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+}
+
+.category-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.category-name {
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+.category-amount {
+  font-weight: 600;
+  color: #f44336;
+}
+
+.category-details {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.category-details .progress-bar {
+  flex: 1;
+}
+
+.percentage {
+  font-size: 0.9rem;
+  color: #666;
+  font-weight: 500;
+  min-width: 40px;
+}
+
+.category-trend {
+  text-align: right;
+}
+
+.trend-indicator {
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.trend-indicator.trend-up {
+  color: #f44336;
+}
+
+.trend-indicator.trend-down {
+  color: #4caf50;
+}
+
+.detail-list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.detail-header {
+  display: grid;
+  grid-template-columns: 100px 100px 120px 1fr 120px;
+  gap: 1rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  font-weight: 600;
+  color: #2c3e50;
+  border-bottom: 1px solid #e0e0e0;
+  position: sticky;
+  top: 0;
+}
+
+.detail-body {
+  display: flex;
+  flex-direction: column;
+}
+
+.detail-row {
+  display: grid;
+  grid-template-columns: 100px 100px 120px 1fr 120px;
+  gap: 1rem;
+  padding: 1rem;
+  border-bottom: 1px solid #f0f0f0;
+  align-items: center;
+  transition: background 0.2s ease;
+}
+
+.detail-row:hover {
+  background: #f8f9fa;
+}
+
+.col-date {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.category-tag {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: white;
+}
+
+.category-tag.식비 {
+  background: #ff9800;
+}
+
+.category-tag.교통비 {
+  background: #2196f3;
+}
+
+.category-tag.사무용품 {
+  background: #4caf50;
+}
+
+.category-tag.마케팅 {
+  background: #9c27b0;
+}
+
+.category-tag.인건비 {
+  background: #f44336;
+}
+
+.category-tag.임대료 {
+  background: #795548;
+}
+
+.category-tag.기타 {
+  background: #607d8b;
+}
+
+.col-department {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.col-description {
+  font-weight: 500;
+}
+
+.col-amount {
+  font-weight: 600;
+  color: #f44336;
+  text-align: right;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .header-actions {
+    align-items: stretch;
+  }
+
+  .date-filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .date-filters::before {
+    align-self: flex-start;
+    margin-bottom: 0.5rem;
+  }
+
+  .date-select,
+  .category-select {
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 1.1rem;
+  }
+
+  .export-dropdown {
+    width: 100%;
+  }
+
+  .export-btn {
+    width: 100%;
+    min-width: auto;
+  }
+
+  .export-menu {
+    position: fixed;
+    top: auto;
+    left: 15px;
+    right: 15px;
+    width: auto;
+    border-radius: 8px;
+    border: 2px solid #4caf50;
+  }
+
+  .export-dropdown.active .export-btn {
+    border-radius: 8px;
+  }
+
+  .report-overview {
+    grid-template-columns: 1fr;
+  }
+
+  .charts-section {
+    grid-template-columns: 1fr;
+  }
+
+  .detailed-reports {
+    grid-template-columns: 1fr;
+  }
+
+  .detail-header {
+    display: none;
+  }
+
+  .detail-row {
+    display: block;
+    padding: 1rem;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+  }
+
+  .detail-row>span {
+    display: block;
+    margin-bottom: 0.5rem;
+  }
+
+  .detail-row>span:before {
+    content: attr(class);
+    font-weight: 600;
+    color: #666;
+    font-size: 0.8rem;
+    display: inline-block;
+    width: 80px;
+  }
+
+  .col-date:before {
+    content: '날짜: ';
+  }
+
+  .col-category:before {
+    content: '카테고리: ';
+  }
+
+  .col-department:before {
+    content: '부서: ';
+  }
+
+  .col-description:before {
+    content: '내용: ';
+  }
+
+  .col-amount:before {
+    content: '금액: ';
+  }
+}
+
+@media (max-width: 480px) {
+  .overview-card {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .card-icon {
+    margin: 0 0 1rem 0;
+  }
+
+  .chart-container {
+    padding: 1rem;
+  }
+
+  .trend-chart {
+    height: 150px;
+  }
+}
+</style>
+>>>>>>> 72b755ed322e1f9c472c4bba8a93082bb68aa9e7

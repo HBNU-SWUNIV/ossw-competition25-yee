@@ -2,7 +2,73 @@
   <div class="department-management">
     <div class="page-header">
       <h2>부서 관리</h2>
-      <button class="add-btn" @click="showAddModal = true">+ 부서 추가</button>
+    </div>
+
+    <!-- 내 부서 정보 -->
+    <div class="my-department-section">
+      <h3>내 부서 정보</h3>
+      <div class="my-department-card">
+        <div class="dept-header">
+          <div class="dept-main-info">
+            <h4>{{ myDepartment.name }}</h4>
+            <span class="dept-code">{{ myDepartment.code }}</span>
+            <span class="my-role">{{ myDepartment.myRole }}</span>
+          </div>
+          <div class="dept-status"
+            :class="{ 'over-budget': myDepartment.usageRate > 90, 'warning': myDepartment.usageRate > 80 }">
+            <span class="status-text">{{ getBudgetStatus(myDepartment.usageRate) }}</span>
+          </div>
+        </div>
+
+        <div class="dept-details">
+          <div class="detail-row">
+            <div class="detail-item">
+              <span class="label">담당자</span>
+              <span class="value">{{ myDepartment.manager }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="label">직원 수</span>
+              <span class="value">{{ myDepartment.employees }}명</span>
+            </div>
+            <div class="detail-item">
+              <span class="label">배정 예산</span>
+              <span class="value budget">₩{{ myDepartment.budget.toLocaleString() }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="label">사용 예산</span>
+              <span class="value used">₩{{ myDepartment.usedBudget.toLocaleString() }}</span>
+            </div>
+          </div>
+
+          <div class="budget-progress">
+            <div class="progress-header">
+              <span>예산 사용률</span>
+              <span class="usage-rate">{{ myDepartment.usageRate }}%</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress" :style="{ width: myDepartment.usageRate + '%' }" :class="{
+                'warning': myDepartment.usageRate > 70 && myDepartment.usageRate <= 90,
+                'danger': myDepartment.usageRate > 90
+              }"></div>
+            </div>
+          </div>
+
+          <div class="contact-section">
+            <div class="contact-item">
+              <span class="contact-icon">📧</span>
+              <span class="contact-text">{{ myDepartment.email }}</span>
+            </div>
+            <div class="contact-item">
+              <span class="contact-icon">📞</span>
+              <span class="contact-text">{{ myDepartment.phone }}</span>
+            </div>
+            <div class="contact-item">
+              <span class="contact-icon">📍</span>
+              <span class="contact-text">{{ myDepartment.location }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="department-stats">
@@ -30,12 +96,7 @@
     </div>
 
     <div class="department-filters">
-      <input 
-        v-model="searchQuery" 
-        type="text" 
-        placeholder="부서명 또는 담당자 검색..." 
-        class="search-input"
-      >
+      <input v-model="searchQuery" type="text" placeholder="부서명 또는 담당자 검색..." class="search-input">
       <select v-model="sortBy" class="sort-select">
         <option value="name">부서명순</option>
         <option value="employees">직원수순</option>
@@ -44,19 +105,11 @@
     </div>
 
     <div class="department-grid">
-      <div 
-        v-for="dept in filteredDepartments" 
-        :key="dept.id" 
-        class="department-card"
-      >
+      <div v-for="dept in filteredDepartments" :key="dept.id" class="department-card">
         <div class="card-header">
           <div class="dept-info">
             <h3>{{ dept.name }}</h3>
             <span class="dept-code">{{ dept.code }}</span>
-          </div>
-          <div class="card-actions">
-            <button class="edit-btn" @click="editDepartment(dept)">✏️</button>
-            <button class="delete-btn" @click="deleteDepartment(dept.id)">🗑️</button>
           </div>
         </div>
 
@@ -88,17 +141,13 @@
               <span>{{ dept.usageRate }}%</span>
             </div>
             <div class="progress-bar">
-              <div 
-                class="progress" 
-                :style="{ width: dept.usageRate + '%' }"
-                :class="{ 
-                  'warning': dept.usageRate > 70 && dept.usageRate <= 90,
-                  'danger': dept.usageRate > 90 
-                }"
-              ></div>
+              <div class="progress" :style="{ width: dept.usageRate + '%' }" :class="{
+                'warning': dept.usageRate > 70 && dept.usageRate <= 90,
+                'danger': dept.usageRate > 90
+              }"></div>
             </div>
           </div>
-          
+
           <div class="contact-info">
             <div class="contact-item">
               <span class="contact-label">📧</span>
@@ -113,28 +162,7 @@
       </div>
     </div>
 
-    <!-- 부서 추가/편집 모달 (실제 구현시 별도 컴포넌트로) -->
-    <div v-if="showAddModal" class="modal-overlay" @click="closeModal">
-      <div class="modal-content" @click.stop>
-        <h3>{{ editingDept ? '부서 편집' : '새 부서 추가' }}</h3>
-        <div class="form-group">
-          <label>부서명</label>
-          <input v-model="formData.name" type="text" placeholder="부서명을 입력하세요">
-        </div>
-        <div class="form-group">
-          <label>부서 코드</label>
-          <input v-model="formData.code" type="text" placeholder="부서 코드를 입력하세요">
-        </div>
-        <div class="form-group">
-          <label>담당자</label>
-          <input v-model="formData.manager" type="text" placeholder="담당자명을 입력하세요">
-        </div>
-        <div class="form-actions">
-          <button class="cancel-btn" @click="closeModal">취소</button>
-          <button class="save-btn" @click="saveDepartment">저장</button>
-        </div>
-      </div>
-    </div>
+
   </div>
 </template>
 
@@ -144,19 +172,22 @@ import { ref, computed } from 'vue'
 export default {
   name: 'DepartmentManagement',
   setup() {
-    const showAddModal = ref(false)
-    const editingDept = ref(null)
     const searchQuery = ref('')
     const sortBy = ref('name')
-    
-    const formData = ref({
-      name: '',
-      code: '',
-      manager: '',
-      employees: 0,
-      budget: 0,
-      email: '',
-      phone: ''
+
+    // 내 부서 정보 (더미 데이터)
+    const myDepartment = ref({
+      name: '개발팀',
+      code: 'DEV',
+      manager: '김개발',
+      myRole: '팀원',
+      employees: 15,
+      budget: 8000000,
+      usedBudget: 6000000,
+      usageRate: 75,
+      email: 'dev@company.com',
+      phone: '02-1234-5678',
+      location: '본사 3층 개발실'
     })
 
     const departments = ref([
@@ -217,16 +248,16 @@ export default {
       }
     ])
 
-    const totalEmployees = computed(() => 
+    const totalEmployees = computed(() =>
       departments.value.reduce((sum, dept) => sum + dept.employees, 0)
     )
 
-    const totalBudget = computed(() => 
+    const totalBudget = computed(() =>
       departments.value.reduce((sum, dept) => sum + dept.budget, 0)
     )
 
     const filteredDepartments = computed(() => {
-      let filtered = departments.value.filter(dept => 
+      let filtered = departments.value.filter(dept =>
         dept.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
         dept.manager.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
         dept.code.toLowerCase().includes(searchQuery.value.toLowerCase())
@@ -247,68 +278,23 @@ export default {
       return filtered
     })
 
-    const editDepartment = (dept) => {
-      editingDept.value = dept
-      formData.value = { ...dept }
-      showAddModal.value = true
-    }
-
-    const deleteDepartment = (id) => {
-      if (confirm('정말로 이 부서를 삭제하시겠습니까?')) {
-        const index = departments.value.findIndex(d => d.id === id)
-        if (index > -1) {
-          departments.value.splice(index, 1)
-        }
-      }
-    }
-
-    const closeModal = () => {
-      showAddModal.value = false
-      editingDept.value = null
-      formData.value = {
-        name: '',
-        code: '',
-        manager: '',
-        employees: 0,
-        budget: 0,
-        email: '',
-        phone: ''
-      }
-    }
-
-    const saveDepartment = () => {
-      if (editingDept.value) {
-        // 편집
-        const index = departments.value.findIndex(d => d.id === editingDept.value.id)
-        if (index > -1) {
-          departments.value[index] = { ...formData.value }
-        }
-      } else {
-        // 새로 추가
-        const newDept = {
-          ...formData.value,
-          id: Date.now(),
-          usageRate: 0
-        }
-        departments.value.push(newDept)
-      }
-      closeModal()
+    // 예산 상태 텍스트 반환 함수
+    const getBudgetStatus = (usageRate) => {
+      if (usageRate > 90) return '예산 초과 위험'
+      if (usageRate > 80) return '예산 사용 주의'
+      if (usageRate < 50) return '예산 여유'
+      return '정상 범위'
     }
 
     return {
-      showAddModal,
-      editingDept,
+      myDepartment,
       searchQuery,
       sortBy,
-      formData,
       departments,
       totalEmployees,
       totalBudget,
       filteredDepartments,
-      editDepartment,
-      deleteDepartment,
-      closeModal,
-      saveDepartment
+      getBudgetStatus
     }
   }
 }
@@ -334,19 +320,185 @@ export default {
   margin: 0;
 }
 
-.add-btn {
-  background: #1976d2;
-  color: white;
-  border: none;
-  padding: 12px 20px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 600;
-  transition: background 0.3s ease;
+/* 내 부서 정보 스타일 */
+.my-department-section {
+  margin-bottom: 2rem;
 }
 
-.add-btn:hover {
-  background: #1565c0;
+.my-department-section h3 {
+  color: #2c3e50;
+  font-size: 1.3rem;
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+.my-department-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 16px;
+  padding: 2rem;
+  color: white;
+  box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.my-department-card::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  z-index: 1;
+}
+
+.dept-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+  position: relative;
+  z-index: 2;
+}
+
+.dept-main-info h4 {
+  font-size: 1.8rem;
+  margin: 0 0 0.5rem 0;
+  font-weight: 700;
+}
+
+.dept-code {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-right: 0.5rem;
+}
+
+.my-role {
+  background: rgba(255, 255, 255, 0.3);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.dept-status {
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  background: rgba(76, 175, 80, 0.2);
+  border: 1px solid rgba(76, 175, 80, 0.3);
+}
+
+.dept-status.warning {
+  background: rgba(255, 152, 0, 0.2);
+  border-color: rgba(255, 152, 0, 0.3);
+}
+
+.dept-status.over-budget {
+  background: rgba(244, 67, 54, 0.2);
+  border-color: rgba(244, 67, 54, 0.3);
+}
+
+.dept-details {
+  position: relative;
+  z-index: 2;
+}
+
+.detail-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.detail-item .label {
+  font-size: 0.85rem;
+  opacity: 0.8;
+  font-weight: 500;
+}
+
+.detail-item .value {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.detail-item .value.budget {
+  color: #81c784;
+}
+
+.detail-item .value.used {
+  color: #ffb74d;
+}
+
+.budget-progress {
+  margin-bottom: 1.5rem;
+}
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.usage-rate {
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.budget-progress .progress-bar {
+  width: 100%;
+  height: 12px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.budget-progress .progress {
+  height: 100%;
+  background: #4caf50;
+  transition: width 0.3s ease;
+  border-radius: 6px;
+}
+
+.budget-progress .progress.warning {
+  background: #ff9800;
+}
+
+.budget-progress .progress.danger {
+  background: #f44336;
+}
+
+.contact-section {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.contact-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+}
+
+.contact-icon {
+  font-size: 1rem;
 }
 
 .department-stats {
@@ -455,23 +607,7 @@ export default {
   gap: 0.5rem;
 }
 
-.edit-btn, .delete-btn {
-  background: none;
-  border: none;
-  padding: 8px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 1rem;
-  transition: background 0.2s ease;
-}
 
-.edit-btn:hover {
-  background: #e3f2fd;
-}
-
-.delete-btn:hover {
-  background: #ffebee;
-}
 
 .card-body {
   padding: 1rem 1.5rem;
@@ -572,88 +708,7 @@ export default {
   color: #666;
 }
 
-/* 모달 스타일 */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
 
-.modal-content {
-  background: white;
-  border-radius: 12px;
-  padding: 2rem;
-  width: 90%;
-  max-width: 500px;
-  max-height: 90vh;
-  overflow-y: auto;
-}
-
-.modal-content h3 {
-  color: #2c3e50;
-  margin: 0 0 1.5rem 0;
-  font-size: 1.5rem;
-}
-
-.form-group {
-  margin-bottom: 1rem;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 0.5rem;
-  color: #2c3e50;
-  font-weight: 500;
-}
-
-.form-group input {
-  width: 100%;
-  padding: 12px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 1rem;
-}
-
-.form-actions {
-  display: flex;
-  gap: 1rem;
-  justify-content: flex-end;
-  margin-top: 2rem;
-}
-
-.cancel-btn, .save-btn {
-  padding: 12px 24px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 600;
-  transition: background 0.3s ease;
-}
-
-.cancel-btn {
-  background: #f5f5f5;
-  color: #666;
-}
-
-.cancel-btn:hover {
-  background: #e0e0e0;
-}
-
-.save-btn {
-  background: #1976d2;
-  color: white;
-}
-
-.save-btn:hover {
-  background: #1565c0;
-}
 
 /* PC 최적화 (1200px 이상) */
 @media (min-width: 1200px) {
@@ -661,40 +716,40 @@ export default {
     grid-template-columns: repeat(3, 1fr);
     gap: 2rem;
   }
-  
+
   .stat-card {
     padding: 2rem;
   }
-  
+
   .stat-icon {
     font-size: 3rem;
   }
-  
+
   .stat-number {
     font-size: 1.8rem;
   }
-  
+
   .department-grid {
     grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
     gap: 2rem;
   }
-  
+
   .department-card {
     padding: 0;
   }
-  
+
   .card-header {
     padding: 2rem 2rem 1.5rem 2rem;
   }
-  
+
   .card-body {
     padding: 1.5rem 2rem;
   }
-  
+
   .card-footer {
     padding: 1.5rem 2rem 2rem 2rem;
   }
-  
+
   .search-input {
     padding: 14px 18px;
     font-size: 1.1rem;
@@ -706,7 +761,7 @@ export default {
   .department-stats {
     grid-template-columns: repeat(2, 1fr);
   }
-  
+
   .department-grid {
     grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   }
@@ -714,77 +769,84 @@ export default {
 
 /* 모바일 (768px 이하) */
 @media (max-width: 768px) {
-  .page-header {
+  .my-department-card {
+    padding: 1.5rem;
+  }
+
+  .dept-header {
     flex-direction: column;
-    align-items: stretch;
     gap: 1rem;
   }
-  
-  .add-btn {
-    width: 100%;
-    padding: 14px 20px;
-    font-size: 1.1rem;
+
+  .detail-row {
+    grid-template-columns: 1fr;
+    gap: 0.8rem;
   }
-  
+
+  .contact-section {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
   .department-stats {
     grid-template-columns: 1fr;
     gap: 1.2rem;
   }
-  
+
   .stat-card {
     padding: 1.5rem;
     flex-direction: row;
   }
-  
+
   .stat-icon {
     font-size: 2.2rem;
   }
-  
+
   .department-filters {
     flex-direction: column;
     gap: 1rem;
   }
-  
+
   .search-input {
     padding: 14px 16px;
     font-size: 1rem;
   }
-  
+
   .sort-select {
     padding: 14px 16px;
     font-size: 1rem;
   }
-  
+
   .department-grid {
     grid-template-columns: 1fr;
     gap: 1.2rem;
   }
-  
+
   .card-header {
     flex-direction: column;
     align-items: stretch;
     gap: 1rem;
     padding: 1.5rem;
   }
-  
+
   .dept-info {
     display: flex;
     justify-content: space-between;
     align-items: center;
   }
-  
+
   .card-actions {
     justify-content: center;
   }
-  
+
   .card-body {
     padding: 1rem 1.5rem;
   }
-  
+
   .card-footer {
     padding: 1rem 1.5rem 1.5rem 1.5rem;
   }
-  
+
   .contact-info {
     gap: 0.8rem;
   }
@@ -795,55 +857,56 @@ export default {
   .page-header h2 {
     font-size: 1.5rem;
   }
-  
+
   .stat-card {
     flex-direction: column;
     text-align: center;
     padding: 1.2rem;
   }
-  
+
   .stat-icon {
     margin: 0 0 1rem 0;
     font-size: 2.5rem;
   }
-  
+
   .department-card {
     margin: 0;
   }
-  
+
   .card-header {
     padding: 1.2rem;
   }
-  
+
   .dept-info {
     flex-direction: column;
     align-items: stretch;
     gap: 0.5rem;
   }
-  
+
   .dept-info h3 {
     font-size: 1.1rem;
   }
-  
+
   .card-body {
     padding: 1rem 1.2rem;
   }
-  
+
   .card-footer {
     padding: 1rem 1.2rem 1.2rem 1.2rem;
   }
-  
+
   .modal-content {
     padding: 1.5rem;
     margin: 1rem;
   }
-  
+
   .form-actions {
     flex-direction: column;
     gap: 0.8rem;
   }
-  
-  .cancel-btn, .save-btn {
+
+  .cancel-btn,
+  .save-btn {
     width: 100%;
   }
 }
