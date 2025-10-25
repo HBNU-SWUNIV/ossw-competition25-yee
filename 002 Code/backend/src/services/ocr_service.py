@@ -11,7 +11,13 @@ class OCRService:
     def __init__(self):
         self.api_url = settings.NAVER_OCR_API_URL
         self.secret_key = settings.NAVER_OCR_SECRET_KEY
-        self.use_mock = not self.api_url or not self.secret_key  # API 키가 없으면 Mock 사용
+        # API 키가 없거나 더미 값이면 Mock 사용
+        self.use_mock = (
+            not self.api_url or
+            not self.secret_key or
+            "your-ocr-api-url" in str(self.api_url) or
+            "your-secret-key" in str(self.secret_key)
+        )
 
     def _generate_mock_data(self) -> Dict[str, Any]:
         """
@@ -125,7 +131,7 @@ class OCRService:
         try:
             # Mock 데이터 사용 (API 키가 없는 경우)
             if self.use_mock:
-                print("⚠️  OCR API 키가 설정되지 않아 Mock 데이터를 사용합니다")
+                print("[WARN] OCR API key not configured, using Mock data")
                 return self._generate_mock_data()
 
             # 실제 NAVER Clover OCR API 호출

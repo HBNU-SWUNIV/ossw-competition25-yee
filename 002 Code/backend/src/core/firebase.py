@@ -24,6 +24,9 @@ class FirebaseClient:
                 "project_id": settings.FIREBASE_PROJECT_ID,
                 "private_key": settings.FIREBASE_PRIVATE_KEY,
                 "client_email": settings.FIREBASE_CLIENT_EMAIL,
+                "token_uri": "https://oauth2.googleapis.com/token",
+                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
             })
             firebase_admin.initialize_app(cred)
             self._db = firestore.client()

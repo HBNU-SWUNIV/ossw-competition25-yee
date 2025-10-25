@@ -39,7 +39,7 @@ class ReceiptService:
         """
         try:
             # 1. OCR 처리
-            print(f"📷 영수증 OCR 처리 시작...")
+            print(f"[OCR] Receipt OCR processing started...")
             ocr_result = await ocr_service.process_receipt(image_data=image_data)
 
             if ocr_result["status"] != "success":
@@ -67,7 +67,7 @@ class ReceiptService:
             receipt_ref.set(receipt_data)
             receipt_data["id"] = receipt_ref.id
 
-            print(f"✅ Receipt 저장 완료: {receipt_ref.id}")
+            print(f"[SUCCESS] Receipt saved: {receipt_ref.id}")
 
             # 4. 각 품목별로 Expense 자동 생성
             created_expenses = []
@@ -93,7 +93,7 @@ class ReceiptService:
                 )
 
                 created_expenses.append(expense)
-                print(f"💰 Expense 생성: {item['name']} - {category} - {item['price']}원")
+                print(f"[EXPENSE] Created: {item['name']} - {category} - {item['price']} KRW")
 
             return {
                 "status": "success",
