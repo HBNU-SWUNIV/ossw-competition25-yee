@@ -22,9 +22,9 @@
 
         <!-- 카테고리 필터 -->
         <select v-model="selectedCategory" @change="onCategoryChange" class="input-field w-full sm:w-48">
-          <option value="">전체 카테고리</option>
-          <option v-for="category in availableCategories" :key="category" :value="category">{{ category }}</option>
-        </select>
+            <option value="">전체 카테고리</option>
+            <option v-for="category in availableCategories" :key="category" :value="category">{{ category }}</option>
+          </select>
 
         <!-- 내보내기 드롭다운 -->
         <div class="relative" :class="{ 'z-50': showExportMenu }">
@@ -47,7 +47,7 @@
                 <div class="text-left">
                   <div class="font-semibold text-gray-900">PDF 리포트</div>
                   <div class="text-sm text-gray-600">완전한 시각적 리포트</div>
-                </div>
+              </div>
               </button>
 
               <button 
@@ -58,7 +58,7 @@
                 <div class="text-left">
                   <div class="font-semibold text-gray-900">Excel 호환 CSV</div>
                   <div class="text-sm text-gray-600">Excel에서 한글 깨짐 없음</div>
-                </div>
+              </div>
               </button>
 
               <button 
@@ -69,7 +69,7 @@
                 <div class="text-left">
                   <div class="font-semibold text-gray-900">일반 CSV</div>
                   <div class="text-sm text-gray-600">범용적인 데이터 형식</div>
-                </div>
+              </div>
               </button>
             </div>
           </div>
@@ -102,7 +102,7 @@
               }"
             >
               {{ currentData.expenseChange > 0 ? '+' : '' }}{{ currentData.expenseChange }}% {{ getPreviousPeriodText() }} 대비
-            </span>
+          </span>
           </div>
         </div>
       </div>
@@ -143,92 +143,174 @@
                 'text-gray-600': currentData.budgetUsage >= 50 && currentData.budgetUsage <= 80
               }"
             >
-              {{ getBudgetStatusText() }}
-            </span>
+            {{ getBudgetStatusText() }}
+          </span>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="charts-section">
-      <div class="chart-container">
-        <h3>{{ getChartTitle('department') }}</h3>
-        <div class="chart-placeholder">
-          <div class="department-chart">
-            <div v-for="dept in filteredDepartmentData" :key="dept.name" class="dept-bar">
-              <div class="dept-info">
-                <span class="dept-name">{{ dept.name }}</span>
-                <span class="dept-amount">₩{{ dept.amount.toLocaleString() }}</span>
+    <!-- 차트 섹션 -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- 부서별 지출 차트 -->
+      <div class="card p-6">
+        <h3 class="text-xl font-semibold text-gray-900 mb-6">{{ getChartTitle('department') }}</h3>
+        <div class="space-y-4">
+          <div 
+            v-for="(dept, index) in departmentData" 
+            :key="index"
+            class="space-y-2"
+          >
+            <div class="flex justify-between items-center">
+              <span class="font-medium text-gray-900">{{ dept.name }}</span>
+              <span class="font-semibold text-primary-600">₩{{ dept.amount.toLocaleString() }}</span>
               </div>
-              <div class="progress-bar">
-                <div class="progress" :style="{ width: (dept.amount / maxDepartmentAmount * 100) + '%' }"></div>
-              </div>
+            <div class="w-full bg-gray-200 rounded-full h-2">
+              <div 
+                class="h-2 rounded-full bg-primary-600 transition-all duration-300"
+                :style="{ width: Math.min((dept.amount / Math.max(...departmentData.map(d => d.amount)) * 100), 100) + '%' }"
+              ></div>
             </div>
           </div>
         </div>
       </div>
 
-      <div class="chart-container">
-        <h3>{{ getChartTitle('trend') }}</h3>
-        <div class="chart-placeholder">
-          <div class="trend-chart">
-            <div class="chart-bars">
-              <div v-for="item in filteredTrendData" :key="item.period" class="trend-bar">
-                <div class="bar" :style="{ height: (item.amount / maxTrendAmount * 100) + '%' }"></div>
-                <span class="period-label">{{ item.period }}</span>
-                <span class="amount-label">₩{{ (item.amount / 1000).toFixed(0) }}K</span>
-              </div>
+      <!-- 트렌드 차트 -->
+      <div class="card p-6">
+        <h3 class="text-xl font-semibold text-gray-900 mb-6">{{ getChartTitle('trend') }}</h3>
+        <div class="h-48 flex items-end justify-between gap-2">
+          <div 
+            v-for="(period, index) in trendData" 
+            :key="index"
+            class="flex flex-col items-center flex-1"
+          >
+            <div 
+              class="w-full bg-gradient-to-t from-primary-600 to-primary-400 rounded-t transition-all duration-300 min-h-4"
+              :style="{ height: (period.amount / Math.max(...trendData.map(p => p.amount)) * 100) + '%' }"
+            ></div>
+            <div class="text-xs text-gray-600 mt-2 text-center">
+              <div class="font-medium">{{ period.label }}</div>
+              <div class="text-gray-500">₩{{ period.amount.toLocaleString() }}</div>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="detailed-reports">
-      <div class="report-section">
-        <h3>카테고리별 지출 분석</h3>
-        <div class="category-analysis">
-          <div v-for="category in filteredCategoryData" :key="category.name" class="category-item">
-            <div class="category-header">
-              <span class="category-name">{{ category.name }}</span>
-              <span class="category-amount">₩{{ category.amount.toLocaleString() }}</span>
+    <!-- 상세 리포트 -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- 카테고리 분석 -->
+      <div class="card p-6">
+        <h3 class="text-xl font-semibold text-gray-900 mb-6">카테고리별 분석</h3>
+        <div class="space-y-4">
+          <div 
+            v-for="(category, index) in categoryData" 
+            :key="index"
+            class="border border-gray-200 rounded-lg p-4"
+          >
+            <div class="flex justify-between items-center mb-2">
+              <span class="font-medium text-gray-900">{{ category.name }}</span>
+              <span class="font-semibold text-red-600">₩{{ category.amount.toLocaleString() }}</span>
             </div>
-            <div class="category-details">
-              <div class="progress-bar">
-                <div class="progress" :style="{ width: (category.amount / totalFilteredCategoryAmount * 100) + '%' }">
+            <div class="flex items-center gap-4 mb-2">
+              <div class="flex-1 bg-gray-200 rounded-full h-2">
+                <div 
+                  class="h-2 rounded-full bg-primary-600 transition-all duration-300"
+                  :style="{ width: Math.min((category.amount / Math.max(...categoryData.map(c => c.amount)) * 100), 100) + '%' }"
+                ></div>
                 </div>
+              <span class="text-sm font-medium text-gray-600">{{ Math.round((category.amount / categoryData.reduce((sum, c) => sum + c.amount, 0)) * 100) }}%</span>
               </div>
-              <span class="percentage">{{ Math.round(category.amount / totalFilteredCategoryAmount * 100) }}%</span>
+            <div class="text-right">
+              <span 
+                class="text-sm font-medium"
+                :class="{ 
+                  'text-red-600': category.trend > 0, 
+                  'text-green-600': category.trend < 0,
+                  'text-gray-600': category.trend === 0
+                }"
+              >
+                {{ category.trend > 0 ? '+' : '' }}{{ category.trend }}%
+              </span>
             </div>
-            <div class="category-trend">
-              <span class="trend-indicator"
-                :class="{ 'trend-up': category.change > 0, 'trend-down': category.change < 0 }">
-                {{ category.change > 0 ? '↗' : category.change < 0 ? '↘' : '→' }} {{ Math.abs(category.change) }}%
+          </div>
+        </div>
+      </div>
+
+      <!-- 상세 내역 -->
+      <div class="card p-6">
+        <h3 class="text-xl font-semibold text-gray-900 mb-6">상세 내역</h3>
+        <div class="max-h-96 overflow-y-auto">
+          <!-- 데스크톱 테이블 -->
+          <div class="hidden lg:block">
+            <div class="grid grid-cols-5 gap-4 p-4 bg-gray-50 font-semibold text-gray-700 border-b">
+              <div>날짜</div>
+              <div>카테고리</div>
+              <div>내용</div>
+              <div>부서</div>
+              <div class="text-right">금액</div>
+            </div>
+            <div class="divide-y divide-gray-200">
+              <div 
+                v-for="(expense, index) in detailedData" 
+                :key="index"
+                class="grid grid-cols-5 gap-4 p-4 hover:bg-gray-50 transition-colors duration-200"
+              >
+                <div class="text-sm text-gray-600">{{ formatDate(expense.date) }}</div>
+                <div>
+                  <span 
+                    class="inline-block px-3 py-1 rounded-full text-xs font-medium text-white"
+                    :class="{
+                      'bg-orange-500': expense.category === '식비',
+                      'bg-blue-500': expense.category === '교통비',
+                      'bg-green-500': expense.category === '사무용품',
+                      'bg-purple-500': expense.category === '마케팅',
+                      'bg-red-500': expense.category === '인건비',
+                      'bg-yellow-600': expense.category === '임대료',
+                      'bg-gray-500': expense.category === '기타'
+                    }"
+                  >
+                    {{ expense.category }}
                   </span>
             </div>
+                <div class="font-medium">{{ expense.description }}</div>
+                <div class="text-sm text-gray-600">{{ expense.department }}</div>
+                <div class="text-right font-semibold text-red-600">₩{{ expense.amount.toLocaleString() }}</div>
           </div>
         </div>
       </div>
 
-      <div class="report-section">
-        <h3>상세 내역 (최신순)</h3>
-        <div class="detail-list">
-          <div class="detail-header">
-            <span class="col-date">날짜</span>
-            <span class="col-category">카테고리</span>
-            <span class="col-department">부서</span>
-            <span class="col-description">내용</span>
-            <span class="col-amount">금액</span>
+          <!-- 모바일 카드 -->
+          <div class="lg:hidden space-y-4">
+            <div 
+              v-for="(expense, index) in detailedData" 
+              :key="index"
+              class="border border-gray-200 rounded-lg p-4 hover:shadow-soft transition-shadow duration-200"
+            >
+              <div class="flex justify-between items-start mb-3">
+                <div>
+                  <h4 class="font-semibold text-gray-900">{{ expense.description }}</h4>
+                  <p class="text-sm text-gray-600">{{ expense.department }}</p>
           </div>
-          <div class="detail-body">
-            <div v-for="item in filteredDetailData" :key="item.id" class="detail-row">
-              <span class="col-date">{{ formatDate(item.date) }}</span>
-              <span class="col-category">
-                <span class="category-tag" :class="item.category">{{ item.category }}</span>
+                <span class="text-lg font-bold text-red-600">₩{{ expense.amount.toLocaleString() }}</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-sm text-gray-600">{{ formatDate(expense.date) }}</span>
+                <span 
+                  class="inline-block px-3 py-1 rounded-full text-xs font-medium text-white"
+                  :class="{
+                    'bg-orange-500': expense.category === '식비',
+                    'bg-blue-500': expense.category === '교통비',
+                    'bg-green-500': expense.category === '사무용품',
+                    'bg-purple-500': expense.category === '마케팅',
+                    'bg-red-500': expense.category === '인건비',
+                    'bg-yellow-600': expense.category === '임대료',
+                    'bg-gray-500': expense.category === '기타'
+                  }"
+                >
+                  {{ expense.category }}
               </span>
-              <span class="col-department">{{ item.department }}</span>
-              <span class="col-description">{{ item.description }}</span>
-              <span class="col-amount">₩{{ item.amount.toLocaleString() }}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -238,1037 +320,313 @@
 </template>
 
 <script>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import jsPDF from 'jspdf'
+import html2canvas from 'html2canvas'
 
 export default {
   name: 'Reports',
   setup() {
-    // 날짜 선택 상태
+    // 반응형 데이터
     const selectedYear = ref('')
     const selectedMonth = ref('')
     const selectedDay = ref('')
     const selectedCategory = ref('')
+    const showExportMenu = ref(false)
 
-
-
-    // 사용 가능한 날짜 옵션들 (최신순)
+    // 사용 가능한 옵션들
     const availableYears = ref([2024, 2023, 2022])
-
     const availableMonths = ref([
-      { value: '12', label: '12월' }, { value: '11', label: '11월' }, { value: '10', label: '10월' },
-      { value: '09', label: '9월' }, { value: '08', label: '8월' }, { value: '07', label: '7월' },
-      { value: '06', label: '6월' }, { value: '05', label: '5월' }, { value: '04', label: '4월' },
-      { value: '03', label: '3월' }, { value: '02', label: '2월' }, { value: '01', label: '1월' }
+      { value: 1, label: '1월' },
+      { value: 2, label: '2월' },
+      { value: 3, label: '3월' },
+      { value: 4, label: '4월' },
+      { value: 5, label: '5월' },
+      { value: 6, label: '6월' },
+      { value: 7, label: '7월' },
+      { value: 8, label: '8월' },
+      { value: 9, label: '9월' },
+      { value: 10, label: '10월' },
+      { value: 11, label: '11월' },
+      { value: 12, label: '12월' }
+    ])
+    const availableDays = ref([])
+    const availableCategories = ref(['식비', '교통비', '사무용품', '마케팅', '인건비', '임대료', '기타'])
+
+    // 현재 데이터 (실제로는 API에서 가져올 데이터)
+    const currentData = ref({
+      totalExpense: 12500000,
+      averageExpense: 1250000,
+      transactionCount: 45,
+      budgetUsage: 75,
+      expenseChange: 12
+    })
+
+    // 차트 데이터
+    const departmentData = ref([
+      { name: '개발팀', amount: 4500000 },
+      { name: '마케팅팀', amount: 3200000 },
+      { name: '영업팀', amount: 2800000 },
+      { name: '인사팀', amount: 2000000 }
     ])
 
-    const availableDays = computed(() => {
-      if (!selectedYear.value || !selectedMonth.value) return []
-      const daysInMonth = new Date(selectedYear.value, selectedMonth.value, 0).getDate()
-      return Array.from({ length: daysInMonth }, (_, i) => String(daysInMonth - i).padStart(2, '0'))
-    })
-
-    const availableCategories = ref(['사무용품', '마케팅', '식비', '교통비', '인건비', '임대료', '기타'])
-
-    // 샘플 데이터 (실제로는 API에서 가져올 데이터)
-    const allExpenseData = ref([
-      // 2024년 10월 데이터
-      { id: 1, date: '2024-10-25', category: '마케팅', department: '마케팅팀', description: '온라인 광고비', amount: 850000 },
-      { id: 2, date: '2024-10-24', category: '사무용품', department: '총무팀', description: '프린터 토너', amount: 120000 },
-      { id: 3, date: '2024-10-23', category: '식비', department: '개발팀', description: '팀 회식', amount: 180000 },
-      { id: 4, date: '2024-10-22', category: '교통비', department: '영업팀', description: '출장비', amount: 95000 },
-      { id: 5, date: '2024-10-21', category: '인건비', department: '인사팀', description: '외부 강사비', amount: 300000 },
-      { id: 6, date: '2024-10-20', category: '마케팅', department: '마케팅팀', description: '브로슈어 제작', amount: 450000 },
-      { id: 7, date: '2024-10-19', category: '사무용품', department: '개발팀', description: '노트북 구매', amount: 1200000 },
-      { id: 8, date: '2024-10-18', category: '임대료', department: '총무팀', description: '사무실 임대료', amount: 2500000 },
-      { id: 9, date: '2024-10-17', category: '식비', department: '전체', description: '회사 워크샵', amount: 320000 },
-      { id: 10, date: '2024-10-16', category: '교통비', department: '영업팀', description: '고객 미팅', amount: 150000 },
-
-      // 2024년 9월 데이터
-      { id: 11, date: '2024-09-30', category: '마케팅', department: '마케팅팀', description: '전시회 참가비', amount: 750000 },
-      { id: 12, date: '2024-09-25', category: '식비', department: '전체', description: '회사 워크샵', amount: 320000 },
-      { id: 13, date: '2024-09-20', category: '사무용품', department: '총무팀', description: '사무용 가구', amount: 680000 },
-      { id: 14, date: '2024-09-15', category: '교통비', department: '영업팀', description: '고객 미팅', amount: 150000 },
-
-      // 2024년 8월 데이터
-      { id: 15, date: '2024-08-30', category: '인건비', department: '인사팀', description: '교육비', amount: 400000 },
-      { id: 16, date: '2024-08-25', category: '마케팅', department: '마케팅팀', description: '소셜미디어 광고', amount: 300000 },
-      { id: 17, date: '2024-08-20', category: '사무용품', department: '개발팀', description: '개발 장비', amount: 1500000 },
-
-      // 2023년 데이터
-      { id: 18, date: '2023-12-20', category: '마케팅', department: '마케팅팀', description: '연말 이벤트', amount: 900000 },
-      { id: 19, date: '2023-11-15', category: '인건비', department: '인사팀', description: '교육비', amount: 400000 },
-      { id: 20, date: '2023-10-25', category: '사무용품', department: '개발팀', description: '개발 장비', amount: 1500000 }
+    const trendData = ref([
+      { label: '1월', amount: 1200000 },
+      { label: '2월', amount: 1500000 },
+      { label: '3월', amount: 1100000 },
+      { label: '4월', amount: 1800000 },
+      { label: '5월', amount: 1600000 },
+      { label: '6월', amount: 1900000 }
     ])
 
-    // 현재 선택된 기간에 따른 데이터 필터링
-    const filteredDetailData = computed(() => {
-      let filtered = allExpenseData.value
+    const categoryData = ref([
+      { name: '식비', amount: 3500000, trend: 5 },
+      { name: '교통비', amount: 2800000, trend: -2 },
+      { name: '사무용품', amount: 2200000, trend: 8 },
+      { name: '마케팅', amount: 4000000, trend: 15 }
+    ])
 
-      // 카테고리 필터
-      if (selectedCategory.value) {
-        filtered = filtered.filter(item => item.category === selectedCategory.value)
-      }
+    const detailedData = ref([
+      { date: '2024-01-15', category: '식비', description: '팀 회식비', department: '개발팀', amount: 150000 },
+      { date: '2024-01-14', category: '교통비', description: '택시비', department: '마케팅팀', amount: 25000 },
+      { date: '2024-01-13', category: '사무용품', description: '문구류 구매', department: '인사팀', amount: 80000 },
+      { date: '2024-01-12', category: '마케팅', description: '광고비', department: '마케팅팀', amount: 500000 }
+    ])
 
-      // 날짜 필터
-      if (selectedYear.value) {
-        filtered = filtered.filter(item => item.date.startsWith(selectedYear.value))
-
-        if (selectedMonth.value) {
-          filtered = filtered.filter(item => item.date.includes(`-${selectedMonth.value}-`))
-
-          if (selectedDay.value) {
-            filtered = filtered.filter(item => item.date.endsWith(`-${selectedDay.value}`))
-          }
-        }
-      }
-
-      // 최신 날짜순으로 정렬
-      return filtered.sort((a, b) => new Date(b.date) - new Date(a.date))
-    })
-
-    // 현재 데이터 통계
-    const currentData = computed(() => {
-      const data = filteredDetailData.value
-      const totalExpense = data.reduce((sum, item) => sum + item.amount, 0)
-      const transactionCount = data.length
-
-      let averageExpense = 0
-      if (selectedDay.value) {
-        averageExpense = totalExpense // 일별은 그 날의 총액
-      } else if (selectedMonth.value) {
-        const daysInMonth = new Date(selectedYear.value, selectedMonth.value, 0).getDate()
-        averageExpense = Math.round(totalExpense / daysInMonth)
-      } else if (selectedYear.value) {
-        averageExpense = Math.round(totalExpense / 12)
-      } else {
-        averageExpense = Math.round(totalExpense / (transactionCount || 1))
-      }
-
-      return {
-        totalExpense,
-        averageExpense,
-        transactionCount,
-        expenseChange: Math.round((Math.random() - 0.5) * 30), // 임시 변화율
-        budgetUsage: Math.round((totalExpense / 10000000) * 100) // 가정된 예산 대비
-      }
-    })
-
-    // 부서별 데이터
-    const filteredDepartmentData = computed(() => {
-      const deptMap = new Map()
-
-      filteredDetailData.value.forEach(item => {
-        const current = deptMap.get(item.department) || 0
-        deptMap.set(item.department, current + item.amount)
-      })
-
-      return Array.from(deptMap.entries())
-        .map(([name, amount]) => ({ name, amount }))
-        .sort((a, b) => b.amount - a.amount)
-    })
-
-    const maxDepartmentAmount = computed(() =>
-      Math.max(...filteredDepartmentData.value.map(d => d.amount), 1)
-    )
-
-    // 카테고리별 데이터
-    const filteredCategoryData = computed(() => {
-      const catMap = new Map()
-
-      filteredDetailData.value.forEach(item => {
-        const current = catMap.get(item.category) || 0
-        catMap.set(item.category, current + item.amount)
-      })
-
-      return Array.from(catMap.entries())
-        .map(([name, amount]) => ({
-          name,
-          amount,
-          change: Math.round((Math.random() - 0.5) * 40) // 임시 변화율
-        }))
-        .sort((a, b) => b.amount - a.amount)
-    })
-
-    const totalFilteredCategoryAmount = computed(() =>
-      filteredCategoryData.value.reduce((sum, cat) => sum + cat.amount, 0)
-    )
-
-    // 트렌드 데이터 (기간에 따라 다르게 표시)
-    const filteredTrendData = computed(() => {
-      if (selectedDay.value) {
-        // 일별 선택시 - 해당 월의 일별 데이터 (최근 10일)
-        const monthData = allExpenseData.value.filter(item =>
-          item.date.startsWith(`${selectedYear.value}-${selectedMonth.value}`)
-        )
-
-        const dayMap = new Map()
-        monthData.forEach(item => {
-          const day = item.date.split('-')[2]
-          const current = dayMap.get(day) || 0
-          dayMap.set(day, current + item.amount)
-        })
-
-        return Array.from(dayMap.entries())
-          .map(([day, amount]) => ({ period: `${day}일`, amount }))
-          .sort((a, b) => parseInt(b.period) - parseInt(a.period))
-          .slice(0, 10)
-
-      } else if (selectedMonth.value) {
-        // 월별 선택시 - 해당 연도의 월별 데이터 (최신순)
-        const yearData = allExpenseData.value.filter(item =>
-          item.date.startsWith(selectedYear.value)
-        )
-
-        const monthMap = new Map()
-        yearData.forEach(item => {
-          const month = item.date.split('-')[1]
-          const current = monthMap.get(month) || 0
-          monthMap.set(month, current + item.amount)
-        })
-
-        return Array.from(monthMap.entries())
-          .map(([month, amount]) => ({ period: `${parseInt(month)}월`, amount }))
-          .sort((a, b) => parseInt(b.period) - parseInt(a.period))
-
-      } else if (selectedYear.value) {
-        // 연도별 선택시 - 연도별 데이터 (최신순)
-        const yearMap = new Map()
-        allExpenseData.value.forEach(item => {
-          const year = item.date.split('-')[0]
-          const current = yearMap.get(year) || 0
-          yearMap.set(year, current + item.amount)
-        })
-
-        return Array.from(yearMap.entries())
-          .map(([year, amount]) => ({ period: `${year}년`, amount }))
-          .sort((a, b) => parseInt(b.period) - parseInt(a.period))
-      }
-
-      return []
-    })
-
-    const maxTrendAmount = computed(() =>
-      Math.max(...filteredTrendData.value.map(d => d.amount), 1)
-    )
-
-    // 이벤트 핸들러
-    const onYearChange = () => {
-      selectedMonth.value = ''
-      selectedDay.value = ''
-    }
-
-    const onMonthChange = () => {
-      selectedDay.value = ''
-    }
-
-    const onDayChange = () => {
-      // 일 변경시 추가 로직 필요시 구현
-    }
-
-    const onCategoryChange = () => {
-      // 카테고리 변경시 추가 로직 필요시 구현
-    }
-
-    // 헬퍼 함수들
+    // 계산된 속성들
     const getCurrentPeriodTitle = () => {
-      if (selectedDay.value) {
-        return `${selectedYear.value}년 ${parseInt(selectedMonth.value)}월 ${parseInt(selectedDay.value)}일 리포트`
-      } else if (selectedMonth.value) {
-        return `${selectedYear.value}년 ${parseInt(selectedMonth.value)}월 리포트`
+      if (selectedYear.value && selectedMonth.value && selectedDay.value) {
+        return `${selectedYear.value}년 ${selectedMonth.value}월 ${selectedDay.value}일 리포트`
+      } else if (selectedYear.value && selectedMonth.value) {
+        return `${selectedYear.value}년 ${selectedMonth.value}월 리포트`
       } else if (selectedYear.value) {
         return `${selectedYear.value}년 리포트`
       }
-      return '전체 리포트'
+      return '전체 기간 리포트'
     }
 
     const getPeriodDescription = () => {
-      const count = filteredDetailData.value.length
-      if (selectedDay.value) {
-        return `선택한 날짜의 지출 내역 ${count}건`
-      } else if (selectedMonth.value) {
-        return `선택한 월의 지출 내역 ${count}건`
+      if (selectedYear.value && selectedMonth.value && selectedDay.value) {
+        return '선택된 날짜의 상세 지출 내역을 확인하세요.'
+      } else if (selectedYear.value && selectedMonth.value) {
+        return '선택된 월의 지출 현황과 트렌드를 분석합니다.'
       } else if (selectedYear.value) {
-        return `선택한 연도의 지출 내역 ${count}건`
+        return '선택된 연도의 전체 지출 현황을 종합 분석합니다.'
       }
-      return `전체 지출 내역 ${count}건`
-    }
-
-    const getExportButtonText = () => {
-      if (selectedDay.value) return '일별 리포트 CSV 내보내기'
-      if (selectedMonth.value) return '월별 리포트 CSV 내보내기'
-      if (selectedYear.value) return '연간 리포트 CSV 내보내기'
-      return '전체 리포트 CSV 내보내기'
-    }
-
-    const getPreviousPeriodText = () => {
-      if (selectedDay.value) return '전일'
-      if (selectedMonth.value) return '전월'
-      if (selectedYear.value) return '전년'
-      return '이전 기간'
+      return '모든 기간의 지출 데이터를 종합적으로 분석합니다.'
     }
 
     const getAverageText = () => {
-      if (selectedDay.value) return '일일 지출'
-      if (selectedMonth.value) return '일일 지출'
-      if (selectedYear.value) return '월별 지출'
-      return '지출'
+      if (selectedYear.value && selectedMonth.value && selectedDay.value) {
+        return '일일 평균'
+      } else if (selectedYear.value && selectedMonth.value) {
+        return '일일 평균'
+      } else if (selectedYear.value) {
+        return '월 평균'
+      }
+      return '월 평균'
     }
 
     const getAverageDescription = () => {
-      if (selectedDay.value) return '해당 일의 총 지출'
-      if (selectedMonth.value) return '해당 월의 일평균'
-      if (selectedYear.value) return '해당 연도의 월평균'
-      return '전체 평균'
+      if (selectedYear.value && selectedMonth.value && selectedDay.value) {
+        return '해당 날짜 기준'
+      } else if (selectedYear.value && selectedMonth.value) {
+        return '해당 월 기준'
+      } else if (selectedYear.value) {
+        return '해당 연도 기준'
+      }
+      return '전체 기간 기준'
     }
 
     const getTransactionDescription = () => {
-      if (selectedDay.value) return '해당 일의 거래'
-      if (selectedMonth.value) return '해당 월의 거래'
-      if (selectedYear.value) return '해당 연도의 거래'
+      if (selectedYear.value && selectedMonth.value && selectedDay.value) {
+        return '해당 날짜 거래'
+      } else if (selectedYear.value && selectedMonth.value) {
+        return '해당 월 거래'
+      } else if (selectedYear.value) {
+        return '해당 연도 거래'
+      }
       return '전체 거래'
+    }
+
+    const getPreviousPeriodText = () => {
+      if (selectedYear.value && selectedMonth.value && selectedDay.value) {
+        return '전일'
+      } else if (selectedYear.value && selectedMonth.value) {
+        return '전월'
+      } else if (selectedYear.value) {
+        return '전년'
+      }
+      return '전기'
     }
 
     const getBudgetStatusText = () => {
       const usage = currentData.value.budgetUsage
       if (usage > 90) return '예산 초과 위험'
-      if (usage > 80) return '예산 사용 주의'
-      if (usage < 50) return '예산 여유'
-      return '정상 범위'
+      if (usage > 80) return '예산 부족 경고'
+      if (usage > 50) return '적정 수준'
+      return '여유 있음'
     }
 
     const getChartTitle = (type) => {
-      const period = selectedDay.value ? '일별' : selectedMonth.value ? '월별' : selectedYear.value ? '연간' : '전체'
       if (type === 'department') {
-        return `${period} 부서별 지출 현황`
+        return '부서별 지출 현황'
       } else if (type === 'trend') {
-        if (selectedDay.value) return '해당 월 일별 지출 추이'
-        if (selectedMonth.value) return '해당 연도 월별 지출 추이'
-        if (selectedYear.value) return '연도별 지출 추이'
-        return '전체 지출 추이'
+        return '지출 트렌드'
       }
-      return ''
+      return '차트'
+    }
+
+    const getExportButtonText = () => {
+      return '리포트 내보내기'
+    }
+
+    // 이벤트 핸들러들
+    const onYearChange = () => {
+      selectedMonth.value = ''
+      selectedDay.value = ''
+      updateAvailableDays()
+    }
+
+    const onMonthChange = () => {
+      selectedDay.value = ''
+      updateAvailableDays()
+    }
+
+    const onDayChange = () => {
+      // 일 변경 시 처리
+    }
+
+    const onCategoryChange = () => {
+      // 카테고리 변경 시 처리
+    }
+
+    const toggleExportMenu = () => {
+      showExportMenu.value = !showExportMenu.value
+    }
+
+    const updateAvailableDays = () => {
+      if (selectedYear.value && selectedMonth.value) {
+        const daysInMonth = new Date(selectedYear.value, selectedMonth.value, 0).getDate()
+        availableDays.value = Array.from({ length: daysInMonth }, (_, i) => i + 1)
+      } else {
+        availableDays.value = []
+      }
     }
 
     const formatDate = (dateString) => {
       const date = new Date(dateString)
-      return date.toLocaleDateString('ko-KR', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        weekday: 'short'
-      })
+      return date.toLocaleDateString('ko-KR')
+    }
+
+    // 내보내기 함수들
+    const exportAsPDF = async () => {
+      try {
+        const element = document.querySelector('.space-y-8')
+        const canvas = await html2canvas(element)
+        const imgData = canvas.toDataURL('image/png')
+        
+        const pdf = new jsPDF()
+        const imgWidth = 210
+        const pageHeight = 295
+        const imgHeight = (canvas.height * imgWidth) / canvas.width
+        let heightLeft = imgHeight
+
+        let position = 0
+
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
+        heightLeft -= pageHeight
+
+        while (heightLeft >= 0) {
+          position = heightLeft - imgHeight
+          pdf.addPage()
+          pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
+          heightLeft -= pageHeight
+        }
+
+        pdf.save('expense-report.pdf')
+        showExportMenu.value = false
+      } catch (error) {
+        console.error('PDF 생성 중 오류:', error)
+        alert('PDF 생성 중 오류가 발생했습니다.')
+      }
+    }
+
+    const exportAsExcelCSV = () => {
+      const csvContent = generateCSVContent()
+      const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' })
+      const link = document.createElement('a')
+      link.href = URL.createObjectURL(blob)
+      link.download = 'expense-report-excel.csv'
+      link.click()
+      showExportMenu.value = false
     }
 
     const exportAsCSV = () => {
-      const reportType = selectedDay.value ? '일별' : selectedMonth.value ? '월별' : selectedYear.value ? '연간' : '전체'
-      const period = getCurrentPeriodTitle()
-
-      const csvContent = generateExcelCSV() // Excel 호환 CSV 사용 (한글 깨짐 방지)
-      downloadExcelCSV(csvContent, `${reportType}_리포트_${period}.csv`)
-
-      setTimeout(() => {
-        alert(`${reportType} CSV 리포트를 내보냈습니다.`)
-      }, 500)
+      const csvContent = generateCSVContent()
+      const blob = new Blob([csvContent], { type: 'text/csv' })
+      const link = document.createElement('a')
+      link.href = URL.createObjectURL(blob)
+      link.download = 'expense-report.csv'
+      link.click()
+      showExportMenu.value = false
     }
 
-
-
-    const generateExcelCSV = () => {
-      // Excel에서 한글이 깨지지 않도록 특별히 처리
-      const headers = ['날짜', '카테고리', '부서', '내용', '금액(원)']
-
-      // 리포트 정보 추가
-      const reportInfo = [
-        [`리포트 생성일: ${new Date().toLocaleDateString('ko-KR')}`],
-        [`리포트 유형: ${selectedDay.value ? '일별' : selectedMonth.value ? '월별' : selectedYear.value ? '연간' : '전체'}`],
-        [`대상 기간: ${getCurrentPeriodTitle()}`],
-        [`총 지출: ₩${currentData.value.totalExpense.toLocaleString()}`],
-        [`거래 건수: ${currentData.value.transactionCount}건`],
-        [''], // 빈 줄
-        headers
-      ]
-
-      const rows = filteredDetailData.value.map(item => [
-        item.date,
-        item.category,
-        item.department,
-        item.description.replace(/"/g, '""'), // 따옴표 이스케이프
-        `₩${item.amount.toLocaleString()}`
+    const generateCSVContent = () => {
+      const headers = ['날짜', '카테고리', '내용', '부서', '금액']
+      const rows = detailedData.value.map(expense => [
+        expense.date,
+        expense.category,
+        expense.description,
+        expense.department,
+        expense.amount
       ])
-
-      const allRows = [...reportInfo, ...rows]
-      return allRows.map(row =>
-        row.map(cell => `"${cell}"`).join(',')
-      ).join('\r\n')
+      
+      return [headers, ...rows].map(row => row.join(',')).join('\n')
     }
 
-    const downloadCSV = (content, filename) => {
-      // UTF-8 BOM 추가로 한글 깨짐 방지
-      const BOM = '\uFEFF'
-      const blob = new Blob([BOM + content], {
-        type: 'text/csv;charset=utf-8;'
-      })
-
-      const link = document.createElement('a')
-      const url = URL.createObjectURL(blob)
-      link.setAttribute('href', url)
-      link.setAttribute('download', filename)
-      link.style.visibility = 'hidden'
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      URL.revokeObjectURL(url)
-    }
-
-    const downloadExcelCSV = (content, filename) => {
-      // Excel 전용 UTF-8 BOM과 인코딩
-      const BOM = '\uFEFF'
-      const blob = new Blob([BOM + content], {
-        type: 'application/vnd.ms-excel;charset=utf-8;'
-      })
-
-      const link = document.createElement('a')
-      const url = URL.createObjectURL(blob)
-      link.setAttribute('href', url)
-      link.setAttribute('download', filename)
-      link.style.visibility = 'hidden'
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      URL.revokeObjectURL(url)
-    }
-
-
+    // 컴포넌트 마운트 시 초기화
+    onMounted(() => {
+      const now = new Date()
+      selectedYear.value = now.getFullYear().toString()
+      selectedMonth.value = (now.getMonth() + 1).toString()
+      updateAvailableDays()
+    })
 
     return {
       selectedYear,
       selectedMonth,
       selectedDay,
       selectedCategory,
+      showExportMenu,
       availableYears,
       availableMonths,
       availableDays,
       availableCategories,
-      filteredDetailData,
       currentData,
-      filteredDepartmentData,
-      maxDepartmentAmount,
-      filteredCategoryData,
-      totalFilteredCategoryAmount,
-      filteredTrendData,
-      maxTrendAmount,
+      departmentData,
+      trendData,
+      categoryData,
+      detailedData,
+      getCurrentPeriodTitle,
+      getPeriodDescription,
+      getAverageText,
+      getAverageDescription,
+      getTransactionDescription,
+      getPreviousPeriodText,
+      getBudgetStatusText,
+      getChartTitle,
+      getExportButtonText,
       onYearChange,
       onMonthChange,
       onDayChange,
       onCategoryChange,
-      getCurrentPeriodTitle,
-      getPeriodDescription,
-      getExportButtonText,
-      getPreviousPeriodText,
-      getAverageText,
-      getAverageDescription,
-      getTransactionDescription,
-      getBudgetStatusText,
-      getChartTitle,
+      toggleExportMenu,
       formatDate,
+      exportAsPDF,
+      exportAsExcelCSV,
       exportAsCSV
     }
   }
 }
 </script>
-.reports {
-  padding: 0;
-}
-
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 2rem;
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-
-.page-header h2 {
-  color: #2c3e50;
-  font-size: 1.8rem;
-  margin: 0;
-}
-
-.header-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 1.2rem;
-  align-items: flex-end;
-}
-
-.date-filters {
-  display: flex;
-  gap: 0.8rem;
-  flex-wrap: wrap;
-  align-items: center;
-}
-
-.date-filters::before {
-  content: '📅';
-  font-size: 1.2rem;
-  margin-right: 0.5rem;
-}
-
-.date-select,
-.category-select {
-  padding: 10px 14px;
-  border: 2px solid #ddd;
-  border-radius: 8px;
-  background: white;
-  color: #2c3e50;
-  font-size: 1rem;
-  font-weight: 500;
-  min-width: 140px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.date-select:hover,
-.category-select:hover {
-  border-color: #1976d2;
-  box-shadow: 0 2px 4px rgba(25, 118, 210, 0.1);
-}
-
-.date-select:focus,
-.category-select:focus {
-  outline: none;
-  border-color: #1976d2;
-  box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
-}
-
-.date-select:disabled {
-  background: #f8f9fa;
-  color: #6c757d;
-  border-color: #e9ecef;
-  cursor: not-allowed;
-}
-
-.date-select option,
-.category-select option {
-  color: #2c3e50;
-  background: white;
-  padding: 8px;
-}
-
-.category-filter {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.category-filter::before {
-  content: '🏷️';
-  font-size: 1.2rem;
-}
-
-.export-btn {
-  background: #4caf50;
-  color: white;
-  border: none;
-  padding: 12px 20px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  white-space: nowrap;
-}
-
-.export-btn:hover {
-  background: #45a049;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(76, 175, 80, 0.3);
-}
-
-.report-info {
-  background: white;
-  border-radius: 12px;
-  padding: 1.5rem;
-  margin-bottom: 2rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.current-period h3 {
-  color: #2c3e50;
-  margin: 0 0 0.5rem 0;
-  font-size: 1.3rem;
-}
-
-.period-description {
-  color: #666;
-  margin: 0;
-  font-size: 1rem;
-}
-
-.report-overview {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2rem;
-}
-
-.overview-card {
-  background: white;
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  display: flex;
-  align-items: center;
-  transition: transform 0.2s ease;
-}
-
-.overview-card:hover {
-  transform: translateY(-2px);
-}
-
-.card-icon {
-  font-size: 2.5rem;
-  margin-right: 1rem;
-}
-
-.card-content h3 {
-  color: #666;
-  font-size: 0.9rem;
-  margin: 0 0 0.5rem 0;
-  font-weight: 500;
-}
-
-.amount {
-  font-size: 1.8rem;
-  font-weight: bold;
-  margin: 0 0 0.25rem 0;
-  color: #2c3e50;
-}
-
-.trend {
-  font-size: 0.8rem;
-  color: #666;
-}
-
-.trend.trend-up {
-  color: #f44336;
-}
-
-.trend.trend-down {
-  color: #4caf50;
-}
-
-.charts-section {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-  gap: 2rem;
-  margin-bottom: 2rem;
-}
-
-.chart-container {
-  background: white;
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.chart-container h3 {
-  color: #2c3e50;
-  margin: 0 0 1.5rem 0;
-  font-size: 1.2rem;
-}
-
-.department-chart {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.dept-bar {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.dept-info {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.dept-name {
-  font-weight: 500;
-  color: #2c3e50;
-}
-
-.dept-amount {
-  font-weight: 600;
-  color: #1976d2;
-}
-
-.progress-bar {
-  width: 100%;
-  height: 8px;
-  background: #e0e0e0;
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.progress {
-  height: 100%;
-  background: #1976d2;
-  transition: width 0.3s ease;
-}
-
-.trend-chart {
-  height: 200px;
-  display: flex;
-  align-items: end;
-}
-
-.chart-bars {
-  display: flex;
-  align-items: end;
-  justify-content: space-between;
-  width: 100%;
-  height: 100%;
-  gap: 0.5rem;
-}
-
-.trend-bar {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  flex: 1;
-  height: 100%;
-  max-width: 60px;
-}
-
-.bar {
-  width: 100%;
-  background: linear-gradient(to top, #1976d2, #42a5f5);
-  border-radius: 4px 4px 0 0;
-  margin-bottom: 0.5rem;
-  transition: height 0.3s ease;
-  min-height: 4px;
-}
-
-.period-label {
-  font-size: 0.8rem;
-  color: #666;
-  font-weight: 500;
-  margin-bottom: 0.25rem;
-}
-
-.amount-label {
-  font-size: 0.7rem;
-  color: #999;
-}
-
-.detailed-reports {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-  gap: 2rem;
-}
-
-.report-section {
-  background: white;
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.report-section h3 {
-  color: #2c3e50;
-  margin: 0 0 1.5rem 0;
-  font-size: 1.2rem;
-}
-
-.category-analysis {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.category-item {
-  padding: 1rem;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-}
-
-.category-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.5rem;
-}
-
-.category-name {
-  font-weight: 500;
-  color: #2c3e50;
-}
-
-.category-amount {
-  font-weight: 600;
-  color: #f44336;
-}
-
-.category-details {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 0.5rem;
-}
-
-.category-details .progress-bar {
-  flex: 1;
-}
-
-.percentage {
-  font-size: 0.9rem;
-  color: #666;
-  font-weight: 500;
-  min-width: 40px;
-}
-
-.category-trend {
-  text-align: right;
-}
-
-.trend-indicator {
-  font-size: 0.8rem;
-  font-weight: 600;
-}
-
-.trend-indicator.trend-up {
-  color: #f44336;
-}
-
-.trend-indicator.trend-down {
-  color: #4caf50;
-}
-
-.detail-list {
-  max-height: 400px;
-  overflow-y: auto;
-}
-
-.detail-header {
-  display: grid;
-  grid-template-columns: 100px 100px 120px 1fr 120px;
-  gap: 1rem;
-  padding: 1rem;
-  background: #f8f9fa;
-  font-weight: 600;
-  color: #2c3e50;
-  border-bottom: 1px solid #e0e0e0;
-  position: sticky;
-  top: 0;
-}
-
-.detail-body {
-  display: flex;
-  flex-direction: column;
-}
-
-.detail-row {
-  display: grid;
-  grid-template-columns: 100px 100px 120px 1fr 120px;
-  gap: 1rem;
-  padding: 1rem;
-  border-bottom: 1px solid #f0f0f0;
-  align-items: center;
-  transition: background 0.2s ease;
-}
-
-.detail-row:hover {
-  background: #f8f9fa;
-}
-
-.col-date {
-  font-size: 0.9rem;
-  color: #666;
-}
-
-.category-tag {
-  display: inline-block;
-  padding: 4px 8px;
-  border-radius: 12px;
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: white;
-}
-
-.category-tag.식비 {
-  background: #ff9800;
-}
-
-.category-tag.교통비 {
-  background: #2196f3;
-}
-
-.category-tag.사무용품 {
-  background: #4caf50;
-}
-
-.category-tag.마케팅 {
-  background: #9c27b0;
-}
-
-.category-tag.인건비 {
-  background: #f44336;
-}
-
-.category-tag.임대료 {
-  background: #795548;
-}
-
-.category-tag.기타 {
-  background: #607d8b;
-}
-
-.col-department {
-  color: #666;
-  font-size: 0.9rem;
-}
-
-.col-description {
-  font-weight: 500;
-}
-
-.col-amount {
-  font-weight: 600;
-  color: #f44336;
-  text-align: right;
-}
-
-/* 반응형 디자인 */
-@media (max-width: 768px) {
-  .page-header {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .header-actions {
-    align-items: stretch;
-  }
-
-  .date-filters {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .date-filters::before {
-    align-self: flex-start;
-    margin-bottom: 0.5rem;
-  }
-
-  .date-select,
-  .category-select {
-    width: 100%;
-    padding: 12px 16px;
-    font-size: 1.1rem;
-  }
-
-  .export-dropdown {
-    width: 100%;
-  }
-
-  .export-btn {
-    width: 100%;
-    min-width: auto;
-  }
-
-  .export-menu {
-    position: fixed;
-    top: auto;
-    left: 15px;
-    right: 15px;
-    width: auto;
-    border-radius: 8px;
-    border: 2px solid #4caf50;
-  }
-
-  .export-dropdown.active .export-btn {
-    border-radius: 8px;
-  }
-
-  .report-overview {
-    grid-template-columns: 1fr;
-  }
-
-  .charts-section {
-    grid-template-columns: 1fr;
-  }
-
-  .detailed-reports {
-    grid-template-columns: 1fr;
-  }
-
-  .detail-header {
-    display: none;
-  }
-
-  .detail-row {
-    display: block;
-    padding: 1rem;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    margin-bottom: 0.5rem;
-  }
-
-  .detail-row>span {
-    display: block;
-    margin-bottom: 0.5rem;
-  }
-
-  .detail-row>span:before {
-    content: attr(class);
-    font-weight: 600;
-    color: #666;
-    font-size: 0.8rem;
-    display: inline-block;
-    width: 80px;
-  }
-
-  .col-date:before {
-    content: '날짜: ';
-  }
-
-  .col-category:before {
-    content: '카테고리: ';
-  }
-
-  .col-department:before {
-    content: '부서: ';
-  }
-
-  .col-description:before {
-    content: '내용: ';
-  }
-
-  .col-amount:before {
-    content: '금액: ';
-  }
-}
-
-@media (max-width: 480px) {
-  .overview-card {
-    flex-direction: column;
-    text-align: center;
-  }
-
-  .card-icon {
-    margin: 0 0 1rem 0;
-  }
-
-  .chart-container {
-    padding: 1rem;
-  }
-
-  .trend-chart {
-    height: 150px;
-  }
-}
-</style>
->>>>>>> 72b755ed322e1f9c472c4bba8a93082bb68aa9e7
