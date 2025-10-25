@@ -8,7 +8,7 @@
           <option value="last-month">지난 달</option>
           <option value="this-year">올해</option>
         </select>
-        <button class="add-btn" @click="showAddModal = true">+ 지출 추가</button>
+        <button class="add-btn" @click="showOcrModal = true">+ 지출 등록 (OCR)</button>
       </div>
     </div>
 
@@ -73,6 +73,156 @@
         </div>
       </div>
     </div>
+
+    <!-- OCR 등록 모달 -->
+    <div v-if="showOcrModal" class="modal-overlay" @click="closeOcrModal">
+      <div class="modal-content" @click.stop>
+        <div class="modal-header">
+          <h2>
+            <span class="modal-icon">📷</span>
+            지출 등록 (OCR)
+          </h2>
+          <button class="close-modal-btn" @click="closeOcrModal">&times;</button>
+        </div>
+
+        <div class="modal-body">
+          <!-- 영수증 업로드 섹션 -->
+          <div class="upload-section">
+            <label class="section-label">영수증 업로드</label>
+            <div class="upload-area" :class="{ 'has-file': uploadedFile }">
+              <input
+                ref="fileInput"
+                type="file"
+                accept="image/*"
+                @change="handleFileSelect"
+                style="display: none"
+              >
+              <input
+                ref="cameraInput"
+                type="file"
+                accept="image/*"
+                capture="environment"
+                @change="handleCameraCapture"
+                style="display: none"
+              >
+              
+              <div v-if="!uploadedFile" class="upload-placeholder">
+                <span class="upload-icon">📄</span>
+                <p class="upload-text">영수증 파일 선택 또는 카메라 실행</p>
+              </div>
+              
+              <div v-if="uploadedFile" class="uploaded-preview">
+                <div class="preview-info">
+                  <span class="preview-icon">📷</span>
+                  <span class="preview-name">{{ uploadedFile.name }}</span>
+                  <button class="remove-file-btn" @click="removeFile">×</button>
+                </div>
+                <img v-if="imagePreview" :src="imagePreview" alt="영수증 미리보기" class="preview-image">
+              </div>
+              
+              <div class="upload-buttons">
+                <button class="upload-btn" @click="triggerFileSelect">
+                  <span>📁</span> 파일 선택
+                </button>
+                <button class="upload-btn" @click="triggerCamera">
+                  <span>📷</span> 카메라
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- OCR 분석 결과 표시 -->
+          <div class="ocr-result-section" v-if="ocrData">
+            <label class="section-label">영수증 OCR 분석 결과</label>
+            <div class="ocr-result-box">
+              <div class="ocr-item">
+                <span class="ocr-label">날짜:</span>
+                <span class="ocr-value">{{ ocrData.date || '-' }}</span>
+              </div>
+              <div class="ocr-item">
+                <span class="ocr-label">금액:</span>
+                <span class="ocr-value">{{ ocrData.amount ? formatAmount(ocrData.amount) : '-' }}</span>
+              </div>
+              <div class="ocr-item">
+                <span class="ocr-label">상호명:</span>
+                <span class="ocr-value">{{ ocrData.merchant || '-' }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 입력 폼 -->
+          <div class="form-section">
+            <div class="form-row">
+              <div class="form-group">
+                <label>날짜</label>
+                <div class="date-input-group">
+                  <input
+                    type="date"
+                    v-model="expenseForm.date"
+                    class="form-input date-input"
+                    required
+                  >
+                  <span class="date-helper" v-if="!expenseForm.date">이 입력란을 작성하세요.</span>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label>금액(원)</label>
+                <input
+                  type="number"
+                  v-model="expenseForm.amount"
+                  class="form-input"
+                  placeholder="금액 입력"
+                  required
+                >
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>상호명</label>
+                <input
+                  type="text"
+                  v-model="expenseForm.merchant"
+                  class="form-input"
+                  placeholder="상호명"
+                  required
+                >
+              </div>
+
+              <div class="form-group">
+                <label>카테고리</label>
+                <select v-model="expenseForm.category" class="form-input">
+                  <option value="식비">식비</option>
+                  <option value="교통비">교통비</option>
+                  <option value="사무용품">사무용품</option>
+                  <option value="마케팅">마케팅</option>
+                  <option value="기타">기타</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>지출 설명</label>
+              <input
+                type="text"
+                v-model="expenseForm.description"
+                class="form-input"
+                placeholder="간단한 지출 목적"
+                required
+              >
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="cancel-btn" @click="closeOcrModal">취소</button>
+          <button class="submit-btn" @click="registerExpense" :disabled="!isFormValid">
+            등록하기 (Firestore addDoc)
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -82,10 +232,26 @@ import { ref, computed } from 'vue'
 export default {
   name: 'ExpenseHistory',
   setup() {
-    const showAddModal = ref(false)
+    const showOcrModal = ref(false)
     const selectedPeriod = ref('this-month')
     const searchQuery = ref('')
     const selectedCategory = ref('')
+    
+    // OCR 관련 state
+    const uploadedFile = ref(null)
+    const imagePreview = ref(null)
+    const ocrData = ref(null)
+    const fileInput = ref(null)
+    const cameraInput = ref(null)
+    
+    // 폼 데이터
+    const expenseForm = ref({
+      date: '',
+      amount: '',
+      merchant: '',
+      category: '식비',
+      description: ''
+    })
     
     const expenses = ref([
       { id: 1, date: '2024-10-20', category: '식비', description: '팀 회식', department: '개발팀', amount: 150000 },
@@ -115,6 +281,130 @@ export default {
       })
     })
 
+    const isFormValid = computed(() => {
+      return expenseForm.value.date && 
+             expenseForm.value.amount && 
+             expenseForm.value.merchant && 
+             expenseForm.value.description
+    })
+
+    // 파일 선택
+    const handleFileSelect = (event) => {
+      const file = event.target.files[0]
+      if (file) {
+        uploadedFile.value = file
+        const reader = new FileReader()
+        reader.onload = (e) => {
+          imagePreview.value = e.target.result
+        }
+        reader.readAsDataURL(file)
+        // TODO: 백엔드 OCR API 호출
+        performOcrAnalysis(file)
+      }
+    }
+
+    // 카메라 캡처
+    const handleCameraCapture = (event) => {
+      handleFileSelect(event)
+    }
+
+    // 파일 선택 트리거
+    const triggerFileSelect = () => {
+      fileInput.value?.click()
+    }
+
+    // 카메라 트리거
+    const triggerCamera = () => {
+      cameraInput.value?.click()
+    }
+
+    // 파일 제거
+    const removeFile = () => {
+      uploadedFile.value = null
+      imagePreview.value = null
+      ocrData.value = null
+      if (fileInput.value) fileInput.value.value = ''
+      if (cameraInput.value) cameraInput.value.value = ''
+    }
+
+    // OCR 분석 수행 (백엔드 API 호출)
+    const performOcrAnalysis = async (file) => {
+      // TODO: 백엔드 개발자가 API 연동 후 수정
+      // const formData = new FormData()
+      // formData.append('file', file)
+      // const response = await fetch('/api/ocr', {
+      //   method: 'POST',
+      //   body: formData
+      // })
+      // const data = await response.json()
+      
+      // 임시 mock 데이터
+      setTimeout(() => {
+        ocrData.value = {
+          date: '2024-10-20',
+          amount: 15000,
+          merchant: '스타벅스 강남점'
+        }
+        
+        // OCR 결과를 폼에 자동 입력
+        if (ocrData.value) {
+          expenseForm.value.date = ocrData.value.date || ''
+          expenseForm.value.amount = ocrData.value.amount || ''
+          expenseForm.value.merchant = ocrData.value.merchant || ''
+        }
+      }, 1000)
+    }
+
+    // 금액 포맷팅
+    const formatAmount = (amount) => {
+      return `₩${amount?.toLocaleString() || '0'}`
+    }
+
+    // 모달 닫기
+    const closeOcrModal = () => {
+      showOcrModal.value = false
+      removeFile()
+      expenseForm.value = {
+        date: '',
+        amount: '',
+        merchant: '',
+        category: '식비',
+        description: ''
+      }
+      ocrData.value = null
+    }
+
+    // 지출 등록
+    const registerExpense = () => {
+      if (!isFormValid.value) {
+        alert('모든 필드를 입력해주세요.')
+        return
+      }
+
+      // TODO: Firestore에 데이터 저장
+      // await addDoc(collection(db, 'expenses'), {
+      //   date: expenseForm.value.date,
+      //   amount: parseInt(expenseForm.value.amount),
+      //   merchant: expenseForm.value.merchant,
+      //   category: expenseForm.value.category,
+      //   description: expenseForm.value.description,
+      //   createdAt: new Date()
+      // })
+
+      // 임시로 expenses 배열에 추가
+      expenses.value.push({
+        id: expenses.value.length + 1,
+        date: expenseForm.value.date,
+        category: expenseForm.value.category,
+        description: expenseForm.value.description,
+        department: '개발팀',
+        amount: parseInt(expenseForm.value.amount)
+      })
+
+      alert('지출 내역이 등록되었습니다.')
+      closeOcrModal()
+    }
+
     const formatDate = (dateString) => {
       const date = new Date(dateString)
       return date.toLocaleDateString('ko-KR', { 
@@ -125,7 +415,7 @@ export default {
     }
 
     return {
-      showAddModal,
+      showOcrModal,
       selectedPeriod,
       searchQuery,
       selectedCategory,
@@ -133,7 +423,22 @@ export default {
       totalExpense,
       avgExpense,
       filteredExpenses,
-      formatDate
+      formatDate,
+      uploadedFile,
+      imagePreview,
+      ocrData,
+      fileInput,
+      cameraInput,
+      expenseForm,
+      handleFileSelect,
+      handleCameraCapture,
+      triggerFileSelect,
+      triggerCamera,
+      removeFile,
+      formatAmount,
+      closeOcrModal,
+      registerExpense,
+      isFormValid
     }
   }
 }
@@ -468,6 +773,378 @@ export default {
   .category-tag {
     font-size: 0.75rem;
     padding: 3px 6px;
+  }
+}
+
+/* 모달 스타일 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 800px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 32px;
+  border-bottom: 1px solid #e0e0e0;
+  background: #f8f9fa;
+  border-radius: 16px 16px 0 0;
+}
+
+.modal-header h2 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 1.5rem;
+  color: #2c3e50;
+  margin: 0;
+}
+
+.modal-icon {
+  font-size: 1.8rem;
+}
+
+.close-modal-btn {
+  background: none;
+  border: none;
+  font-size: 32px;
+  color: #666;
+  cursor: pointer;
+  padding: 0;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.close-modal-btn:hover {
+  background: #e0e0e0;
+  color: #333;
+}
+
+.modal-body {
+  padding: 32px;
+}
+
+.section-label {
+  display: block;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 12px;
+}
+
+/* 업로드 섹션 */
+.upload-area {
+  border: 2px dashed #ccc;
+  border-radius: 12px;
+  padding: 40px;
+  text-align: center;
+  background: #fafafa;
+  transition: all 0.3s;
+}
+
+.upload-area.has-file {
+  border-color: #1976d2;
+  background: #f0f7ff;
+}
+
+.upload-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.upload-icon {
+  font-size: 48px;
+}
+
+.upload-text {
+  color: #666;
+  font-size: 1rem;
+  margin: 0;
+}
+
+.uploaded-preview {
+  margin-bottom: 24px;
+}
+
+.preview-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 12px;
+  background: white;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.preview-icon {
+  font-size: 24px;
+}
+
+.preview-name {
+  flex: 1;
+  font-weight: 500;
+  color: #333;
+}
+
+.remove-file-btn {
+  background: #f44336;
+  color: white;
+  border: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.remove-file-btn:hover {
+  background: #d32f2f;
+}
+
+.preview-image {
+  max-width: 100%;
+  max-height: 300px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.upload-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.upload-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: #1976d2;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.upload-btn:hover {
+  background: #1565c0;
+}
+
+.upload-btn span {
+  font-size: 1.2rem;
+}
+
+/* OCR 결과 섹션 */
+.ocr-result-section {
+  margin-top: 32px;
+}
+
+.ocr-result-box {
+  background: #f5f5f5;
+  border-radius: 12px;
+  padding: 20px;
+  border: 1px solid #e0e0e0;
+}
+
+.ocr-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.ocr-item:last-child {
+  border-bottom: none;
+}
+
+.ocr-label {
+  font-weight: 600;
+  color: #666;
+}
+
+.ocr-value {
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+/* 폼 섹션 */
+.form-section {
+  margin-top: 32px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  font-weight: 500;
+  color: #2c3e50;
+  margin-bottom: 8px;
+}
+
+.form-input {
+  padding: 12px 16px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: border-color 0.2s;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #1976d2;
+}
+
+.date-input-group {
+  position: relative;
+}
+
+.date-helper {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 4px;
+  font-size: 0.875rem;
+  color: #666;
+}
+
+.form-group:has(.form-input:required:invalid) .date-helper {
+  color: #f44336;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 24px 32px;
+  border-top: 1px solid #e0e0e0;
+  background: #f8f9fa;
+  border-radius: 0 0 16px 16px;
+}
+
+.cancel-btn,
+.submit-btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cancel-btn {
+  background: #e0e0e0;
+  color: #666;
+}
+
+.cancel-btn:hover {
+  background: #d0d0d0;
+}
+
+.submit-btn {
+  background: #1976d2;
+  color: white;
+}
+
+.submit-btn:hover:not(:disabled) {
+  background: #1565c0;
+}
+
+.submit-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+/* 모바일 반응형 */
+@media (max-width: 768px) {
+  .modal-content {
+    max-width: 100%;
+    max-height: 95vh;
+    border-radius: 12px;
+  }
+
+  .modal-header {
+    padding: 20px;
+  }
+
+  .modal-header h2 {
+    font-size: 1.3rem;
+  }
+
+  .modal-body {
+    padding: 24px;
+  }
+
+  .upload-area {
+    padding: 24px 16px;
+  }
+
+  .upload-buttons {
+    flex-direction: column;
+  }
+
+  .upload-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .modal-footer {
+    padding: 20px;
+    flex-direction: column-reverse;
+  }
+
+  .cancel-btn,
+  .submit-btn {
+    width: 100%;
   }
 }
 </style>
