@@ -18,9 +18,10 @@ class ReceiptBase(BaseModel):
     items: List[ReceiptItem]
 
 
-class ReceiptCreate(ReceiptBase):
-    """영수증 생성 스키마"""
-    budget_id: str
+class ReceiptCreate(BaseModel):
+    """영수증 생성 스키마 (이미지 업로드용)"""
+    # OCR로 자동 처리되므로 최소한의 정보만 필요
+    pass
 
 
 class ReceiptUpdate(BaseModel):
@@ -36,8 +37,10 @@ class ReceiptResponse(ReceiptBase):
     """영수증 응답 스키마"""
     id: str
     user_id: str
-    budget_id: str
     image_url: Optional[str] = None
+    ocr_raw_data: Optional[Dict] = None
+    ocr_status: str
+    ocr_processed_at: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime
 
