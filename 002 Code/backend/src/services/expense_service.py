@@ -99,29 +99,32 @@ class ExpenseService:
             지출 내역 리스트
         """
         try:
+            # 기본 쿼리 (Firestore 인덱스 불필요)
             query = self.db.collection(self.collection).where("user_id", "==", user_id)
 
-            # 카테고리 필터
-            if category:
-                query = query.where("category", "==", category)
-
-            # 날짜 필터
-            if start_date:
-                query = query.where("date", ">=", start_date)
-            if end_date:
-                query = query.where("date", "<=", end_date)
-
-            # 날짜 기준 내림차순 정렬
-            query = query.order_by("date", direction="DESCENDING").limit(limit)
-
+            # Firestore 인덱스 에러 방지를 위해 간단한 쿼리만 사용
+            # 복잡한 필터링은 Python에서 처리
             docs = query.stream()
             expenses = []
             for doc in docs:
                 expense_data = doc.to_dict()
                 expense_data["id"] = doc.id
+
+                # Python에서 필터링
+                if category and expense_data.get("category") != category:
+                    continue
+                if start_date and expense_data.get("date") and expense_data["date"] < start_date:
+                    continue
+                if end_date and expense_data.get("date") and expense_data["date"] > end_date:
+                    continue
+
                 expenses.append(expense_data)
 
-            return expenses
+            # Python에서 정렬 (날짜 기준 내림차순)
+            expenses.sort(key=lambda x: x.get("date", datetime.min), reverse=True)
+
+            # limit 적용
+            return expenses[:limit]
 
         except Exception as e:
             raise Exception(f"지출 목록 조회 실패: {str(e)}")

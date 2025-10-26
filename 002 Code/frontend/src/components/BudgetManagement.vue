@@ -56,13 +56,13 @@
         >
           <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
             <div class="flex-1">
-              <h4 class="text-lg font-semibold text-gray-900 mb-1">{{ budget.department }}</h4>
-              <p class="text-sm text-gray-600">{{ budget.period }}</p>
+              <h4 class="text-lg font-semibold text-gray-900 mb-1">{{ budget.name }}</h4>
+              <p class="text-sm text-gray-600">{{ budget.category }}</p>
             </div>
             <div class="flex flex-col sm:flex-row gap-4 lg:gap-8">
               <div class="text-center">
                 <span class="text-sm text-gray-600 block">배정</span>
-                <span class="text-lg font-semibold text-gray-900">₩{{ budget.allocated.toLocaleString() }}</span>
+                <span class="text-lg font-semibold text-gray-900">₩{{ budget.amount.toLocaleString() }}</span>
               </div>
               <div class="text-center">
                 <span class="text-sm text-gray-600 block">사용</span>
@@ -71,22 +71,22 @@
             </div>
           </div>
           <div class="w-full bg-gray-200 rounded-full h-2">
-            <div 
+            <div
               class="h-2 rounded-full transition-all duration-300"
               :class="{
-                'bg-green-500': (budget.spent / budget.allocated) < 0.7,
-                'bg-yellow-500': (budget.spent / budget.allocated) >= 0.7 && (budget.spent / budget.allocated) < 0.9,
-                'bg-red-500': (budget.spent / budget.allocated) >= 0.9
+                'bg-green-500': (budget.spent / budget.amount) < 0.7,
+                'bg-yellow-500': (budget.spent / budget.amount) >= 0.7 && (budget.spent / budget.amount) < 0.9,
+                'bg-red-500': (budget.spent / budget.amount) >= 0.9
               }"
-              :style="{ width: Math.min((budget.spent / budget.allocated * 100), 100) + '%' }"
+              :style="{ width: Math.min((budget.spent / budget.amount * 100), 100) + '%' }"
             ></div>
           </div>
           <div class="flex justify-between items-center mt-2">
             <span class="text-sm text-gray-600">
-              사용률: {{ Math.round((budget.spent / budget.allocated) * 100) }}%
+              사용률: {{ Math.round((budget.spent / budget.amount) * 100) }}%
             </span>
             <span class="text-sm font-medium text-gray-900">
-              남은 예산: ₩{{ (budget.allocated - budget.spent).toLocaleString() }}
+              남은 예산: ₩{{ budget.remaining.toLocaleString() }}
             </span>
           </div>
         </div>
@@ -96,36 +96,61 @@
 </template>
 
 <script>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { budgetAPI } from '../api/budget'
 
 export default {
   name: 'BudgetManagement',
   setup() {
     const showAddModal = ref(false)
+    const budgets = ref([])
+    const isLoading = ref(false)
 
-    const budgets = ref([
-      { id: 1, department: '마케팅팀', period: '2024년 10월', allocated: 5000000, spent: 3200000 },
-      { id: 2, department: '개발팀', period: '2024년 10월', allocated: 8000000, spent: 4500000 },
-      { id: 3, department: '영업팀', period: '2024년 10월', allocated: 3000000, spent: 1800000 },
-      { id: 4, department: '인사팀', period: '2024년 10월', allocated: 2000000, spent: 900000 }
-    ])
+    // 예산 목록 조회
+    const fetchBudgets = async () => {
+      isLoading.value = true
+      try {
+        const result = await budgetAPI.getBudgets()
+        if (result.success) {
+          budgets.value = result.data
+        } else {
+          console.error('예산 목록 조회 실패:', result.error)
+        }
+      } catch (error) {
+        console.error('예산 목록 조회 중 오류:', error)
+      } finally {
+        isLoading.value = false
+      }
+    }
 
+    // 총 예산 (백엔드의 amount 필드 사용)
     const totalBudget = computed(() =>
-      budgets.value.reduce((sum, budget) => sum + budget.allocated, 0)
+      budgets.value.reduce((sum, budget) => sum + budget.amount, 0)
     )
 
+    // 사용된 예산
     const usedBudget = computed(() =>
       budgets.value.reduce((sum, budget) => sum + budget.spent, 0)
     )
 
-    const remainingBudget = computed(() => totalBudget.value - usedBudget.value)
+    // 남은 예산
+    const remainingBudget = computed(() =>
+      budgets.value.reduce((sum, budget) => sum + budget.remaining, 0)
+    )
+
+    // 컴포넌트 마운트 시 예산 목록 조회
+    onMounted(() => {
+      fetchBudgets()
+    })
 
     return {
       showAddModal,
       budgets,
+      isLoading,
       totalBudget,
       usedBudget,
-      remainingBudget
+      remainingBudget,
+      fetchBudgets
     }
   }
 }

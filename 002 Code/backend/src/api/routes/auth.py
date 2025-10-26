@@ -59,8 +59,13 @@ async def get_me(current_user: dict = Depends(get_current_user)):
     - JWT 토큰에서 사용자 정보 추출
     - Authorization 헤더 필요: Bearer {token}
     """
-    return {
-        "id": current_user["user_id"],
-        "email": current_user["email"],
-        "role": current_user["role"]
-    }
+    try:
+        # Firestore에서 전체 사용자 정보 가져오기
+        user = await auth_service.get_user_by_id(current_user["user_id"])
+        if not user:
+            raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다")
+        return user
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

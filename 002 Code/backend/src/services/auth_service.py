@@ -163,5 +163,35 @@ class AuthService:
         except Exception as e:
             raise Exception(f"로그인 실패: {str(e)}")
 
+    async def get_user_by_id(self, user_id: str) -> Optional[Dict[str, Any]]:
+        """
+        사용자 ID로 사용자 정보 조회
+
+        Args:
+            user_id: 사용자 ID
+
+        Returns:
+            사용자 정보 (비밀번호 제외)
+        """
+        try:
+            doc_ref = self.db.collection(self.collection).document(user_id)
+            doc = doc_ref.get()
+
+            if not doc.exists:
+                return None
+
+            user_data = doc.to_dict()
+            user_data["id"] = doc.id
+
+            # 비밀번호 제외
+            if "hashed_password" in user_data:
+                del user_data["hashed_password"]
+
+            return user_data
+
+        except Exception as e:
+            print(f"사용자 조회 실패: {str(e)}")
+            return None
+
 
 auth_service = AuthService()

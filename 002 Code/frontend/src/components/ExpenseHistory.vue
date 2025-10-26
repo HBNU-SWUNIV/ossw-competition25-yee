@@ -278,13 +278,13 @@
         <!-- 모달 푸터 -->
         <div class="flex justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50 rounded-b-2xl">
           <button class="btn-secondary" @click="closeOcrModal">취소</button>
-          <button 
-            class="btn-primary" 
-            @click="registerExpense" 
+          <button
+            class="btn-primary"
+            @click="registerExpense"
             :disabled="!isFormValid"
             :class="{ 'opacity-50 cursor-not-allowed': !isFormValid }"
           >
-            등록하기 (Firestore addDoc)
+            등록하기
           </button>
         </div>
       </div>
@@ -293,7 +293,9 @@
 </template>
 
 <script>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { expenseAPI } from '../api/expense'
+import { receiptAPI } from '../api/receipt'
 
 export default {
   name: 'ExpenseHistory',
@@ -302,33 +304,43 @@ export default {
     const selectedPeriod = ref('this-month')
     const searchQuery = ref('')
     const selectedCategory = ref('')
-    
+    const isLoading = ref(false)
+
     // OCR 관련 state
     const uploadedFile = ref(null)
     const imagePreview = ref(null)
     const ocrData = ref(null)
     const fileInput = ref(null)
     const cameraInput = ref(null)
-    
+
     // 폼 데이터
     const expenseForm = ref({
       date: '',
       amount: '',
       merchant: '',
       category: '식비',
-      description: ''
+      description: '',
+      receipt_id: ''
     })
-    
-    const expenses = ref([
-      { id: 1, date: '2024-10-20', category: '식비', description: '팀 회식', department: '개발팀', amount: 150000 },
-      { id: 2, date: '2024-10-19', category: '사무용품', description: '프린터 토너', department: '총무팀', amount: 85000 },
-      { id: 3, date: '2024-10-18', category: '마케팅', description: '광고비', department: '마케팅팀', amount: 500000 },
-      { id: 4, date: '2024-10-17', category: '교통비', description: '출장 교통비', department: '영업팀', amount: 45000 },
-      { id: 5, date: '2024-10-16', category: '식비', description: '점심 식대', department: '인사팀', amount: 25000 },
-      { id: 6, date: '2024-10-15', category: '기타', description: '사무실 청소', department: '총무팀', amount: 120000 },
-      { id: 7, date: '2024-10-14', category: '사무용품', description: '노트북 구매', department: '개발팀', amount: 1200000 },
-      { id: 8, date: '2024-10-13', category: '마케팅', description: '브로슈어 제작', department: '마케팅팀', amount: 300000 }
-    ])
+
+    const expenses = ref([])
+
+    // 지출 목록 조회
+    const fetchExpenses = async () => {
+      isLoading.value = true
+      try {
+        const result = await expenseAPI.getExpenses()
+        if (result.success) {
+          expenses.value = result.data
+        } else {
+          console.error('지출 목록 조회 실패:', result.error)
+        }
+      } catch (error) {
+        console.error('지출 목록 조회 중 오류:', error)
+      } finally {
+        isLoading.value = false
+      }
+    }
 
     const totalExpense = computed(() => 
       expenses.value.reduce((sum, expense) => sum + expense.amount, 0)
@@ -395,30 +407,40 @@ export default {
 
     // OCR 분석 수행 (백엔드 API 호출)
     const performOcrAnalysis = async (file) => {
-      // TODO: 백엔드 개발자가 API 연동 후 수정
-      // const formData = new FormData()
-      // formData.append('file', file)
-      // const response = await fetch('/api/ocr', {
-      //   method: 'POST',
-      //   body: formData
-      // })
-      // const data = await response.json()
-      
-      // 임시 mock 데이터
-      setTimeout(() => {
-        ocrData.value = {
-          date: '2024-10-20',
-          amount: 15000,
-          merchant: '스타벅스 강남점'
-        }
-        
-        // OCR 결과를 폼에 자동 입력
-        if (ocrData.value) {
+      try {
+        console.log('[OCR] 파일 업로드 시작:', file.name)
+
+        // 백엔드 OCR API 호출
+        const result = await receiptAPI.uploadReceipt(file)
+
+        console.log('[OCR] API 응답:', result)
+
+        if (result.success) {
+          console.log('[OCR] 성공:', result.data)
+
+          // OCR 결과 저장
+          ocrData.value = {
+            date: new Date().toISOString().split('T')[0], // 임시로 오늘 날짜
+            amount: result.data.total_amount,
+            merchant: result.data.store_name,
+            receipt_id: result.data.receipt_id
+          }
+
+          // OCR 결과를 폼에 자동 입력
           expenseForm.value.date = ocrData.value.date || ''
           expenseForm.value.amount = ocrData.value.amount || ''
           expenseForm.value.merchant = ocrData.value.merchant || ''
+          expenseForm.value.receipt_id = ocrData.value.receipt_id || ''
+
+          alert(`OCR 처리 완료!\n상호명: ${ocrData.value.merchant}\n금액: ${ocrData.value.amount}원`)
+        } else {
+          console.error('[OCR] 실패:', result.error)
+          alert('OCR 처리 실패: ' + result.error)
         }
-      }, 1000)
+      } catch (error) {
+        console.error('[OCR] 처리 중 오류:', error)
+        alert('OCR 처리 중 오류가 발생했습니다: ' + error.message)
+      }
     }
 
     // 금액 포맷팅
@@ -441,44 +463,59 @@ export default {
     }
 
     // 지출 등록
-    const registerExpense = () => {
+    const registerExpense = async () => {
       if (!isFormValid.value) {
         alert('모든 필드를 입력해주세요.')
         return
       }
 
-      // TODO: Firestore에 데이터 저장
-      // await addDoc(collection(db, 'expenses'), {
-      //   date: expenseForm.value.date,
-      //   amount: parseInt(expenseForm.value.amount),
-      //   merchant: expenseForm.value.merchant,
-      //   category: expenseForm.value.category,
-      //   description: expenseForm.value.description,
-      //   createdAt: new Date()
-      // })
+      try {
+        // 날짜를 ISO 형식으로 변환 (백엔드 datetime 형식)
+        const dateObj = new Date(expenseForm.value.date)
+        const isoDate = dateObj.toISOString()
 
-      // 임시로 expenses 배열에 추가
-      expenses.value.push({
-        id: expenses.value.length + 1,
-        date: expenseForm.value.date,
-        category: expenseForm.value.category,
-        description: expenseForm.value.description,
-        department: '개발팀',
-        amount: parseInt(expenseForm.value.amount)
-      })
+        // 백엔드 API를 통해 지출 등록
+        const expenseData = {
+          receipt_id: expenseForm.value.receipt_id || 'manual-' + Date.now(),
+          store_name: expenseForm.value.merchant,
+          amount: parseFloat(expenseForm.value.amount),
+          date: isoDate,  // ISO 형식으로 변환
+          item_name: expenseForm.value.merchant,
+          category: expenseForm.value.category,
+          description: expenseForm.value.description
+        }
 
-      alert('지출 내역이 등록되었습니다.')
-      closeOcrModal()
+        console.log('[registerExpense] 전송 데이터:', expenseData)
+
+        const result = await expenseAPI.createExpense(expenseData)
+
+        if (result.success) {
+          alert('지출 내역이 등록되었습니다.')
+          // 지출 목록 다시 조회
+          await fetchExpenses()
+          closeOcrModal()
+        } else {
+          alert('지출 등록 실패: ' + result.error)
+        }
+      } catch (error) {
+        console.error('지출 등록 중 오류:', error)
+        alert('지출 등록 중 오류가 발생했습니다.')
+      }
     }
 
     const formatDate = (dateString) => {
       const date = new Date(dateString)
-      return date.toLocaleDateString('ko-KR', { 
-        month: 'short', 
+      return date.toLocaleDateString('ko-KR', {
+        month: 'short',
         day: 'numeric',
         weekday: 'short'
       })
     }
+
+    // 컴포넌트 마운트 시 지출 목록 조회
+    onMounted(() => {
+      fetchExpenses()
+    })
 
     return {
       showOcrModal,
@@ -486,6 +523,7 @@ export default {
       searchQuery,
       selectedCategory,
       expenses,
+      isLoading,
       totalExpense,
       avgExpense,
       filteredExpenses,
@@ -504,7 +542,8 @@ export default {
       formatAmount,
       closeOcrModal,
       registerExpense,
-      isFormValid
+      isFormValid,
+      fetchExpenses
     }
   }
 }
