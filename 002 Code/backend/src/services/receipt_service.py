@@ -93,7 +93,8 @@ class ReceiptService:
                 )
 
                 created_expenses.append(expense)
-                print(f"[EXPENSE] Created: {item['name']} - {category} - {item['price']} KRW")
+                # 한글 인코딩 문제 방지를 위해 영문으로 출력
+                print(f"[EXPENSE] Created: {category} - {item['price']} KRW")
 
             return {
                 "status": "success",
