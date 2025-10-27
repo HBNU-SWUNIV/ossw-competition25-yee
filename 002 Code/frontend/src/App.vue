@@ -1,6 +1,9 @@
 <template>
+  <!-- 온보딩 화면 -->
+  <Onboarding v-if="!onboardingCompleted" @complete="handleOnboardingComplete" />
+
   <!-- 로그인 화면 -->
-  <Login v-if="!isLoggedIn" @login-success="handleLoginSuccess" />
+  <Login v-else-if="!isLoggedIn" @login-success="handleLoginSuccess" />
 
   <!-- 메인 애플리케이션 -->
   <div v-else id="app" class="min-h-screen bg-gray-50">
@@ -171,6 +174,7 @@
 
 <script>
 import { ref, computed, onMounted } from 'vue'
+import Onboarding from './components/Onboarding.vue'
 import Login from './components/Login.vue'
 import BudgetManagement from './components/BudgetManagement.vue'
 import ExpenseHistory from './components/ExpenseHistory.vue'
@@ -181,6 +185,7 @@ import Settings from './components/Settings.vue'
 export default {
   name: 'App',
   components: {
+    Onboarding,
     Login,
     BudgetManagement,
     ExpenseHistory,
@@ -193,6 +198,7 @@ export default {
     const activeMenu = ref('home')
     const isLoggedIn = ref(false)
     const userInfo = ref(null)
+    const onboardingCompleted = ref(false)
 
     const toggleSidebar = () => {
       sidebarOpen.value = !sidebarOpen.value
@@ -230,6 +236,17 @@ export default {
       return components[activeMenu.value] || 'BudgetManagement'
     })
 
+    // 온보딩 완료 확인
+    const checkOnboardingStatus = () => {
+      const completed = localStorage.getItem('onboardingCompleted')
+      onboardingCompleted.value = completed === 'true'
+    }
+
+    // 온보딩 완료 처리
+    const handleOnboardingComplete = () => {
+      onboardingCompleted.value = true
+    }
+
     // 로그인 상태 확인
     const checkLoginStatus = () => {
       const storedLoginStatus = localStorage.getItem('isLoggedIn')
@@ -259,8 +276,9 @@ export default {
       sidebarOpen.value = false
     }
 
-    // 컴포넌트 마운트 시 로그인 상태 확인
+    // 컴포넌트 마운트 시 상태 확인
     onMounted(() => {
+      checkOnboardingStatus()
       checkLoginStatus()
     })
 
@@ -269,11 +287,13 @@ export default {
       activeMenu,
       isLoggedIn,
       userInfo,
+      onboardingCompleted,
       toggleSidebar,
       closeSidebar,
       selectMenu,
       getPageTitle,
       currentComponent,
+      handleOnboardingComplete,
       handleLoginSuccess,
       handleLogout
     }
