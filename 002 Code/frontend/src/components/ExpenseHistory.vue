@@ -141,7 +141,7 @@
                 <p v-if="expense.store_phone_number" class="text-xs text-gray-500">{{ expense.store_phone_number }}</p>
               </div>
               <span class="text-lg font-bold text-red-600 whitespace-nowrap">₩{{ expense.amount.toLocaleString()
-                }}</span>
+              }}</span>
             </div>
 
             <div class="flex justify-between items-end">
@@ -819,19 +819,35 @@ export default {
     const swipedExpenseId = ref(null)
     const touchStartX = ref(0)
     const touchStartY = ref(0)
+    const currentExpenseId = ref(null)
+    const isSwiping = ref(false)
 
     // 스와이프 함수들
     const handleTouchStart = (event, expenseId) => {
       touchStartX.value = event.touches[0].clientX
       touchStartY.value = event.touches[0].clientY
+      currentExpenseId.value = expenseId
+      isSwiping.value = false
     }
 
     const handleTouchMove = (event) => {
-      // 스크롤을 방해하지 않도록 처리
-      event.preventDefault()
+      if (!currentExpenseId.value) return
+
+      const touchCurrentX = event.touches[0].clientX
+      const touchCurrentY = event.touches[0].clientY
+      const deltaX = touchStartX.value - touchCurrentX
+      const deltaY = Math.abs(touchStartY.value - touchCurrentY)
+
+      // 수평 스와이프가 수직보다 크면 스크롤 방지
+      if (Math.abs(deltaX) > deltaY && Math.abs(deltaX) > 10) {
+        isSwiping.value = true
+        event.preventDefault()
+      }
     }
 
     const handleTouchEnd = (event) => {
+      if (!currentExpenseId.value) return
+
       const touchEndX = event.changedTouches[0].clientX
       const touchEndY = event.changedTouches[0].clientY
       const deltaX = touchStartX.value - touchEndX
@@ -839,22 +855,22 @@ export default {
 
       // 수평 스와이프가 수직 스와이프보다 크고, 최소 거리 이상일 때만 처리
       if (Math.abs(deltaX) > deltaY && Math.abs(deltaX) > 50) {
-        const expenseId = event.target.closest('[data-expense-id]')?.dataset.expenseId
-        if (expenseId) {
-          if (deltaX > 0) {
-            // 왼쪽으로 스와이프 - 액션 버튼 표시
-            swipedExpenseId.value = parseInt(expenseId)
-          } else {
-            // 오른쪽으로 스와이프 - 액션 버튼 숨김
-            swipedExpenseId.value = null
-          }
+        if (deltaX > 0) {
+          // 왼쪽으로 스와이프 - 액션 버튼 표시
+          swipedExpenseId.value = currentExpenseId.value
+        } else {
+          // 오른쪽으로 스와이프 - 액션 버튼 숨김
+          swipedExpenseId.value = null
         }
       }
+
+      currentExpenseId.value = null
+      isSwiping.value = false
     }
 
     const handleCardClick = (expenseId) => {
-      // 카드가 스와이프된 상태에서 클릭하면 원래 상태로 복원
-      if (swipedExpenseId.value === expenseId) {
+      // 스와이프 중이 아니고, 카드가 스와이프된 상태에서 클릭하면 원래 상태로 복원
+      if (!isSwiping.value && swipedExpenseId.value === expenseId) {
         swipedExpenseId.value = null
       }
     }
