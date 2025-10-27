@@ -31,7 +31,6 @@
         <!-- 내보내기 드롭다운 -->
         <div class="relative" :class="{ 'z-50': showExportMenu }">
           <button class="btn-primary flex items-center gap-2 w-full sm:w-auto" @click="toggleExportMenu">
-            <span class="text-lg">📊</span>
             {{ getExportButtonText() }}
             <span class="text-sm transition-transform duration-200" :class="{ 'rotate-180': showExportMenu }">▼</span>
           </button>
@@ -42,7 +41,10 @@
               <button
                 class="w-full flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors duration-200"
                 @click="exportSelectedAsExcelCSV">
-                <span class="text-xl">📊</span>
+                <div
+                  class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600 font-bold text-sm">
+                  CSV
+                </div>
                 <div class="text-left">
                   <div class="font-semibold text-gray-900">선택 항목 Excel CSV</div>
                   <div class="text-sm text-gray-600">선택한 항목만 내보내기</div>
@@ -52,7 +54,10 @@
               <button
                 class="w-full flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors duration-200"
                 @click="exportSelectedAsPDF">
-                <span class="text-xl">📄</span>
+                <div
+                  class="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center text-red-600 font-bold text-sm">
+                  PDF
+                </div>
                 <div class="text-left">
                   <div class="font-semibold text-gray-900">선택 항목 PDF</div>
                   <div class="text-sm text-gray-600">선택한 항목만 PDF로</div>
@@ -75,204 +80,152 @@
     <!-- 요약 카드 -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       <div class="card p-6 hover:shadow-medium transition-shadow duration-200">
-        <div class="flex items-center gap-4">
-          <div class="text-4xl">💰</div>
-          <div class="flex-1">
-            <h3 class="text-sm font-medium text-gray-600 mb-1">총 지출</h3>
-            <p class="text-2xl font-bold text-gray-900">₩{{ currentData.totalExpense.toLocaleString() }}</p>
-            <span class="text-sm" :class="{
-              'text-red-600': currentData.expenseChange > 0,
-              'text-green-600': currentData.expenseChange < 0,
-              'text-gray-600': currentData.expenseChange === 0
-            }">
-              {{ currentData.expenseChange > 0 ? '+' : '' }}{{ currentData.expenseChange }}% {{ getPreviousPeriodText()
-              }} 대비
-            </span>
-          </div>
+        <div>
+          <h3 class="text-sm font-medium text-gray-600 mb-1">총 지출</h3>
+          <p class="text-2xl font-bold text-gray-900">₩{{ currentData.totalExpense.toLocaleString() }}</p>
+          <span class="text-sm" :class="{
+            'text-red-600': currentData.expenseChange > 0,
+            'text-green-600': currentData.expenseChange < 0,
+            'text-gray-600': currentData.expenseChange === 0
+          }">
+            {{ currentData.expenseChange > 0 ? '+' : '' }}{{ currentData.expenseChange }}% {{ getPreviousPeriodText()
+            }} 대비
+          </span>
         </div>
       </div>
 
       <div class="card p-6 hover:shadow-medium transition-shadow duration-200">
-        <div class="flex items-center gap-4">
-          <div class="text-4xl">📊</div>
-          <div class="flex-1">
-            <h3 class="text-sm font-medium text-gray-600 mb-1">평균 {{ getAverageText() }}</h3>
-            <p class="text-2xl font-bold text-gray-900">₩{{ currentData.averageExpense.toLocaleString() }}</p>
-            <span class="text-sm text-gray-600">{{ getAverageDescription() }}</span>
-          </div>
+        <div>
+          <h3 class="text-sm font-medium text-gray-600 mb-1">평균 {{ getAverageText() }}</h3>
+          <p class="text-2xl font-bold text-gray-900">₩{{ currentData.averageExpense.toLocaleString() }}</p>
+          <span class="text-sm text-gray-600">{{ getAverageDescription() }}</span>
         </div>
       </div>
+    </div>
 
-      <div class="card p-6 hover:shadow-medium transition-shadow duration-200">
-        <div class="flex items-center gap-4">
-          <div class="text-4xl">📈</div>
-          <div class="flex-1">
-            <h3 class="text-sm font-medium text-gray-600 mb-1">지출 건수</h3>
-            <p class="text-2xl font-bold text-gray-900">{{ currentData.transactionCount }}건</p>
-            <span class="text-sm text-gray-600">{{ getTransactionDescription() }}</span>
-          </div>
-        </div>
+    <div class="card p-6 hover:shadow-medium transition-shadow duration-200">
+      <div>
+        <h3 class="text-sm font-medium text-gray-600 mb-1">지출 건수</h3>
+        <p class="text-2xl font-bold text-gray-900">{{ currentData.transactionCount }}건</p>
+        <span class="text-sm text-gray-600">{{ getTransactionDescription() }}</span>
       </div>
+    </div>
 
-      <div class="card p-6 hover:shadow-medium transition-shadow duration-200">
-        <div class="flex items-center gap-4">
-          <div class="text-4xl">🎯</div>
-          <div class="flex-1">
-            <h3 class="text-sm font-medium text-gray-600 mb-1">예산 대비</h3>
-            <p class="text-2xl font-bold text-gray-900">{{ currentData.budgetUsage }}%</p>
-            <span class="text-sm" :class="{
-              'text-red-600': currentData.budgetUsage > 80,
-              'text-green-600': currentData.budgetUsage < 50,
-              'text-gray-600': currentData.budgetUsage >= 50 && currentData.budgetUsage <= 80
-            }">
-              {{ getBudgetStatusText() }}
-            </span>
+    <div class="card p-6 hover:shadow-medium transition-shadow duration-200">
+      <div>
+        <h3 class="text-sm font-medium text-gray-600 mb-1">예산 대비</h3>
+        <p class="text-2xl font-bold text-gray-900">{{ currentData.budgetUsage }}%</p>
+        <span class="text-sm" :class="{
+          'text-red-600': currentData.budgetUsage > 80,
+          'text-green-600': currentData.budgetUsage < 50,
+          'text-gray-600': currentData.budgetUsage >= 50 && currentData.budgetUsage <= 80
+        }">
+          {{ getBudgetStatusText() }}
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 차트 섹션 -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- 부서별 지출 차트 -->
+    <div class="card p-6">
+      <h3 class="text-xl font-semibold text-gray-900 mb-6">{{ getChartTitle('department') }}</h3>
+      <div class="space-y-4">
+        <div v-for="(dept, index) in departmentData" :key="index" class="space-y-2">
+          <div class="flex justify-between items-center">
+            <span class="font-medium text-gray-900">{{ dept.name }}</span>
+            <span class="font-semibold text-primary-600">₩{{ dept.amount.toLocaleString() }}</span>
+          </div>
+          <div class="w-full bg-gray-200 rounded-full h-2">
+            <div class="h-2 rounded-full bg-primary-600 transition-all duration-300"
+              :style="{ width: Math.min((dept.amount / Math.max(...departmentData.map(d => d.amount)) * 100), 100) + '%' }">
+            </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- 차트 섹션 -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <!-- 부서별 지출 차트 -->
-      <div class="card p-6">
-        <h3 class="text-xl font-semibold text-gray-900 mb-6">{{ getChartTitle('department') }}</h3>
-        <div class="space-y-4">
-          <div v-for="(dept, index) in departmentData" :key="index" class="space-y-2">
-            <div class="flex justify-between items-center">
-              <span class="font-medium text-gray-900">{{ dept.name }}</span>
-              <span class="font-semibold text-primary-600">₩{{ dept.amount.toLocaleString() }}</span>
-            </div>
-            <div class="w-full bg-gray-200 rounded-full h-2">
+    <!-- 트렌드 차트 -->
+    <div class="card p-6">
+      <h3 class="text-xl font-semibold text-gray-900 mb-6">{{ getChartTitle('trend') }}</h3>
+      <div class="h-48 flex items-end justify-between gap-2">
+        <div v-for="(period, index) in trendData" :key="index" class="flex flex-col items-center flex-1">
+          <div
+            class="w-full bg-gradient-to-t from-primary-600 to-primary-400 rounded-t transition-all duration-300 min-h-4"
+            :style="{ height: (period.amount / Math.max(...trendData.map(p => p.amount)) * 100) + '%' }"></div>
+          <div class="text-xs text-gray-600 mt-2 text-center">
+            <div class="font-medium">{{ period.label }}</div>
+            <div class="text-gray-500">₩{{ period.amount.toLocaleString() }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 상세 리포트 -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- 카테고리 분석 -->
+    <div class="card p-6">
+      <h3 class="text-xl font-semibold text-gray-900 mb-6">카테고리별 분석</h3>
+      <div class="space-y-4">
+        <div v-for="(category, index) in categoryData" :key="index" class="border border-gray-200 rounded-lg p-4">
+          <div class="flex justify-between items-center mb-2">
+            <span class="font-medium text-gray-900">{{ category.name }}</span>
+            <span class="font-semibold text-red-600">₩{{ category.amount.toLocaleString() }}</span>
+          </div>
+          <div class="flex items-center gap-4 mb-2">
+            <div class="flex-1 bg-gray-200 rounded-full h-2">
               <div class="h-2 rounded-full bg-primary-600 transition-all duration-300"
-                :style="{ width: Math.min((dept.amount / Math.max(...departmentData.map(d => d.amount)) * 100), 100) + '%' }">
+                :style="{ width: Math.min((category.amount / Math.max(...categoryData.map(c => c.amount)) * 100), 100) + '%' }">
               </div>
             </div>
+            <span class="text-sm font-medium text-gray-600">{{Math.round((category.amount / categoryData.reduce((sum,
+              c) => sum + c.amount, 0)) * 100)}}%</span>
           </div>
-        </div>
-      </div>
-
-      <!-- 트렌드 차트 -->
-      <div class="card p-6">
-        <h3 class="text-xl font-semibold text-gray-900 mb-6">{{ getChartTitle('trend') }}</h3>
-        <div class="h-48 flex items-end justify-between gap-2">
-          <div v-for="(period, index) in trendData" :key="index" class="flex flex-col items-center flex-1">
-            <div
-              class="w-full bg-gradient-to-t from-primary-600 to-primary-400 rounded-t transition-all duration-300 min-h-4"
-              :style="{ height: (period.amount / Math.max(...trendData.map(p => p.amount)) * 100) + '%' }"></div>
-            <div class="text-xs text-gray-600 mt-2 text-center">
-              <div class="font-medium">{{ period.label }}</div>
-              <div class="text-gray-500">₩{{ period.amount.toLocaleString() }}</div>
-            </div>
+          <div class="text-right">
+            <span class="text-sm font-medium" :class="{
+              'text-red-600': category.trend > 0,
+              'text-green-600': category.trend < 0,
+              'text-gray-600': category.trend === 0
+            }">
+              {{ category.trend > 0 ? '+' : '' }}{{ category.trend }}%
+            </span>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- 상세 리포트 -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <!-- 카테고리 분석 -->
-      <div class="card p-6">
-        <h3 class="text-xl font-semibold text-gray-900 mb-6">카테고리별 분석</h3>
-        <div class="space-y-4">
-          <div v-for="(category, index) in categoryData" :key="index" class="border border-gray-200 rounded-lg p-4">
-            <div class="flex justify-between items-center mb-2">
-              <span class="font-medium text-gray-900">{{ category.name }}</span>
-              <span class="font-semibold text-red-600">₩{{ category.amount.toLocaleString() }}</span>
-            </div>
-            <div class="flex items-center gap-4 mb-2">
-              <div class="flex-1 bg-gray-200 rounded-full h-2">
-                <div class="h-2 rounded-full bg-primary-600 transition-all duration-300"
-                  :style="{ width: Math.min((category.amount / Math.max(...categoryData.map(c => c.amount)) * 100), 100) + '%' }">
-                </div>
-              </div>
-              <span class="text-sm font-medium text-gray-600">{{Math.round((category.amount / categoryData.reduce((sum,
-                c) => sum + c.amount, 0)) * 100) }}%</span>
-            </div>
-            <div class="text-right">
-              <span class="text-sm font-medium" :class="{
-                'text-red-600': category.trend > 0,
-                'text-green-600': category.trend < 0,
-                'text-gray-600': category.trend === 0
-              }">
-                {{ category.trend > 0 ? '+' : '' }}{{ category.trend }}%
-              </span>
-            </div>
-          </div>
+    <!-- 상세 내역 -->
+    <div class="card p-6">
+      <div class="flex justify-between items-center mb-6">
+        <h3 class="text-xl font-semibold text-gray-900">상세 내역</h3>
+        <div class="text-sm text-gray-600">
+          선택: {{ selectedExpenses.length }}개
         </div>
       </div>
-
-      <!-- 상세 내역 -->
-      <div class="card p-6">
-        <div class="flex justify-between items-center mb-6">
-          <h3 class="text-xl font-semibold text-gray-900">상세 내역</h3>
-          <div class="text-sm text-gray-600">
-            선택: {{ selectedExpenses.length }}개
-          </div>
-        </div>
-        <div class="max-h-96 overflow-y-auto">
-          <!-- 데스크톱 테이블 -->
-          <div class="hidden lg:block">
-            <div class="grid grid-cols-7 gap-4 p-4 bg-gray-50 font-semibold text-gray-700 border-b">
-              <div>
-                <input type="checkbox" @change="toggleSelectAll" :checked="isAllSelected" class="rounded" />
-              </div>
-              <div>날짜</div>
-              <div>카테고리</div>
-              <div>내용</div>
-              <div>상점명</div>
-              <div>연락처</div>
-              <div class="text-right">금액</div>
+      <div class="max-h-96 overflow-y-auto">
+        <!-- 데스크톱 테이블 -->
+        <div class="hidden lg:block">
+          <div class="grid grid-cols-7 gap-4 p-4 bg-gray-50 font-semibold text-gray-700 border-b">
+            <div>
+              <input type="checkbox" @change="toggleSelectAll" :checked="isAllSelected" class="rounded" />
             </div>
-            <div class="divide-y divide-gray-200">
-              <div v-for="(expense, index) in detailedData" :key="index"
-                class="grid grid-cols-7 gap-4 p-4 hover:bg-gray-50 transition-colors duration-200">
-                <div>
-                  <input type="checkbox" v-model="selectedExpenses" :value="expense" class="rounded" />
-                </div>
-                <div class="text-sm text-gray-600">{{ formatDate(expense.date) }}</div>
-                <div>
-                  <span class="inline-block px-3 py-1 rounded-full text-xs font-medium text-white" :class="{
-                    'bg-orange-500': expense.category === '식비',
-                    'bg-blue-500': expense.category === '교통비',
-                    'bg-green-500': expense.category === '사무용품',
-                    'bg-purple-500': expense.category === '회식',
-                    'bg-red-500': expense.category === '공과금',
-                    'bg-yellow-600': expense.category === '유흥',
-                    'bg-indigo-500': expense.category === '교육',
-                    'bg-pink-500': expense.category === '의료',
-                    'bg-gray-500': expense.category === '기타'
-                  }">
-                    {{ expense.category }}
-                  </span>
-                </div>
-                <div class="font-medium">{{ expense.description }}</div>
-                <div class="text-sm">
-                  <div class="font-medium text-gray-900">{{ expense.department }}</div>
-                  <div v-if="expense.store_address" class="text-xs text-gray-500">{{ expense.store_address }}</div>
-                </div>
-                <div class="text-sm text-gray-600">{{ expense.store_phone_number || '-' }}</div>
-                <div class="text-right font-semibold text-red-600">₩{{ expense.amount.toLocaleString() }}</div>
-              </div>
-            </div>
+            <div>날짜</div>
+            <div>카테고리</div>
+            <div>내용</div>
+            <div>상점명</div>
+            <div>연락처</div>
+            <div class="text-right">금액</div>
           </div>
-
-          <!-- 모바일 카드 -->
-          <div class="lg:hidden space-y-4">
+          <div class="divide-y divide-gray-200">
             <div v-for="(expense, index) in detailedData" :key="index"
-              class="border border-gray-200 rounded-lg p-4 hover:shadow-soft transition-shadow duration-200">
-              <div class="flex justify-between items-start mb-3">
-                <div>
-                  <h4 class="font-semibold text-gray-900">{{ expense.description }}</h4>
-                  <p class="text-sm text-gray-700">{{ expense.department }}</p>
-                  <p v-if="expense.store_address" class="text-xs text-gray-500 mt-1">{{ expense.store_address }}</p>
-                  <p v-if="expense.store_phone_number" class="text-xs text-gray-500">{{ expense.store_phone_number }}
-                  </p>
-                </div>
-                <span class="text-lg font-bold text-red-600">₩{{ expense.amount.toLocaleString() }}</span>
+              class="grid grid-cols-7 gap-4 p-4 hover:bg-gray-50 transition-colors duration-200">
+              <div>
+                <input type="checkbox" v-model="selectedExpenses" :value="expense" class="rounded" />
               </div>
-              <div class="flex justify-between items-center">
-                <span class="text-sm text-gray-600">{{ formatDate(expense.date) }}</span>
+              <div class="text-sm text-gray-600">{{ formatDate(expense.date) }}</div>
+              <div>
                 <span class="inline-block px-3 py-1 rounded-full text-xs font-medium text-white" :class="{
                   'bg-orange-500': expense.category === '식비',
                   'bg-blue-500': expense.category === '교통비',
@@ -287,6 +240,49 @@
                   {{ expense.category }}
                 </span>
               </div>
+              <div class="font-medium">{{ expense.description }}</div>
+              <div class="text-sm">
+                <div class="font-medium text-gray-900">{{ expense.department }}</div>
+                <div v-if="expense.store_address" class="text-xs text-gray-500">{{ expense.store_address }}</div>
+              </div>
+              <div class="text-sm text-gray-600">{{ expense.store_phone_number || '-' }}</div>
+              <div class="text-right font-semibold text-red-600">₩{{ expense.amount.toLocaleString() }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 모바일 카드 -->
+        <div class="lg:hidden space-y-4">
+          <div v-for="(expense, index) in detailedData" :key="index"
+            class="border border-gray-200 rounded-lg p-4 hover:shadow-soft transition-shadow duration-200">
+            <div class="flex justify-between items-start mb-3">
+              <div class="flex items-start gap-3 flex-1">
+                <input type="checkbox" v-model="selectedExpenses" :value="expense" class="rounded mt-1" />
+                <div class="flex-1">
+                  <h4 class="font-semibold text-gray-900">{{ expense.description }}</h4>
+                  <p class="text-sm text-gray-700">{{ expense.department }}</p>
+                  <p v-if="expense.store_address" class="text-xs text-gray-500 mt-1">{{ expense.store_address }}</p>
+                  <p v-if="expense.store_phone_number" class="text-xs text-gray-500">{{ expense.store_phone_number }}
+                  </p>
+                </div>
+              </div>
+              <span class="text-lg font-bold text-red-600">₩{{ expense.amount.toLocaleString() }}</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-sm text-gray-600">{{ formatDate(expense.date) }}</span>
+              <span class="inline-block px-3 py-1 rounded-full text-xs font-medium text-white" :class="{
+                'bg-orange-500': expense.category === '식비',
+                'bg-blue-500': expense.category === '교통비',
+                'bg-green-500': expense.category === '사무용품',
+                'bg-purple-500': expense.category === '회식',
+                'bg-red-500': expense.category === '공과금',
+                'bg-yellow-600': expense.category === '유흥',
+                'bg-indigo-500': expense.category === '교육',
+                'bg-pink-500': expense.category === '의료',
+                'bg-gray-500': expense.category === '기타'
+              }">
+                {{ expense.category }}
+              </span>
             </div>
           </div>
         </div>

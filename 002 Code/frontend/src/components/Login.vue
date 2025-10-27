@@ -3,11 +3,8 @@
     <div class="max-w-md w-full">
       <!-- 로고 및 제목 -->
       <div class="text-center mb-8">
-        <div class="w-16 h-16 bg-blue-500 rounded-3xl flex items-center justify-center text-3xl mx-auto mb-6 shadow-lg">
-          🏢
-        </div>
-        <h1 class="text-2xl font-bold text-gray-900 mb-2">예산 관리 시스템</h1>
-        <p class="text-gray-500 text-sm">{{ isRegistering ? '새 계정을 만들어보세요' : '계정에 로그인하세요' }}</p>
+
+        <h1 class="text-5xl font-bold mb-2" style="color: #3e56f6;">Budgetly</h1>
       </div>
 
       <!-- 로그인/회원가입 폼 -->
@@ -66,7 +63,6 @@
           <button type="submit" :disabled="isLoading" class="w-full btn-primary flex items-center justify-center gap-2"
             :class="{ 'opacity-50 cursor-not-allowed': isLoading }">
             <span v-if="isLoading" class="animate-spin">⏳</span>
-            <span v-else>🔐</span>
             {{ isLoading ? '로그인 중...' : '로그인' }}
           </button>
 
@@ -121,7 +117,6 @@
           <button type="submit" :disabled="isLoading" class="w-full btn-primary flex items-center justify-center gap-2"
             :class="{ 'opacity-50 cursor-not-allowed': isLoading }">
             <span v-if="isLoading" class="animate-spin">⏳</span>
-            <span v-else>✨</span>
             {{ isLoading ? '가입 중...' : '회원가입' }}
           </button>
 
@@ -142,15 +137,7 @@
           </div>
         </form>
 
-        <!-- 데모 계정 정보 (로그인 탭일 때만 표시) -->
-        <div v-if="!isRegistering" class="mt-6 p-4 bg-blue-50 rounded-lg">
-          <h3 class="text-sm font-medium text-blue-900 mb-2">테스트 계정</h3>
-          <div class="text-xs text-blue-700 space-y-1">
-            <p><strong>이메일:</strong> test@example.com</p>
-            <p><strong>비밀번호:</strong> password123</p>
-            <p class="text-blue-600 mt-2">※ 백엔드 API와 연동되어 있습니다</p>
-          </div>
-        </div>
+
       </div>
     </div>
   </div>

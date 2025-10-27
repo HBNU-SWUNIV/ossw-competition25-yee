@@ -13,40 +13,25 @@
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div
         class="bg-white rounded-2xl p-6 border border-gray-100 hover:border-blue-200 hover:shadow-lg transition-all duration-200">
-        <div class="flex items-center justify-between mb-4">
-          <div class="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center">
-            <span class="text-2xl">💰</span>
-          </div>
-          <div class="text-right">
-            <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">총 예산</p>
-            <p class="text-xl font-bold text-gray-900">₩{{ totalBudget.toLocaleString() }}</p>
-          </div>
+        <div class="mb-4">
+          <p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">총 예산</p>
+          <p class="text-xl font-bold text-gray-900">₩{{ totalBudget.toLocaleString() }}</p>
         </div>
       </div>
 
       <div
         class="bg-white rounded-2xl p-6 border border-gray-100 hover:border-red-200 hover:shadow-lg transition-all duration-200">
-        <div class="flex items-center justify-between mb-4">
-          <div class="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center">
-            <span class="text-2xl">📊</span>
-          </div>
-          <div class="text-right">
-            <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">사용된 예산</p>
-            <p class="text-xl font-bold text-red-600">₩{{ usedBudget.toLocaleString() }}</p>
-          </div>
+        <div class="mb-4">
+          <p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">사용된 예산</p>
+          <p class="text-xl font-bold text-red-600">₩{{ usedBudget.toLocaleString() }}</p>
         </div>
       </div>
 
       <div
         class="bg-white rounded-2xl p-6 border border-gray-100 hover:border-green-200 hover:shadow-lg transition-all duration-200">
-        <div class="flex items-center justify-between mb-4">
-          <div class="w-12 h-12 bg-green-50 rounded-2xl flex items-center justify-center">
-            <span class="text-2xl">💳</span>
-          </div>
-          <div class="text-right">
-            <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">남은 예산</p>
-            <p class="text-xl font-bold text-green-600">₩{{ remainingBudget.toLocaleString() }}</p>
-          </div>
+        <div class="mb-4">
+          <p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">남은 예산</p>
+          <p class="text-xl font-bold text-green-600">₩{{ remainingBudget.toLocaleString() }}</p>
         </div>
       </div>
     </div>
@@ -57,7 +42,7 @@
 
       <!-- 예산 목록이 비어있을 때 -->
       <div v-if="budgets.length === 0 && !isLoading" class="text-center py-16">
-        <div class="w-20 h-20 bg-gray-100 rounded-3xl flex items-center justify-center text-4xl mx-auto mb-6">💸</div>
+
         <h4 class="text-lg font-semibold text-gray-900 mb-2">예산을 등록해보세요</h4>
         <p class="text-gray-500 mb-6">첫 번째 예산을 등록하여 관리를 시작하세요</p>
         <button class="btn-primary" @click="showAddModal = true">

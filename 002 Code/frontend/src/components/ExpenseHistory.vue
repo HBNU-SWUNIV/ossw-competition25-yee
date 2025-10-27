@@ -20,38 +20,23 @@
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div
         class="bg-white rounded-2xl p-6 border border-gray-100 hover:border-red-200 hover:shadow-lg transition-all duration-200">
-        <div class="flex items-center justify-between mb-4">
-          <div class="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center">
-            <span class="text-2xl">💸</span>
-          </div>
-          <div class="text-right">
-            <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">총 지출</p>
-            <p class="text-xl font-bold text-red-600">₩{{ totalExpense.toLocaleString() }}</p>
-          </div>
+        <div class="mb-4">
+          <p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">총 지출</p>
+          <p class="text-xl font-bold text-red-600">₩{{ totalExpense.toLocaleString() }}</p>
         </div>
       </div>
       <div
         class="bg-white rounded-2xl p-6 border border-gray-100 hover:border-blue-200 hover:shadow-lg transition-all duration-200">
-        <div class="flex items-center justify-between mb-4">
-          <div class="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center">
-            <span class="text-2xl">📊</span>
-          </div>
-          <div class="text-right">
-            <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">평균 지출</p>
-            <p class="text-xl font-bold text-blue-600">₩{{ avgExpense.toLocaleString() }}</p>
-          </div>
+        <div class="mb-4">
+          <p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">평균 지출</p>
+          <p class="text-xl font-bold text-blue-600">₩{{ avgExpense.toLocaleString() }}</p>
         </div>
       </div>
       <div
         class="bg-white rounded-2xl p-6 border border-gray-100 hover:border-green-200 hover:shadow-lg transition-all duration-200">
-        <div class="flex items-center justify-between mb-4">
-          <div class="w-12 h-12 bg-green-50 rounded-2xl flex items-center justify-center">
-            <span class="text-2xl">📈</span>
-          </div>
-          <div class="text-right">
-            <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">지출 건수</p>
-            <p class="text-xl font-bold text-green-600">{{ expenses.length }}건</p>
-          </div>
+        <div class="mb-4">
+          <p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">지출 건수</p>
+          <p class="text-xl font-bold text-green-600">{{ expenses.length }}건</p>
         </div>
       </div>
     </div>
