@@ -119,26 +119,26 @@
             <div class="bg-white rounded-2xl p-6 border border-gray-100">
               <h3 class="text-lg font-bold text-gray-900 mb-6">빠른 작업</h3>
               <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                <button @click="selectMenu('budget')"
-                  class="flex flex-col items-center p-6 bg-gray-50 hover:bg-blue-50 rounded-2xl transition-all duration-200 border border-transparent hover:border-blue-200">
+                <button @click.stop="selectMenu('budget')"
+                  class="flex flex-col items-center p-6 bg-gray-50 hover:bg-blue-50 rounded-2xl transition-all duration-200 border border-transparent hover:border-blue-200 active:scale-95">
                   <p class="font-semibold text-gray-900 text-center">예산 등록</p>
                   <p class="text-xs text-gray-500 text-center mt-1">새 예산 계획 수립</p>
                 </button>
 
-                <button @click="selectMenu('expenses')"
-                  class="flex flex-col items-center p-6 bg-gray-50 hover:bg-red-50 rounded-2xl transition-all duration-200 border border-transparent hover:border-red-200">
+                <button @click.stop="selectMenu('expenses')"
+                  class="flex flex-col items-center p-6 bg-gray-50 hover:bg-red-50 rounded-2xl transition-all duration-200 border border-transparent hover:border-red-200 active:scale-95">
                   <p class="font-semibold text-gray-900 text-center">지출 추가</p>
                   <p class="text-xs text-gray-500 text-center mt-1">새 지출 내역 등록</p>
                 </button>
 
-                <button @click="selectMenu('reports')"
-                  class="flex flex-col items-center p-6 bg-gray-50 hover:bg-green-50 rounded-2xl transition-all duration-200 border border-transparent hover:border-green-200">
+                <button @click.stop="selectMenu('reports')"
+                  class="flex flex-col items-center p-6 bg-gray-50 hover:bg-green-50 rounded-2xl transition-all duration-200 border border-transparent hover:border-green-200 active:scale-95">
                   <p class="font-semibold text-gray-900 text-center">리포트 보기</p>
                   <p class="text-xs text-gray-500 text-center mt-1">상세 분석 리포트</p>
                 </button>
 
-                <button @click="selectMenu('departments')"
-                  class="flex flex-col items-center p-6 bg-gray-50 hover:bg-purple-50 rounded-2xl transition-all duration-200 border border-transparent hover:border-purple-200">
+                <button @click.stop="selectMenu('departments')"
+                  class="flex flex-col items-center p-6 bg-gray-50 hover:bg-purple-50 rounded-2xl transition-all duration-200 border border-transparent hover:border-purple-200 active:scale-95">
                   <p class="font-semibold text-gray-900 text-center">자치기구 관리</p>
                   <p class="text-xs text-gray-500 text-center mt-1">자치기구 정보 확인</p>
                 </button>
@@ -152,12 +152,12 @@
                 효율적인 예산 관리를 위해 먼저 예산을 등록하고 지출 내역을 추가해보세요.
               </p>
               <div class="flex flex-col sm:flex-row gap-3 justify-center">
-                <button @click="selectMenu('budget')"
-                  class="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-xl transition-colors duration-200">
+                <button @click.stop="selectMenu('budget')"
+                  class="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-xl transition-colors duration-200 active:scale-95">
                   예산 등록하기
                 </button>
-                <button @click="selectMenu('expenses')"
-                  class="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition-colors duration-200">
+                <button @click.stop="selectMenu('expenses')"
+                  class="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition-colors duration-200 active:scale-95">
                   지출 추가하기
                 </button>
               </div>
