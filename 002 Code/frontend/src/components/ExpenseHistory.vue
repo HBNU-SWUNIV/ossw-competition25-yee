@@ -57,19 +57,20 @@
     <div class="card overflow-hidden">
       <!-- 데스크톱 테이블 -->
       <div class="hidden lg:block">
-        <div class="grid grid-cols-6 gap-4 p-4 bg-gray-50 font-semibold text-gray-700 border-b">
+        <div class="grid grid-cols-7 gap-4 p-4 bg-gray-50 font-semibold text-gray-700 border-b">
           <div>날짜</div>
           <div>카테고리</div>
           <div>내용</div>
           <div>상점명</div>
           <div>연락처</div>
           <div class="text-right">금액</div>
+          <div class="text-right">작업</div>
         </div>
         <div class="divide-y divide-gray-200">
           <div
             v-for="expense in filteredExpenses"
             :key="expense.id"
-            class="grid grid-cols-6 gap-4 p-4 hover:bg-gray-50 transition-colors duration-200"
+            class="grid grid-cols-7 gap-4 p-4 hover:bg-gray-50 transition-colors duration-200"
           >
             <div class="text-sm text-gray-600">{{ formatDate(expense.date) }}</div>
             <div>
@@ -97,6 +98,15 @@
             </div>
             <div class="text-sm text-gray-600">{{ expense.store_phone_number || '-' }}</div>
             <div class="text-right font-semibold text-red-600">₩{{ expense.amount.toLocaleString() }}</div>
+            <div class="text-right">
+              <button
+                @click="deleteExpense(expense.id)"
+                class="px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-sm rounded-lg transition-colors duration-200"
+                title="삭제"
+              >
+                🗑️ 삭제
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -119,30 +129,39 @@
           </div>
           <div class="flex justify-between items-center">
             <span class="text-sm text-gray-600">{{ formatDate(expense.date) }}</span>
-            <span
-              class="inline-block px-3 py-1 rounded-full text-xs font-medium text-white"
-              :class="{
-                'bg-orange-500': expense.category === '식비',
-                'bg-blue-500': expense.category === '교통비',
-                'bg-green-500': expense.category === '사무용품',
-                'bg-purple-500': expense.category === '회식',
-                'bg-red-500': expense.category === '공과금',
-                'bg-yellow-600': expense.category === '유흥',
-                'bg-indigo-500': expense.category === '교육',
-                'bg-pink-500': expense.category === '의료',
-                'bg-gray-500': expense.category === '기타'
-              }"
-            >
-              {{ expense.category }}
-            </span>
+            <div class="flex items-center gap-2">
+              <span
+                class="inline-block px-3 py-1 rounded-full text-xs font-medium text-white"
+                :class="{
+                  'bg-orange-500': expense.category === '식비',
+                  'bg-blue-500': expense.category === '교통비',
+                  'bg-green-500': expense.category === '사무용품',
+                  'bg-purple-500': expense.category === '회식',
+                  'bg-red-500': expense.category === '공과금',
+                  'bg-yellow-600': expense.category === '유흥',
+                  'bg-indigo-500': expense.category === '교육',
+                  'bg-pink-500': expense.category === '의료',
+                  'bg-gray-500': expense.category === '기타'
+                }"
+              >
+                {{ expense.category }}
+              </span>
+              <button
+                @click="deleteExpense(expense.id)"
+                class="px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-xs rounded-lg transition-colors duration-200"
+                title="삭제"
+              >
+                🗑️
+              </button>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
     <!-- OCR 등록 모달 -->
-    <div v-if="showOcrModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" @click="closeOcrModal">
-      <div class="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-strong" @click.stop>
+    <div v-if="showOcrModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" @click.self="closeOcrModal">
+      <div class="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-strong">
         <!-- 모달 헤더 -->
         <div class="flex items-center justify-between p-6 border-b border-gray-200 bg-gray-50 rounded-t-2xl">
           <h2 class="flex items-center gap-3 text-xl font-semibold text-gray-900">
@@ -161,10 +180,22 @@
           <!-- 영수증 업로드 섹션 -->
           <div>
             <label class="block text-lg font-semibold text-gray-900 mb-3">영수증 업로드</label>
-            <div 
-              class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center transition-all duration-300"
+            <div
+              class="relative border-2 border-dashed border-gray-300 rounded-xl p-8 text-center transition-all duration-300"
               :class="{ 'border-primary-500 bg-primary-50': uploadedFile }"
             >
+              <!-- OCR 처리 중 로딩 오버레이 -->
+              <div v-if="isLoading" class="absolute inset-0 bg-white bg-opacity-95 rounded-xl flex items-center justify-center z-10">
+                <div class="text-center space-y-4">
+                  <div class="inline-block animate-spin rounded-full h-16 w-16 border-4 border-primary-500 border-t-transparent"></div>
+                  <div>
+                    <p class="text-lg font-semibold text-gray-900">OCR 처리 중...</p>
+                    <p class="text-sm text-gray-600 mt-2">영수증을 분석하고 있습니다</p>
+                    <p class="text-xs text-gray-500 mt-1">잠시만 기다려주세요 (약 5-10초)</p>
+                  </div>
+                </div>
+              </div>
+
               <input
                 ref="fileInput"
                 type="file"
@@ -180,17 +211,17 @@
                 @change="handleCameraCapture"
                 class="hidden"
               >
-              
+
               <div v-if="!uploadedFile" class="space-y-4">
                 <div class="text-5xl">📄</div>
                 <p class="text-gray-600">영수증 파일 선택 또는 카메라 실행</p>
               </div>
-              
+
               <div v-if="uploadedFile" class="space-y-4">
                 <div class="flex items-center justify-center gap-3 p-3 bg-white rounded-lg">
                   <span class="text-2xl">📷</span>
                   <span class="font-medium text-gray-900 flex-1">{{ uploadedFile.name }}</span>
-                  <button 
+                  <button
                     class="w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors duration-200"
                     @click="removeFile"
                   >
@@ -475,6 +506,7 @@ export default {
     // OCR 분석 수행 (백엔드 API 호출 - Expense 생성 안함)
     const performOcrAnalysis = async (file) => {
       try {
+        isLoading.value = true
         console.log('[OCR] 파일 업로드 시작:', file.name)
 
         // 백엔드 OCR API 호출 (OCR만 수행, Expense 생성 안함)
@@ -507,6 +539,8 @@ export default {
       } catch (error) {
         console.error('[OCR] 처리 중 오류:', error)
         alert('OCR 처리 중 오류가 발생했습니다: ' + error.message)
+      } finally {
+        isLoading.value = false
       }
     }
 
@@ -581,6 +615,27 @@ export default {
       })
     }
 
+    // 지출 삭제
+    const deleteExpense = async (expenseId) => {
+      if (!confirm('이 지출 내역을 삭제하시겠습니까?')) {
+        return
+      }
+
+      try {
+        const result = await expenseAPI.deleteExpense(expenseId)
+        if (result.success) {
+          alert('지출 내역이 삭제되었습니다.')
+          // 목록 새로고침
+          await fetchExpenses()
+        } else {
+          alert('삭제 실패: ' + result.error)
+        }
+      } catch (error) {
+        console.error('[삭제] 오류:', error)
+        alert('삭제 중 오류가 발생했습니다.')
+      }
+    }
+
     // 컴포넌트 마운트 시 지출 목록 조회
     onMounted(() => {
       fetchExpenses()
@@ -612,7 +667,8 @@ export default {
       closeOcrModal,
       registerExpense,
       isFormValid,
-      fetchExpenses
+      fetchExpenses,
+      deleteExpense
     }
   }
 }

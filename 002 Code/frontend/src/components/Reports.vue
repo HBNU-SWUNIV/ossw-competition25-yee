@@ -39,36 +39,25 @@
 
           <div v-if="showExportMenu" class="absolute top-full left-0 right-0 mt-2 bg-white border-2 border-primary-500 rounded-lg shadow-strong overflow-hidden">
             <div class="p-2 space-y-1">
-              <button 
+              <button
                 class="w-full flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors duration-200"
-                @click="exportAsPDF"
-              >
-                <span class="text-xl">📄</span>
-                <div class="text-left">
-                  <div class="font-semibold text-gray-900">PDF 리포트</div>
-                  <div class="text-sm text-gray-600">완전한 시각적 리포트</div>
-              </div>
-              </button>
-
-              <button 
-                class="w-full flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors duration-200"
-                @click="exportAsExcelCSV"
+                @click="exportSelectedAsExcelCSV"
               >
                 <span class="text-xl">📊</span>
                 <div class="text-left">
-                  <div class="font-semibold text-gray-900">Excel 호환 CSV</div>
-                  <div class="text-sm text-gray-600">Excel에서 한글 깨짐 없음</div>
+                  <div class="font-semibold text-gray-900">선택 항목 Excel CSV</div>
+                  <div class="text-sm text-gray-600">선택한 항목만 내보내기</div>
               </div>
               </button>
 
-              <button 
+              <button
                 class="w-full flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors duration-200"
-                @click="exportAsCSV"
+                @click="exportSelectedAsPDF"
               >
-                <span class="text-xl">📋</span>
+                <span class="text-xl">📄</span>
                 <div class="text-left">
-                  <div class="font-semibold text-gray-900">일반 CSV</div>
-                  <div class="text-sm text-gray-600">범용적인 데이터 형식</div>
+                  <div class="font-semibold text-gray-900">선택 항목 PDF</div>
+                  <div class="text-sm text-gray-600">선택한 항목만 PDF로</div>
               </div>
               </button>
             </div>
@@ -239,11 +228,19 @@
 
       <!-- 상세 내역 -->
       <div class="card p-6">
-        <h3 class="text-xl font-semibold text-gray-900 mb-6">상세 내역</h3>
+        <div class="flex justify-between items-center mb-6">
+          <h3 class="text-xl font-semibold text-gray-900">상세 내역</h3>
+          <div class="text-sm text-gray-600">
+            선택: {{ selectedExpenses.length }}개
+          </div>
+        </div>
         <div class="max-h-96 overflow-y-auto">
           <!-- 데스크톱 테이블 -->
           <div class="hidden lg:block">
-            <div class="grid grid-cols-6 gap-4 p-4 bg-gray-50 font-semibold text-gray-700 border-b">
+            <div class="grid grid-cols-7 gap-4 p-4 bg-gray-50 font-semibold text-gray-700 border-b">
+              <div>
+                <input type="checkbox" @change="toggleSelectAll" :checked="isAllSelected" class="rounded" />
+              </div>
               <div>날짜</div>
               <div>카테고리</div>
               <div>내용</div>
@@ -255,8 +252,11 @@
               <div
                 v-for="(expense, index) in detailedData"
                 :key="index"
-                class="grid grid-cols-6 gap-4 p-4 hover:bg-gray-50 transition-colors duration-200"
+                class="grid grid-cols-7 gap-4 p-4 hover:bg-gray-50 transition-colors duration-200"
               >
+                <div>
+                  <input type="checkbox" v-model="selectedExpenses" :value="expense" class="rounded" />
+                </div>
                 <div class="text-sm text-gray-600">{{ formatDate(expense.date) }}</div>
                 <div>
                   <span
@@ -346,6 +346,8 @@ export default {
     const selectedCategory = ref('')
     const showExportMenu = ref(false)
     const loading = ref(false)
+    const selectedExpenses = ref([])
+    const isAllSelected = ref(false)
 
     // 사용 가능한 옵션들
     const now = new Date()
@@ -520,14 +522,67 @@ export default {
         if (expensesResult.success) {
           expenses.value = expensesResult.data
           detailedData.value = expenses.value.map(exp => ({
+            id: exp.id,
             date: exp.date,
             category: exp.category,
             description: exp.description || exp.item_name || exp.store_name,
             department: exp.store_name, // 부서 대신 상점명 사용
             amount: exp.amount,
+            store_name: exp.store_name,
             store_address: exp.store_address || '',
             store_phone_number: exp.store_phone_number || ''
           }))
+
+          // 부서별 데이터 계산 (임시로 상점명 기준으로 그룹화)
+          if (expenses.value.length > 0) {
+            const deptMap = {}
+            expenses.value.forEach(exp => {
+              const dept = exp.store_name || '기타'
+              if (!deptMap[dept]) {
+                deptMap[dept] = 0
+              }
+              deptMap[dept] += exp.amount
+            })
+            departmentData.value = Object.entries(deptMap).map(([name, amount]) => ({
+              name,
+              amount
+            })).sort((a, b) => b.amount - a.amount)
+          } else {
+            departmentData.value = []
+          }
+
+          // 트렌드 데이터 계산 (임시 데이터)
+          if (expenses.value.length > 0) {
+            const dates = expenses.value.map(exp => new Date(exp.date))
+            const validDates = dates.filter(d => !isNaN(d.getTime()))
+            
+            if (validDates.length > 0) {
+              // 월별로 그룹화
+              const trendMap = {}
+              expenses.value.forEach(exp => {
+                const date = new Date(exp.date)
+                if (!isNaN(date.getTime())) {
+                  const key = `${date.getFullYear()}-${date.getMonth() + 1}`
+                  if (!trendMap[key]) {
+                    trendMap[key] = 0
+                  }
+                  trendMap[key] += exp.amount
+                }
+              })
+              
+              trendData.value = Object.entries(trendMap).map(([key, amount]) => {
+                const [year, month] = key.split('-')
+                return {
+                  label: `${year}-${month.padStart(2, '0')}`,
+                  amount
+                }
+              }).sort((a, b) => a.label.localeCompare(b.label))
+            } else {
+              trendData.value = []
+            }
+          } else {
+            trendData.value = []
+          }
         }
       } catch (error) {
         console.error('데이터 로드 실패:', error)
@@ -670,6 +725,52 @@ export default {
       showExportMenu.value = false
     }
 
+    const exportSelectedAsExcelCSV = () => {
+      if (selectedExpenses.value.length === 0) {
+        alert('선택한 항목이 없습니다.')
+        return
+      }
+      const csvContent = generateSelectedCSVContent()
+      const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' })
+      const link = document.createElement('a')
+      link.href = URL.createObjectURL(blob)
+      link.download = 'selected-expense-report-excel.csv'
+      link.click()
+      showExportMenu.value = false
+    }
+
+    const exportSelectedAsPDF = async () => {
+      if (selectedExpenses.value.length === 0) {
+        alert('선택한 항목이 없습니다.')
+        return
+      }
+      try {
+        showExportMenu.value = false
+        
+        // 각 선택된 항목에 대해 PDF 다운로드
+        for (const expense of selectedExpenses.value) {
+          if (!expense.id) {
+            console.warn('Expense ID가 없습니다:', expense)
+            continue
+          }
+          
+          try {
+            await expenseAPI.exportExpensePDF(expense.id)
+          } catch (error) {
+            console.error(`Expense ${expense.id} PDF 다운로드 실패:`, error)
+          }
+          
+          // 다운로드 간 딜레이 (브라우저가 동시 다운로드를 처리할 수 있도록)
+          await new Promise(resolve => setTimeout(resolve, 500))
+        }
+        
+        alert(`선택한 ${selectedExpenses.value.length}개 항목의 PDF 다운로드가 완료되었습니다.`)
+      } catch (error) {
+        console.error('PDF 생성 중 오류:', error)
+        alert('PDF 생성 중 오류가 발생했습니다.')
+      }
+    }
+
     const exportAsCSV = () => {
       const csvContent = generateCSVContent()
       const blob = new Blob([csvContent], { type: 'text/csv' })
@@ -678,6 +779,30 @@ export default {
       link.download = 'expense-report.csv'
       link.click()
       showExportMenu.value = false
+    }
+
+    const toggleSelectAll = () => {
+      if (isAllSelected.value) {
+        selectedExpenses.value = []
+      } else {
+        selectedExpenses.value = [...detailedData.value]
+      }
+      isAllSelected.value = !isAllSelected.value
+    }
+
+    const generateSelectedCSVContent = () => {
+      const headers = ['날짜', '카테고리', '내용', '상점명', '주소', '전화번호', '금액']
+      const rows = selectedExpenses.value.map(expense => [
+        expense.date,
+        expense.category,
+        expense.description,
+        expense.department,
+        expense.store_address || '',
+        expense.store_phone_number || '',
+        expense.amount
+      ])
+
+      return [headers, ...rows].map(row => row.join(',')).join('\n')
     }
 
     const generateCSVContent = () => {
@@ -720,6 +845,8 @@ export default {
       trendData,
       categoryData,
       detailedData,
+      selectedExpenses,
+      isAllSelected,
       getCurrentPeriodTitle,
       getPeriodDescription,
       getAverageText,
@@ -738,6 +865,9 @@ export default {
       exportAsPDF,
       exportAsExcelCSV,
       exportAsCSV,
+      exportSelectedAsExcelCSV,
+      exportSelectedAsPDF,
+      toggleSelectAll,
       loadData
     }
   }
