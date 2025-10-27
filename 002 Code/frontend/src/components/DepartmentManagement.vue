@@ -932,7 +932,7 @@ export default {
     text-align: left;
   }
 }
-</style>
+
 .department-management {
 padding: 0;
 }
