@@ -111,20 +111,41 @@
 
       <!-- 모바일 카드 -->
       <div class="lg:hidden space-y-4 p-4">
-        <div v-for="expense in filteredExpenses" :key="expense.id"
-          class="border border-gray-200 rounded-lg p-4 hover:shadow-soft transition-shadow duration-200">
-          <div class="flex justify-between items-start mb-3">
-            <div>
-              <h4 class="font-semibold text-gray-900">{{ expense.description || expense.store_name }}</h4>
-              <p class="text-sm text-gray-700">{{ expense.store_name }}</p>
-              <p v-if="expense.store_address" class="text-xs text-gray-500 mt-1">{{ expense.store_address }}</p>
-              <p v-if="expense.store_phone_number" class="text-xs text-gray-500">{{ expense.store_phone_number }}</p>
-            </div>
-            <span class="text-lg font-bold text-red-600">₩{{ expense.amount.toLocaleString() }}</span>
+        <div v-for="expense in filteredExpenses" :key="expense.id" class="relative overflow-hidden">
+          <!-- 배경 액션 버튼들 (1행 2열) -->
+          <div class="absolute inset-0 bg-gray-100 rounded-lg flex items-stretch justify-end">
+            <button @click="openEditModal(expense)"
+              class="w-24 bg-blue-500 hover:bg-blue-600 text-white transition-colors duration-200 flex items-center justify-center text-sm font-medium"
+              title="수정">
+              수정
+            </button>
+            <button @click="deleteExpense(expense.id)"
+              class="w-24 bg-red-500 hover:bg-red-600 text-white rounded-r-lg transition-colors duration-200 flex items-center justify-center text-sm font-medium"
+              title="삭제">
+              삭제
+            </button>
           </div>
-          <div class="flex justify-between items-center">
-            <span class="text-sm text-gray-600">{{ formatDate(expense.date) }}</span>
-            <div class="flex items-center gap-2">
+
+          <!-- 메인 카드 (스와이프 가능) -->
+          <div
+            class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-soft transition-all duration-200 transform"
+            :class="{ '-translate-x-48': swipedExpenseId === expense.id }" :data-expense-id="expense.id"
+            @touchstart="handleTouchStart($event, expense.id)" @touchmove="handleTouchMove" @touchend="handleTouchEnd"
+            @click="handleCardClick(expense.id)">
+
+            <div class="flex justify-between items-start mb-3">
+              <div class="flex-1 pr-4">
+                <h4 class="font-semibold text-gray-900">{{ expense.description || expense.store_name }}</h4>
+                <p class="text-sm text-gray-700">{{ expense.store_name }}</p>
+                <p v-if="expense.store_address" class="text-xs text-gray-500 mt-1">{{ expense.store_address }}</p>
+                <p v-if="expense.store_phone_number" class="text-xs text-gray-500">{{ expense.store_phone_number }}</p>
+              </div>
+              <span class="text-lg font-bold text-red-600 whitespace-nowrap">₩{{ expense.amount.toLocaleString()
+                }}</span>
+            </div>
+
+            <div class="flex justify-between items-end">
+              <span class="text-sm text-gray-600">{{ formatDate(expense.date) }}</span>
               <span class="inline-block px-3 py-1 rounded-full text-xs font-medium text-white" :class="{
                 'bg-orange-500': expense.category === '식비',
                 'bg-blue-500': expense.category === '교통비',
@@ -138,16 +159,6 @@
               }">
                 {{ expense.category }}
               </span>
-              <button @click="openEditModal(expense)"
-                class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded-lg transition-colors duration-200"
-                title="수정">
-                수정
-              </button>
-              <button @click="deleteExpense(expense.id)"
-                class="px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-xs rounded-lg transition-colors duration-200"
-                title="삭제">
-                삭제
-              </button>
             </div>
           </div>
         </div>
@@ -804,6 +815,50 @@ export default {
 
 
 
+    // 스와이프 관련 변수
+    const swipedExpenseId = ref(null)
+    const touchStartX = ref(0)
+    const touchStartY = ref(0)
+
+    // 스와이프 함수들
+    const handleTouchStart = (event, expenseId) => {
+      touchStartX.value = event.touches[0].clientX
+      touchStartY.value = event.touches[0].clientY
+    }
+
+    const handleTouchMove = (event) => {
+      // 스크롤을 방해하지 않도록 처리
+      event.preventDefault()
+    }
+
+    const handleTouchEnd = (event) => {
+      const touchEndX = event.changedTouches[0].clientX
+      const touchEndY = event.changedTouches[0].clientY
+      const deltaX = touchStartX.value - touchEndX
+      const deltaY = Math.abs(touchStartY.value - touchEndY)
+
+      // 수평 스와이프가 수직 스와이프보다 크고, 최소 거리 이상일 때만 처리
+      if (Math.abs(deltaX) > deltaY && Math.abs(deltaX) > 50) {
+        const expenseId = event.target.closest('[data-expense-id]')?.dataset.expenseId
+        if (expenseId) {
+          if (deltaX > 0) {
+            // 왼쪽으로 스와이프 - 액션 버튼 표시
+            swipedExpenseId.value = parseInt(expenseId)
+          } else {
+            // 오른쪽으로 스와이프 - 액션 버튼 숨김
+            swipedExpenseId.value = null
+          }
+        }
+      }
+    }
+
+    const handleCardClick = (expenseId) => {
+      // 카드가 스와이프된 상태에서 클릭하면 원래 상태로 복원
+      if (swipedExpenseId.value === expenseId) {
+        swipedExpenseId.value = null
+      }
+    }
+
     // 컴포넌트 마운트 시 지출 목록 조회
     onMounted(() => {
       fetchExpenses()
@@ -842,7 +897,12 @@ export default {
       deleteExpense,
       openEditModal,
       closeEditModal,
-      updateExpense
+      updateExpense,
+      swipedExpenseId,
+      handleTouchStart,
+      handleTouchMove,
+      handleTouchEnd,
+      handleCardClick
     }
   }
 }
