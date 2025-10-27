@@ -7,7 +7,7 @@ export default defineConfig({
     vue(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['BudgetlyApp.png'],
+      includeAssets: ['App.png'],
       manifest: {
         name: 'Budgetly - 예산 관리',
         short_name: 'Budgetly',
@@ -18,23 +18,23 @@ export default defineConfig({
         start_url: '/',
         icons: [
           {
-            src: '/BudgetlyApp.png',
+            src: '/App.png',
             sizes: '192x192',
             type: 'image/png'
           },
           {
-            src: '/BudgetlyApp.png',
+            src: '/App.png',
             sizes: '512x512',
             type: 'image/png'
           },
           {
-            src: '/BudgetlyApp.png',
+            src: '/App.png',
             sizes: '192x192',
             type: 'image/png',
             purpose: 'maskable'
           },
           {
-            src: '/BudgetlyApp.png',
+            src: '/App.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'maskable'
