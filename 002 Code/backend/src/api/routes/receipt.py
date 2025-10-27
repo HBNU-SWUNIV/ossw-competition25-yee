@@ -8,6 +8,57 @@ from src.api.dependencies import get_current_user
 router = APIRouter(prefix="/receipt", tags=["receipt"])
 
 
+@router.post("/ocr")
+async def ocr_receipt(
+    file: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    영수증 이미지 OCR 처리만 수행 (Expense 생성 안함)
+
+    - OCR 처리하여 영수증 정보 추출
+    - Receipt는 저장하지만 Expense는 생성하지 않음
+    - 프론트엔드에서 "등록" 버튼 클릭 시 Expense 생성
+
+    **플로우:**
+    1. 이미지 업로드
+    2. OCR 처리
+    3. 상호명, 주소, 전화번호, 날짜, 금액 추출
+    4. Receipt 정보만 반환 (DB 저장 안함)
+    """
+    try:
+        # 인증된 사용자 ID 가져오기
+        user_id = current_user["user_id"]
+
+        # 이미지 파일 읽기
+        image_data = await file.read()
+
+        # OCR만 수행
+        from src.services.ocr_service import ocr_service
+        ocr_result = await ocr_service.process_receipt(image_data=image_data)
+
+        if ocr_result["status"] != "success":
+            raise HTTPException(status_code=400, detail=f"OCR 처리 실패: {ocr_result.get('message', 'Unknown error')}")
+
+        ocr_data = ocr_result["data"]
+
+        return {
+            "status": "success",
+            "data": {
+                "store_name": ocr_data.get("store_name", ""),
+                "store_address": ocr_data.get("store_address", ""),
+                "store_phone_number": ocr_data.get("store_phone_number", ""),
+                "date": ocr_data.get("date").isoformat() if hasattr(ocr_data.get("date"), 'isoformat') else str(ocr_data.get("date", "")),
+                "total_amount": ocr_data.get("total_amount", 0)
+            }
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.post("/upload")
 async def upload_receipt(
     file: UploadFile = File(...),

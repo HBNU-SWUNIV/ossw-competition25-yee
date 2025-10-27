@@ -57,36 +57,45 @@
     <div class="card overflow-hidden">
       <!-- 데스크톱 테이블 -->
       <div class="hidden lg:block">
-        <div class="grid grid-cols-5 gap-4 p-4 bg-gray-50 font-semibold text-gray-700 border-b">
+        <div class="grid grid-cols-6 gap-4 p-4 bg-gray-50 font-semibold text-gray-700 border-b">
           <div>날짜</div>
           <div>카테고리</div>
           <div>내용</div>
-          <div>부서</div>
+          <div>상점명</div>
+          <div>연락처</div>
           <div class="text-right">금액</div>
         </div>
         <div class="divide-y divide-gray-200">
-          <div 
-            v-for="expense in filteredExpenses" 
-            :key="expense.id" 
-            class="grid grid-cols-5 gap-4 p-4 hover:bg-gray-50 transition-colors duration-200"
+          <div
+            v-for="expense in filteredExpenses"
+            :key="expense.id"
+            class="grid grid-cols-6 gap-4 p-4 hover:bg-gray-50 transition-colors duration-200"
           >
             <div class="text-sm text-gray-600">{{ formatDate(expense.date) }}</div>
             <div>
-              <span 
+              <span
                 class="inline-block px-3 py-1 rounded-full text-xs font-medium text-white"
                 :class="{
                   'bg-orange-500': expense.category === '식비',
                   'bg-blue-500': expense.category === '교통비',
                   'bg-green-500': expense.category === '사무용품',
-                  'bg-purple-500': expense.category === '마케팅',
+                  'bg-purple-500': expense.category === '회식',
+                  'bg-red-500': expense.category === '공과금',
+                  'bg-yellow-600': expense.category === '유흥',
+                  'bg-indigo-500': expense.category === '교육',
+                  'bg-pink-500': expense.category === '의료',
                   'bg-gray-500': expense.category === '기타'
                 }"
               >
                 {{ expense.category }}
               </span>
             </div>
-            <div class="font-medium">{{ expense.description }}</div>
-            <div class="text-sm text-gray-600">{{ expense.department }}</div>
+            <div class="font-medium">{{ expense.description || expense.store_name }}</div>
+            <div class="text-sm">
+              <div class="font-medium text-gray-900">{{ expense.store_name }}</div>
+              <div v-if="expense.store_address" class="text-xs text-gray-500">{{ expense.store_address }}</div>
+            </div>
+            <div class="text-sm text-gray-600">{{ expense.store_phone_number || '-' }}</div>
             <div class="text-right font-semibold text-red-600">₩{{ expense.amount.toLocaleString() }}</div>
           </div>
         </div>
@@ -94,27 +103,33 @@
 
       <!-- 모바일 카드 -->
       <div class="lg:hidden space-y-4 p-4">
-        <div 
-          v-for="expense in filteredExpenses" 
-          :key="expense.id" 
+        <div
+          v-for="expense in filteredExpenses"
+          :key="expense.id"
           class="border border-gray-200 rounded-lg p-4 hover:shadow-soft transition-shadow duration-200"
         >
           <div class="flex justify-between items-start mb-3">
             <div>
-              <h4 class="font-semibold text-gray-900">{{ expense.description }}</h4>
-              <p class="text-sm text-gray-600">{{ expense.department }}</p>
+              <h4 class="font-semibold text-gray-900">{{ expense.description || expense.store_name }}</h4>
+              <p class="text-sm text-gray-700">{{ expense.store_name }}</p>
+              <p v-if="expense.store_address" class="text-xs text-gray-500 mt-1">{{ expense.store_address }}</p>
+              <p v-if="expense.store_phone_number" class="text-xs text-gray-500">{{ expense.store_phone_number }}</p>
             </div>
             <span class="text-lg font-bold text-red-600">₩{{ expense.amount.toLocaleString() }}</span>
           </div>
           <div class="flex justify-between items-center">
             <span class="text-sm text-gray-600">{{ formatDate(expense.date) }}</span>
-            <span 
+            <span
               class="inline-block px-3 py-1 rounded-full text-xs font-medium text-white"
               :class="{
                 'bg-orange-500': expense.category === '식비',
                 'bg-blue-500': expense.category === '교통비',
                 'bg-green-500': expense.category === '사무용품',
-                'bg-purple-500': expense.category === '마케팅',
+                'bg-purple-500': expense.category === '회식',
+                'bg-red-500': expense.category === '공과금',
+                'bg-yellow-600': expense.category === '유흥',
+                'bg-indigo-500': expense.category === '교육',
+                'bg-pink-500': expense.category === '의료',
                 'bg-gray-500': expense.category === '기타'
               }"
             >
@@ -457,13 +472,13 @@ export default {
       if (cameraInput.value) cameraInput.value.value = ''
     }
 
-    // OCR 분석 수행 (백엔드 API 호출)
+    // OCR 분석 수행 (백엔드 API 호출 - Expense 생성 안함)
     const performOcrAnalysis = async (file) => {
       try {
         console.log('[OCR] 파일 업로드 시작:', file.name)
 
-        // 백엔드 OCR API 호출
-        const result = await receiptAPI.uploadReceipt(file)
+        // 백엔드 OCR API 호출 (OCR만 수행, Expense 생성 안함)
+        const result = await receiptAPI.performOCR(file)
 
         console.log('[OCR] API 응답:', result)
 
@@ -472,19 +487,19 @@ export default {
 
           // OCR 결과 저장
           ocrData.value = {
-            date: new Date().toISOString().split('T')[0], // 임시로 오늘 날짜
+            date: result.data.date || new Date().toISOString().split('T')[0],
             amount: result.data.total_amount,
             merchant: result.data.store_name,
-            receipt_id: result.data.receipt_id
+            address: result.data.store_address || '',
+            phone: result.data.store_phone_number || ''
           }
 
           // OCR 결과를 폼에 자동 입력
           expenseForm.value.date = ocrData.value.date || ''
           expenseForm.value.amount = ocrData.value.amount || ''
           expenseForm.value.merchant = ocrData.value.merchant || ''
-          expenseForm.value.receipt_id = ocrData.value.receipt_id || ''
 
-          alert(`OCR 처리 완료!\n상호명: ${ocrData.value.merchant}\n금액: ${ocrData.value.amount}원`)
+          alert(`OCR 처리 완료!\n상호명: ${ocrData.value.merchant}\n주소: ${ocrData.value.address || '정보 없음'}\n전화번호: ${ocrData.value.phone || '정보 없음'}\n금액: ${ocrData.value.amount}원\n\n"등록" 버튼을 눌러 지출 내역을 저장하세요.`)
         } else {
           console.error('[OCR] 실패:', result.error)
           alert('OCR 처리 실패: ' + result.error)
@@ -528,13 +543,15 @@ export default {
 
         // 백엔드 API를 통해 지출 등록
         const expenseData = {
-          receipt_id: expenseForm.value.receipt_id || 'manual-' + Date.now(),
+          receipt_id: 'manual-' + Date.now(),
           store_name: expenseForm.value.merchant,
+          store_address: ocrData.value?.address || '',
+          store_phone_number: ocrData.value?.phone || '',
           amount: parseFloat(expenseForm.value.amount),
           date: isoDate,  // ISO 형식으로 변환
-          item_name: expenseForm.value.merchant,
+          item_name: '',
           category: expenseForm.value.category,
-          description: expenseForm.value.description
+          description: expenseForm.value.description || `${expenseForm.value.merchant}에서 구매`
         }
 
         console.log('[registerExpense] 전송 데이터:', expenseData)

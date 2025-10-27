@@ -5,7 +5,53 @@ import apiClient from './client'
  */
 export const receiptAPI = {
   /**
-   * 영수증 업로드 및 OCR 처리
+   * OCR 처리만 수행 (Expense 생성 안함)
+   * @param {File} file - 영수증 이미지 파일
+   * @returns {Promise} OCR 처리 결과
+   */
+  async performOCR(file) {
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+
+      const response = await apiClient.post('/api/receipt/ocr', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      })
+
+      console.log('[receiptAPI] OCR 백엔드 응답:', response.data)
+
+      if (response.data && response.data.status === 'success') {
+        return {
+          success: true,
+          data: response.data.data
+        }
+      } else {
+        return {
+          success: false,
+          error: response.data?.message || 'OCR 처리에 실패했습니다.'
+        }
+      }
+    } catch (error) {
+      console.error('[receiptAPI] OCR 에러:', error)
+
+      if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+        return {
+          success: false,
+          error: 'OCR 처리 시간이 초과되었습니다. 이미지 크기를 줄이거나 다시 시도해주세요.'
+        }
+      }
+
+      return {
+        success: false,
+        error: error.response?.data?.detail || 'OCR 처리에 실패했습니다.'
+      }
+    }
+  },
+
+  /**
+   * 영수증 업로드 및 전체 처리 (OCR + Expense 자동 생성)
    * @param {File} file - 영수증 이미지 파일
    * @returns {Promise} OCR 처리 결과 및 영수증 정보
    */
