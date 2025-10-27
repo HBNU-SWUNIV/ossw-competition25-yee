@@ -18,30 +18,22 @@ bcrypt==4.1.2
 
 # HTTP Client
 requests==2.31.0
-httpx==0.26.0
 
-# OCR - PaddleOCR (Open Source, Apache 2.0 License)
-paddlepaddle==2.6.0
-paddleocr==2.7.0.3
+# Azure Document Intelligence (OCR)
+azure-ai-documentintelligence==1.0.0
+azure-core==1.29.5
+
+# Image Processing (for OCR and PDF)
 Pillow==10.2.0
 numpy>=1.21.0,<2.0.0
-opencv-python<=4.6.0.66
-shapely==2.0.2
+opencv-python==4.8.1.78
+
+# PDF Generation
+reportlab==4.0.7
 
 # Environment Variables
 python-dotenv==1.0.0
 
-# CORS
-fastapi-cors==0.0.6
-
-# Utilities
-python-dateutil==2.8.2
-
-# AI Model (Apache 2.0 License - Commercial Use OK)
-transformers==4.36.2
-torch==2.1.2
-sentencepiece==0.1.99
-
-# Testing
+# Testing (Optional - 개발용)
 pytest==8.0.0
 pytest-asyncio==0.23.3

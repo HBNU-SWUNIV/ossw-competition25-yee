@@ -143,5 +143,47 @@ export const expenseAPI = {
         error: error.response?.data?.detail || '영수증 지출 조회에 실패했습니다.'
       }
     }
+  },
+
+  /**
+   * 개별 지출 내역 PDF 내보내기
+   * @param {string} expenseId - 지출 ID
+   * @returns {Promise} PDF 다운로드
+   */
+  async exportExpensePDF(expenseId) {
+    try {
+      const response = await apiClient.get(`/api/expense/${expenseId}/pdf`, {
+        responseType: 'blob'
+      })
+
+      // Blob에서 파일명 추출 (Content-Disposition 헤더에서)
+      const contentDisposition = response.headers['content-disposition']
+      let filename = 'expense.pdf'
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename=(.+)/)
+        if (filenameMatch) {
+          filename = filenameMatch[1].replace(/['"]/g, '')
+        }
+      }
+
+      // Blob URL 생성 및 다운로드
+      const url = window.URL.createObjectURL(new Blob([response.data]))
+      const link = document.createElement('a')
+      link.href = url
+      link.setAttribute('download', filename)
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.URL.revokeObjectURL(url)
+
+      return {
+        success: true
+      }
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.detail || 'PDF 내보내기에 실패했습니다.'
+      }
+    }
   }
 }

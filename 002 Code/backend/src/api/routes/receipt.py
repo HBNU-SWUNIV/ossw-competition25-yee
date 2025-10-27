@@ -14,7 +14,7 @@ async def ocr_receipt(
     current_user: dict = Depends(get_current_user)
 ):
     """
-    영수증 이미지 OCR 처리만 수행 (Expense 생성 안함)
+    영수증 이미지 OCR 처리 및 Receipt 저장 (Expense 생성 안함)
 
     - OCR 처리하여 영수증 정보 추출
     - Receipt는 저장하지만 Expense는 생성하지 않음
@@ -24,7 +24,7 @@ async def ocr_receipt(
     1. 이미지 업로드
     2. OCR 처리
     3. 상호명, 주소, 전화번호, 날짜, 금액 추출
-    4. Receipt 정보만 반환 (DB 저장 안함)
+    4. Receipt 정보 반환 및 DB 저장
     """
     try:
         # 인증된 사용자 ID 가져오기
@@ -33,8 +33,16 @@ async def ocr_receipt(
         # 이미지 파일 읽기
         image_data = await file.read()
 
-        # OCR만 수행
+        # 1. Firebase Storage에 이미지 업로드
+        from src.core.firebase import firebase_client
         from src.services.ocr_service import ocr_service
+        
+        uploaded_image_url = firebase_client.upload_image(
+            image_data=image_data,
+            user_id=user_id
+        )
+
+        # 2. OCR 처리
         ocr_result = await ocr_service.process_receipt(image_data=image_data)
 
         if ocr_result["status"] != "success":
@@ -42,15 +50,46 @@ async def ocr_receipt(
 
         ocr_data = ocr_result["data"]
 
-        # 날짜를 YYYY-MM-DD 형식으로 변환
+        # 3. 날짜 처리
         date_value = ocr_data.get("date")
         if isinstance(date_value, datetime):
-            date_str = date_value.strftime("%Y-%m-%d")
+            purchase_date = date_value
         else:
-            date_str = str(date_value) if date_value else ""
+            try:
+                purchase_date = datetime.strptime(str(date_value), "%Y-%m-%d")
+            except:
+                purchase_date = datetime.utcnow()
+
+        # 4. Receipt 데이터 생성
+        receipt_data = {
+            "user_id": user_id,
+            "store_name": ocr_data.get("store_name", ""),
+            "store_address": ocr_data.get("store_address", ""),
+            "store_phone_number": ocr_data.get("store_phone_number", ""),
+            "total_amount": ocr_data.get("total_amount", 0),
+            "purchase_date": purchase_date,
+            "items": [],
+            "image_url": uploaded_image_url,
+            "ocr_raw_data": ocr_result.get("raw_ocr_response"),
+            "ocr_status": "completed",
+            "ocr_processed_at": datetime.utcnow(),
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow()
+        }
+
+        # 5. Firestore에 Receipt 저장
+        receipt_ref = firebase_client.db.collection("receipts").document()
+        receipt_ref.set(receipt_data)
+        receipt_id = receipt_ref.id
+
+        print(f"[SUCCESS] Receipt saved: {receipt_id}")
+
+        # 6. 날짜를 YYYY-MM-DD 형식으로 변환하여 반환
+        date_str = purchase_date.strftime("%Y-%m-%d")
 
         return {
             "status": "success",
+            "receipt_id": receipt_id,
             "data": {
                 "store_name": ocr_data.get("store_name", ""),
                 "store_address": ocr_data.get("store_address", ""),
@@ -63,6 +102,7 @@ async def ocr_receipt(
     except HTTPException:
         raise
     except Exception as e:
+        print(f"[ERROR] Receipt OCR/Upload failed: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
