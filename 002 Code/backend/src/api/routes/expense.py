@@ -36,6 +36,8 @@ async def create_expense(
             store_name=expense_data.store_name,
             amount=expense_data.amount,
             date=expense_data.date,
+            store_address=expense_data.store_address,
+            store_phone_number=expense_data.store_phone_number,
             item_name=expense_data.item_name,
             category=expense_data.category,
             description=expense_data.description
