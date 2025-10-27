@@ -36,7 +36,7 @@ class ExpenseResponse(ExpenseBase):
     """지출 응답 스키마"""
     id: str
     user_id: str
-    receipt_id: str
+    receipt_id: Optional[str]
     classification_method: str
     classification_confidence: Optional[float] = None
     created_at: datetime
