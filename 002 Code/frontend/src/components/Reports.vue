@@ -78,7 +78,7 @@
     </div>
 
     <!-- 요약 카드 -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div class="card p-6 hover:shadow-medium transition-shadow duration-200">
         <div>
           <h3 class="text-sm font-medium text-gray-600 mb-1">총 지출</h3>
@@ -101,97 +101,26 @@
           <span class="text-sm text-gray-600">{{ getAverageDescription() }}</span>
         </div>
       </div>
-    </div>
 
-    <div class="card p-6 hover:shadow-medium transition-shadow duration-200">
-      <div>
-        <h3 class="text-sm font-medium text-gray-600 mb-1">지출 건수</h3>
-        <p class="text-2xl font-bold text-gray-900">{{ currentData.transactionCount }}건</p>
-        <span class="text-sm text-gray-600">{{ getTransactionDescription() }}</span>
-      </div>
-    </div>
-
-    <div class="card p-6 hover:shadow-medium transition-shadow duration-200">
-      <div>
-        <h3 class="text-sm font-medium text-gray-600 mb-1">예산 대비</h3>
-        <p class="text-2xl font-bold text-gray-900">{{ currentData.budgetUsage }}%</p>
-        <span class="text-sm" :class="{
-          'text-red-600': currentData.budgetUsage > 80,
-          'text-green-600': currentData.budgetUsage < 50,
-          'text-gray-600': currentData.budgetUsage >= 50 && currentData.budgetUsage <= 80
-        }">
-          {{ getBudgetStatusText() }}
-        </span>
-      </div>
-    </div>
-  </div>
-
-  <!-- 차트 섹션 -->
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-    <!-- 부서별 지출 차트 -->
-    <div class="card p-6">
-      <h3 class="text-xl font-semibold text-gray-900 mb-6">{{ getChartTitle('department') }}</h3>
-      <div class="space-y-4">
-        <div v-for="(dept, index) in departmentData" :key="index" class="space-y-2">
-          <div class="flex justify-between items-center">
-            <span class="font-medium text-gray-900">{{ dept.name }}</span>
-            <span class="font-semibold text-primary-600">₩{{ dept.amount.toLocaleString() }}</span>
-          </div>
-          <div class="w-full bg-gray-200 rounded-full h-2">
-            <div class="h-2 rounded-full bg-primary-600 transition-all duration-300"
-              :style="{ width: Math.min((dept.amount / Math.max(...departmentData.map(d => d.amount)) * 100), 100) + '%' }">
-            </div>
-          </div>
+      <div class="card p-6 hover:shadow-medium transition-shadow duration-200">
+        <div>
+          <h3 class="text-sm font-medium text-gray-600 mb-1">지출 건수</h3>
+          <p class="text-2xl font-bold text-gray-900">{{ currentData.transactionCount }}건</p>
+          <span class="text-sm text-gray-600">{{ getTransactionDescription() }}</span>
         </div>
       </div>
-    </div>
 
-    <!-- 트렌드 차트 -->
-    <div class="card p-6">
-      <h3 class="text-xl font-semibold text-gray-900 mb-6">{{ getChartTitle('trend') }}</h3>
-      <div class="h-48 flex items-end justify-between gap-2">
-        <div v-for="(period, index) in trendData" :key="index" class="flex flex-col items-center flex-1">
-          <div
-            class="w-full bg-gradient-to-t from-primary-600 to-primary-400 rounded-t transition-all duration-300 min-h-4"
-            :style="{ height: (period.amount / Math.max(...trendData.map(p => p.amount)) * 100) + '%' }"></div>
-          <div class="text-xs text-gray-600 mt-2 text-center">
-            <div class="font-medium">{{ period.label }}</div>
-            <div class="text-gray-500">₩{{ period.amount.toLocaleString() }}</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 상세 리포트 -->
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-    <!-- 카테고리 분석 -->
-    <div class="card p-6">
-      <h3 class="text-xl font-semibold text-gray-900 mb-6">카테고리별 분석</h3>
-      <div class="space-y-4">
-        <div v-for="(category, index) in categoryData" :key="index" class="border border-gray-200 rounded-lg p-4">
-          <div class="flex justify-between items-center mb-2">
-            <span class="font-medium text-gray-900">{{ category.name }}</span>
-            <span class="font-semibold text-red-600">₩{{ category.amount.toLocaleString() }}</span>
-          </div>
-          <div class="flex items-center gap-4 mb-2">
-            <div class="flex-1 bg-gray-200 rounded-full h-2">
-              <div class="h-2 rounded-full bg-primary-600 transition-all duration-300"
-                :style="{ width: Math.min((category.amount / Math.max(...categoryData.map(c => c.amount)) * 100), 100) + '%' }">
-              </div>
-            </div>
-            <span class="text-sm font-medium text-gray-600">{{Math.round((category.amount / categoryData.reduce((sum,
-              c) => sum + c.amount, 0)) * 100)}}%</span>
-          </div>
-          <div class="text-right">
-            <span class="text-sm font-medium" :class="{
-              'text-red-600': category.trend > 0,
-              'text-green-600': category.trend < 0,
-              'text-gray-600': category.trend === 0
-            }">
-              {{ category.trend > 0 ? '+' : '' }}{{ category.trend }}%
-            </span>
-          </div>
+      <div class="card p-6 hover:shadow-medium transition-shadow duration-200">
+        <div>
+          <h3 class="text-sm font-medium text-gray-600 mb-1">예산 대비</h3>
+          <p class="text-2xl font-bold text-gray-900">{{ currentData.budgetUsage }}%</p>
+          <span class="text-sm" :class="{
+            'text-red-600': currentData.budgetUsage > 80,
+            'text-green-600': currentData.budgetUsage < 50,
+            'text-gray-600': currentData.budgetUsage >= 50 && currentData.budgetUsage <= 80
+          }">
+            {{ getBudgetStatusText() }}
+          </span>
         </div>
       </div>
     </div>
@@ -284,6 +213,74 @@
                 {{ expense.category }}
               </span>
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 차트 섹션 -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- 부서별 지출 차트 -->
+      <div class="card p-6">
+        <h3 class="text-xl font-semibold text-gray-900 mb-6">{{ getChartTitle('department') }}</h3>
+        <div class="space-y-4">
+          <div v-for="(dept, index) in departmentData" :key="index" class="space-y-2">
+            <div class="flex justify-between items-center">
+              <span class="font-medium text-gray-900">{{ dept.name }}</span>
+              <span class="font-semibold text-primary-600">₩{{ dept.amount.toLocaleString() }}</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-2">
+              <div class="h-2 rounded-full bg-primary-600 transition-all duration-300"
+                :style="{ width: Math.min((dept.amount / Math.max(...departmentData.map(d => d.amount)) * 100), 100) + '%' }">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 트렌드 차트 -->
+      <div class="card p-6">
+        <h3 class="text-xl font-semibold text-gray-900 mb-6">{{ getChartTitle('trend') }}</h3>
+        <div class="h-48 flex items-end justify-between gap-2">
+          <div v-for="(period, index) in trendData" :key="index" class="flex flex-col items-center flex-1">
+            <div
+              class="w-full bg-gradient-to-t from-primary-600 to-primary-400 rounded-t transition-all duration-300 min-h-4"
+              :style="{ height: (period.amount / Math.max(...trendData.map(p => p.amount)) * 100) + '%' }"></div>
+            <div class="text-xs text-gray-600 mt-2 text-center">
+              <div class="font-medium">{{ period.label }}</div>
+              <div class="text-gray-500">₩{{ period.amount.toLocaleString() }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 카테고리 분석 -->
+    <div class="card p-6">
+      <h3 class="text-xl font-semibold text-gray-900 mb-6">카테고리별 분석</h3>
+      <div class="space-y-4">
+        <div v-for="(category, index) in categoryData" :key="index" class="border border-gray-200 rounded-lg p-4">
+          <div class="flex justify-between items-center mb-2">
+            <span class="font-medium text-gray-900">{{ category.name }}</span>
+            <span class="font-semibold text-red-600">₩{{ category.amount.toLocaleString() }}</span>
+          </div>
+          <div class="flex items-center gap-4 mb-2">
+            <div class="flex-1 bg-gray-200 rounded-full h-2">
+              <div class="h-2 rounded-full bg-primary-600 transition-all duration-300"
+                :style="{ width: Math.min((category.amount / Math.max(...categoryData.map(c => c.amount)) * 100), 100) + '%' }">
+              </div>
+            </div>
+            <span class="text-sm font-medium text-gray-600">{{Math.round((category.amount / categoryData.reduce((sum,
+              c) => sum + c.amount, 0)) * 100)}}%</span>
+          </div>
+          <div class="text-right">
+            <span class="text-sm font-medium" :class="{
+              'text-red-600': category.trend > 0,
+              'text-green-600': category.trend < 0,
+              'text-gray-600': category.trend === 0
+            }">
+              {{ category.trend > 0 ? '+' : '' }}{{ category.trend }}%
+            </span>
           </div>
         </div>
       </div>

@@ -96,12 +96,12 @@
                 <button @click="openEditModal(expense)"
                   class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-lg transition-colors duration-200"
                   title="수정">
-                  ✏️ 수정
+                  수정
                 </button>
                 <button @click="deleteExpense(expense.id)"
                   class="px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-sm rounded-lg transition-colors duration-200"
                   title="삭제">
-                  🗑️ 삭제
+                  삭제
                 </button>
               </div>
             </div>
@@ -141,12 +141,12 @@
               <button @click="openEditModal(expense)"
                 class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded-lg transition-colors duration-200"
                 title="수정">
-                ✏️
+                수정
               </button>
               <button @click="deleteExpense(expense.id)"
                 class="px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-xs rounded-lg transition-colors duration-200"
                 title="삭제">
-                🗑️
+                삭제
               </button>
             </div>
           </div>

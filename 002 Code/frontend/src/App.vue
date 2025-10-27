@@ -22,9 +22,9 @@
 
     <!-- 사이드바 -->
     <nav
-      class="fixed top-0 left-0 h-full w-80 bg-white shadow-toss z-50 sidebar-transition transform border-r border-gray-100"
+      class="fixed top-0 left-0 h-full w-80 bg-white shadow-toss z-50 sidebar-transition transform border-r border-gray-100 flex flex-col"
       :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'">
-      <div class="flex items-center justify-between p-6 border-b border-gray-100">
+      <div class="flex items-center justify-between p-6 border-b border-gray-100 flex-shrink-0">
         <h2 class="text-lg font-bold leading-tight" style="color: #3e56f6;">Budgetly</h2>
         <button
           class="w-10 h-10 flex items-center justify-center rounded-2xl hover:bg-gray-100 transition-colors duration-200"
@@ -33,60 +33,62 @@
         </button>
       </div>
 
-      <ul class="px-4 py-2 space-y-1 pb-24">
-        <li>
-          <a href="#" @click="selectMenu('home')"
-            class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-2xl transition-all duration-200"
-            :class="{ 'bg-blue-50 text-blue-600 font-semibold': activeMenu === 'home' }">
-            <span class="font-medium">홈</span>
-          </a>
-        </li>
-        <li>
-          <a href="#" @click="selectMenu('budget')"
-            class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-2xl transition-all duration-200"
-            :class="{ 'bg-blue-50 text-blue-600 font-semibold': activeMenu === 'budget' }">
-            <span class="font-medium">예산관리</span>
-          </a>
-        </li>
-        <li>
-          <a href="#" @click="selectMenu('expenses')"
-            class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-2xl transition-all duration-200"
-            :class="{ 'bg-blue-50 text-blue-600 font-semibold': activeMenu === 'expenses' }">
-            <span class="font-medium">지출내역</span>
-          </a>
-        </li>
-        <li>
-          <a href="#" @click="selectMenu('reports')"
-            class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-2xl transition-all duration-200"
-            :class="{ 'bg-blue-50 text-blue-600 font-semibold': activeMenu === 'reports' }">
-            <span class="font-medium">리포트</span>
-          </a>
-        </li>
-        <li>
-          <a href="#" @click="selectMenu('departments')"
-            class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-2xl transition-all duration-200"
-            :class="{ 'bg-blue-50 text-blue-600 font-semibold': activeMenu === 'departments' }">
-            <span class="font-medium">자치기구 관리</span>
-          </a>
-        </li>
-        <li>
-          <a href="#" @click="selectMenu('settings')"
-            class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-2xl transition-all duration-200"
-            :class="{ 'bg-blue-50 text-blue-600 font-semibold': activeMenu === 'settings' }">
-            <span class="font-medium">설정</span>
-          </a>
-        </li>
-      </ul>
+      <div class="flex-1 overflow-y-auto">
+        <ul class="px-4 py-2 space-y-1">
+          <li>
+            <a href="#" @click="selectMenu('home')"
+              class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-2xl transition-all duration-200"
+              :class="{ 'bg-blue-50 text-blue-600 font-semibold': activeMenu === 'home' }">
+              <span class="font-medium">홈</span>
+            </a>
+          </li>
+          <li>
+            <a href="#" @click="selectMenu('budget')"
+              class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-2xl transition-all duration-200"
+              :class="{ 'bg-blue-50 text-blue-600 font-semibold': activeMenu === 'budget' }">
+              <span class="font-medium">예산관리</span>
+            </a>
+          </li>
+          <li>
+            <a href="#" @click="selectMenu('expenses')"
+              class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-2xl transition-all duration-200"
+              :class="{ 'bg-blue-50 text-blue-600 font-semibold': activeMenu === 'expenses' }">
+              <span class="font-medium">지출내역</span>
+            </a>
+          </li>
+          <li>
+            <a href="#" @click="selectMenu('reports')"
+              class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-2xl transition-all duration-200"
+              :class="{ 'bg-blue-50 text-blue-600 font-semibold': activeMenu === 'reports' }">
+              <span class="font-medium">리포트</span>
+            </a>
+          </li>
+          <li>
+            <a href="#" @click="selectMenu('departments')"
+              class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-2xl transition-all duration-200"
+              :class="{ 'bg-blue-50 text-blue-600 font-semibold': activeMenu === 'departments' }">
+              <span class="font-medium">자치기구 관리</span>
+            </a>
+          </li>
+          <li>
+            <a href="#" @click="selectMenu('settings')"
+              class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-2xl transition-all duration-200"
+              :class="{ 'bg-blue-50 text-blue-600 font-semibold': activeMenu === 'settings' }">
+              <span class="font-medium">설정</span>
+            </a>
+          </li>
+        </ul>
+      </div>
 
       <!-- 사용자 정보 및 로그아웃 -->
-      <div class="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-100 bg-white">
-        <div class="flex flex-col items-center p-4 bg-gray-50 rounded-2xl space-y-3">
-          <div class="text-center">
+      <div class="flex-shrink-0 p-4 border-t border-gray-100 bg-white">
+        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-2xl">
+          <div class="flex-1">
             <p class="text-sm font-semibold text-gray-900">{{ userInfo?.name }}</p>
             <p class="text-xs text-gray-500">{{ userInfo?.role === 'admin' ? '관리자' : '사용자' }}</p>
           </div>
           <button @click="handleLogout"
-            class="w-full px-3 py-2 text-sm font-semibold text-gray-600 hover:text-gray-800 hover:bg-gray-200 rounded-xl transition-all duration-200">
+            class="px-3 py-2 text-sm font-semibold text-gray-600 hover:text-gray-800 hover:bg-gray-200 rounded-xl transition-all duration-200">
             로그아웃
           </button>
         </div>
@@ -95,7 +97,7 @@
 
     <!-- 메인 콘텐츠 -->
     <main class="min-h-screen transition-all duration-300" :class="{ 'ml-0': !sidebarOpen, 'lg:ml-80': sidebarOpen }">
-      <div class="flex justify-center px-4 sm:px-6 lg:px-8 py-12">
+      <div class="flex justify-center px-4 sm:px-6 lg:px-8 pt-8 sm:pt-12 pb-12">
         <div class="w-full max-w-6xl">
           <!-- 대시보드 메인 화면 -->
           <div v-if="activeMenu === 'home'" class="space-y-8">
