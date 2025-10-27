@@ -21,7 +21,7 @@ requests==2.31.0
 
 # Azure Document Intelligence (OCR)
 azure-ai-documentintelligence==1.0.0
-azure-core==1.29.5
+azure-core==1.30.0
 
 # Image Processing (for OCR and PDF)
 Pillow==10.2.0

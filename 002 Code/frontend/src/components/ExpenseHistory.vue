@@ -99,13 +99,22 @@
             <div class="text-sm text-gray-600">{{ expense.store_phone_number || '-' }}</div>
             <div class="text-right font-semibold text-red-600">₩{{ expense.amount.toLocaleString() }}</div>
             <div class="text-right">
-              <button
-                @click="deleteExpense(expense.id)"
-                class="px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-sm rounded-lg transition-colors duration-200"
-                title="삭제"
-              >
-                🗑️ 삭제
-              </button>
+              <div class="flex gap-2 justify-end">
+                <button
+                  @click="openEditModal(expense)"
+                  class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-lg transition-colors duration-200"
+                  title="수정"
+                >
+                  ✏️ 수정
+                </button>
+                <button
+                  @click="deleteExpense(expense.id)"
+                  class="px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-sm rounded-lg transition-colors duration-200"
+                  title="삭제"
+                >
+                  🗑️ 삭제
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -146,6 +155,13 @@
               >
                 {{ expense.category }}
               </span>
+              <button
+                @click="openEditModal(expense)"
+                class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded-lg transition-colors duration-200"
+                title="수정"
+              >
+                ✏️
+              </button>
               <button
                 @click="deleteExpense(expense.id)"
                 class="px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-xs rounded-lg transition-colors duration-200"
@@ -254,9 +270,17 @@
                 <span class="font-semibold text-gray-700">금액:</span>
                 <span class="font-medium text-gray-900">{{ ocrData.amount ? formatAmount(ocrData.amount) : '-' }}</span>
               </div>
-              <div class="flex justify-between items-center py-2">
+              <div class="flex justify-between items-center py-2 border-b border-gray-200">
                 <span class="font-semibold text-gray-700">상호명:</span>
                 <span class="font-medium text-gray-900">{{ ocrData.merchant || '-' }}</span>
+              </div>
+              <div class="flex justify-between items-center py-2 border-b border-gray-200">
+                <span class="font-semibold text-gray-700">주소:</span>
+                <span class="font-medium text-gray-900">{{ ocrData.address || '정보 없음' }}</span>
+              </div>
+              <div class="flex justify-between items-center py-2">
+                <span class="font-semibold text-gray-700">전화번호:</span>
+                <span class="font-medium text-gray-900">{{ ocrData.phone || '정보 없음' }}</span>
               </div>
             </div>
           </div>
@@ -302,10 +326,34 @@
                   <option value="식비">식비</option>
                   <option value="교통비">교통비</option>
                   <option value="사무용품">사무용품</option>
-                  <option value="마케팅">마케팅</option>
+                  <option value="회식">회식</option>
+                  <option value="공과금">공과금</option>
+                  <option value="유흥">유흥</option>
+                  <option value="교육">교육</option>
+                  <option value="의료">의료</option>
                   <option value="기타">기타</option>
                 </select>
               </div>
+            </div>
+
+            <div>
+              <label class="block text-sm font-semibold text-gray-900 mb-2">주소</label>
+              <input
+                type="text"
+                v-model="expenseForm.address"
+                class="input-field"
+                placeholder="주소 (OCR 또는 수동 입력)"
+              >
+            </div>
+
+            <div>
+              <label class="block text-sm font-semibold text-gray-900 mb-2">전화번호</label>
+              <input
+                type="text"
+                v-model="expenseForm.phone"
+                class="input-field"
+                placeholder="전화번호 (OCR 또는 수동 입력)"
+              >
             </div>
 
             <div>
@@ -335,6 +383,123 @@
         </div>
       </div>
     </div>
+
+    <!-- 지출 수정 모달 -->
+    <div v-if="showEditModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" @click.self="closeEditModal">
+      <div class="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-strong">
+        <!-- 모달 헤더 -->
+        <div class="flex items-center justify-between p-6 border-b border-gray-200 bg-gray-50 rounded-t-2xl">
+          <h2 class="flex items-center gap-3 text-xl font-semibold text-gray-900">
+            <span class="text-2xl">✏️</span>
+            지출 내역 수정
+          </h2>
+          <button 
+            class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-200 transition-colors duration-200"
+            @click="closeEditModal"
+          >
+            <span class="text-xl">&times;</span>
+          </button>
+        </div>
+
+        <div class="p-6 space-y-6">
+          <!-- 입력 폼 -->
+          <div class="space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-semibold text-gray-900 mb-2">날짜</label>
+                <input
+                  type="date"
+                  v-model="editForm.date"
+                  class="input-field"
+                  required
+                >
+              </div>
+              <div>
+                <label class="block text-sm font-semibold text-gray-900 mb-2">금액(원)</label>
+                <input
+                  type="number"
+                  v-model="editForm.amount"
+                  class="input-field"
+                  placeholder="금액 입력"
+                  required
+                >
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-semibold text-gray-900 mb-2">상호명</label>
+                <input
+                  type="text"
+                  v-model="editForm.store_name"
+                  class="input-field"
+                  placeholder="상호명"
+                  required
+                >
+              </div>
+              <div>
+                <label class="block text-sm font-semibold text-gray-900 mb-2">카테고리</label>
+                <select v-model="editForm.category" class="input-field">
+                  <option value="식비">식비</option>
+                  <option value="교통비">교통비</option>
+                  <option value="사무용품">사무용품</option>
+                  <option value="회식">회식</option>
+                  <option value="공과금">공과금</option>
+                  <option value="유흥">유흥</option>
+                  <option value="교육">교육</option>
+                  <option value="의료">의료</option>
+                  <option value="기타">기타</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-sm font-semibold text-gray-900 mb-2">주소</label>
+              <input
+                type="text"
+                v-model="editForm.store_address"
+                class="input-field"
+                placeholder="주소 (선택)"
+              >
+            </div>
+
+            <div>
+              <label class="block text-sm font-semibold text-gray-900 mb-2">전화번호</label>
+              <input
+                type="text"
+                v-model="editForm.store_phone_number"
+                class="input-field"
+                placeholder="전화번호 (선택)"
+              >
+            </div>
+
+            <div>
+              <label class="block text-sm font-semibold text-gray-900 mb-2">지출 설명</label>
+              <input
+                type="text"
+                v-model="editForm.description"
+                class="input-field"
+                placeholder="간단한 지출 목적"
+                required
+              >
+            </div>
+          </div>
+        </div>
+
+        <!-- 모달 푸터 -->
+        <div class="flex justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50 rounded-b-2xl">
+          <button class="btn-secondary" @click="closeEditModal">취소</button>
+          <button
+            class="btn-primary"
+            @click="updateExpense"
+            :disabled="!isEditFormValid"
+            :class="{ 'opacity-50 cursor-not-allowed': !isEditFormValid }"
+          >
+            수정하기
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -347,6 +512,7 @@ export default {
   name: 'ExpenseHistory',
   setup() {
     const showOcrModal = ref(false)
+    const showEditModal = ref(false)
     const selectedPeriod = ref('this-month')
     const searchQuery = ref('')
     const selectedCategory = ref('')
@@ -359,6 +525,9 @@ export default {
     const fileInput = ref(null)
     const cameraInput = ref(null)
 
+    // 수정용 state
+    const editingExpenseId = ref(null)
+
     // 폼 데이터
     const expenseForm = ref({
       date: '',
@@ -366,7 +535,19 @@ export default {
       merchant: '',
       category: '식비',
       description: '',
-      receipt_id: ''
+      receipt_id: '',
+      address: '',
+      phone: ''
+    })
+
+    const editForm = ref({
+      date: '',
+      amount: '',
+      store_name: '',
+      store_address: '',
+      store_phone_number: '',
+      category: '식비',
+      description: ''
     })
 
     const expenses = ref([])
@@ -410,6 +591,13 @@ export default {
              expenseForm.value.amount && 
              expenseForm.value.merchant && 
              expenseForm.value.description
+    })
+
+    const isEditFormValid = computed(() => {
+      return editForm.value.date && 
+             editForm.value.amount && 
+             editForm.value.store_name && 
+             editForm.value.description
     })
 
     // 파일 선택
@@ -530,6 +718,8 @@ export default {
           expenseForm.value.date = ocrData.value.date || ''
           expenseForm.value.amount = ocrData.value.amount || ''
           expenseForm.value.merchant = ocrData.value.merchant || ''
+          expenseForm.value.address = ocrData.value.address || ''
+          expenseForm.value.phone = ocrData.value.phone || ''
 
           alert(`OCR 처리 완료!\n상호명: ${ocrData.value.merchant}\n주소: ${ocrData.value.address || '정보 없음'}\n전화번호: ${ocrData.value.phone || '정보 없음'}\n금액: ${ocrData.value.amount}원\n\n"등록" 버튼을 눌러 지출 내역을 저장하세요.`)
         } else {
@@ -558,7 +748,10 @@ export default {
         amount: '',
         merchant: '',
         category: '식비',
-        description: ''
+        description: '',
+        receipt_id: '',
+        address: '',
+        phone: ''
       }
       ocrData.value = null
     }
@@ -579,8 +772,8 @@ export default {
         const expenseData = {
           receipt_id: 'manual-' + Date.now(),
           store_name: expenseForm.value.merchant,
-          store_address: ocrData.value?.address || '',
-          store_phone_number: ocrData.value?.phone || '',
+          store_address: expenseForm.value.address || '',
+          store_phone_number: expenseForm.value.phone || '',
           amount: parseFloat(expenseForm.value.amount),
           date: isoDate,  // ISO 형식으로 변환
           item_name: '',
@@ -636,6 +829,84 @@ export default {
       }
     }
 
+    // 수정 모달 열기
+    const openEditModal = (expense) => {
+      editingExpenseId.value = expense.id
+      
+      // 날짜를 YYYY-MM-DD 형식으로 변환
+      const dateObj = new Date(expense.date)
+      const year = dateObj.getFullYear()
+      const month = String(dateObj.getMonth() + 1).padStart(2, '0')
+      const day = String(dateObj.getDate()).padStart(2, '0')
+      const formattedDate = `${year}-${month}-${day}`
+
+      editForm.value = {
+        date: formattedDate,
+        amount: expense.amount,
+        store_name: expense.store_name || '',
+        store_address: expense.store_address || '',
+        store_phone_number: expense.store_phone_number || '',
+        category: expense.category,
+        description: expense.description || ''
+      }
+
+      showEditModal.value = true
+    }
+
+    // 수정 모달 닫기
+    const closeEditModal = () => {
+      showEditModal.value = false
+      editingExpenseId.value = null
+      editForm.value = {
+        date: '',
+        amount: '',
+        store_name: '',
+        store_address: '',
+        store_phone_number: '',
+        category: '식비',
+        description: ''
+      }
+    }
+
+    // 지출 수정
+    const updateExpense = async () => {
+      if (!isEditFormValid.value) {
+        alert('모든 필수 필드를 입력해주세요.')
+        return
+      }
+
+      try {
+        // 날짜를 ISO 형식으로 변환
+        const dateObj = new Date(editForm.value.date)
+        const isoDate = dateObj.toISOString()
+
+        const updateData = {
+          date: isoDate,
+          amount: parseFloat(editForm.value.amount),
+          store_name: editForm.value.store_name,
+          store_address: editForm.value.store_address,
+          store_phone_number: editForm.value.store_phone_number,
+          category: editForm.value.category,
+          description: editForm.value.description
+        }
+
+        console.log('[updateExpense] 수정 데이터:', updateData)
+
+        const result = await expenseAPI.updateExpense(editingExpenseId.value, updateData)
+
+        if (result.success) {
+          alert('지출 내역이 수정되었습니다.')
+          await fetchExpenses()
+          closeEditModal()
+        } else {
+          alert('수정 실패: ' + result.error)
+        }
+      } catch (error) {
+        console.error('[수정] 오류:', error)
+        alert('수정 중 오류가 발생했습니다.')
+      }
+    }
+
     // 컴포넌트 마운트 시 지출 목록 조회
     onMounted(() => {
       fetchExpenses()
@@ -643,6 +914,7 @@ export default {
 
     return {
       showOcrModal,
+      showEditModal,
       selectedPeriod,
       searchQuery,
       selectedCategory,
@@ -658,6 +930,7 @@ export default {
       fileInput,
       cameraInput,
       expenseForm,
+      editForm,
       handleFileSelect,
       handleCameraCapture,
       triggerFileSelect,
@@ -667,8 +940,12 @@ export default {
       closeOcrModal,
       registerExpense,
       isFormValid,
+      isEditFormValid,
       fetchExpenses,
-      deleteExpense
+      deleteExpense,
+      openEditModal,
+      closeEditModal,
+      updateExpense
     }
   }
 }
