@@ -27,12 +27,12 @@
         <h3>일반 설정</h3>
         <div class="setting-item">
           <label class="setting-label">
-            <span class="label-text">회사명</span>
+            <span class="label-text">학교명</span>
             <input 
               v-model="settings.general.companyName" 
               type="text" 
               class="setting-input"
-              placeholder="회사명을 입력하세요"
+              placeholder="학교명을 입력하세요"
             >
           </label>
         </div>
@@ -353,7 +353,7 @@ export default {
     
     const settings = ref({
       general: {
-        companyName: '우리회사',
+        companyName: '우리학교',
         currency: 'KRW',
         language: 'ko',
         timezone: 'Asia/Seoul'
