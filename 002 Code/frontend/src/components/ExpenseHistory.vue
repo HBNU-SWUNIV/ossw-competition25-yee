@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-8">
+  <div class="space-y-8 max-w-6xl mx-auto">
     <!-- 페이지 헤더 -->
     <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
       <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">지출 내역</h2>

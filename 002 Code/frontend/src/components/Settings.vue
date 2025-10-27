@@ -1,5 +1,5 @@
 <template>
-  <div class="settings">
+  <div class="settings max-w-6xl mx-auto">
     <div class="page-header">
       <h2>설정</h2>
       <button class="save-all-btn" @click="saveAllSettings">💾 모든 설정 저장</button>
@@ -28,15 +28,10 @@
         <div class="setting-item">
           <label class="setting-label">
             <span class="label-text">학교명</span>
-            <input 
-              v-model="settings.general.companyName" 
-              type="text" 
-              class="setting-input"
-              placeholder="학교명을 입력하세요"
-            >
+            <input v-model="settings.general.companyName" type="text" class="setting-input" placeholder="학교명을 입력하세요">
           </label>
         </div>
-        
+
         <div class="setting-item">
           <label class="setting-label">
             <span class="label-text">기본 통화</span>
@@ -79,12 +74,7 @@
         <div class="setting-item">
           <label class="setting-label">
             <span class="label-text">예산 승인 한도</span>
-            <input 
-              v-model.number="settings.budget.approvalLimit" 
-              type="number" 
-              class="setting-input"
-              placeholder="0"
-            >
+            <input v-model.number="settings.budget.approvalLimit" type="number" class="setting-input" placeholder="0">
           </label>
           <span class="setting-description">이 금액을 초과하는 예산은 승인이 필요합니다</span>
         </div>
@@ -92,14 +82,8 @@
         <div class="setting-item">
           <label class="setting-label">
             <span class="label-text">예산 경고 임계값 (%)</span>
-            <input 
-              v-model.number="settings.budget.warningThreshold" 
-              type="number" 
-              min="0" 
-              max="100"
-              class="setting-input"
-              placeholder="80"
-            >
+            <input v-model.number="settings.budget.warningThreshold" type="number" min="0" max="100"
+              class="setting-input" placeholder="80">
           </label>
           <span class="setting-description">예산 사용률이 이 값을 초과하면 경고를 표시합니다</span>
         </div>
@@ -107,11 +91,7 @@
         <div class="setting-item">
           <div class="checkbox-group">
             <label class="checkbox-label">
-              <input 
-                v-model="settings.budget.autoApproval" 
-                type="checkbox" 
-                class="setting-checkbox"
-              >
+              <input v-model="settings.budget.autoApproval" type="checkbox" class="setting-checkbox">
               <span class="checkmark"></span>
               <span class="checkbox-text">한도 내 자동 승인</span>
             </label>
@@ -121,11 +101,7 @@
         <div class="setting-item">
           <div class="checkbox-group">
             <label class="checkbox-label">
-              <input 
-                v-model="settings.budget.monthlyReset" 
-                type="checkbox" 
-                class="setting-checkbox"
-              >
+              <input v-model="settings.budget.monthlyReset" type="checkbox" class="setting-checkbox">
               <span class="checkmark"></span>
               <span class="checkbox-text">월별 예산 자동 리셋</span>
             </label>
@@ -139,11 +115,7 @@
         <div class="setting-item">
           <div class="checkbox-group">
             <label class="checkbox-label">
-              <input 
-                v-model="settings.notifications.email" 
-                type="checkbox" 
-                class="setting-checkbox"
-              >
+              <input v-model="settings.notifications.email" type="checkbox" class="setting-checkbox">
               <span class="checkmark"></span>
               <span class="checkbox-text">이메일 알림</span>
             </label>
@@ -153,11 +125,7 @@
         <div class="setting-item">
           <div class="checkbox-group">
             <label class="checkbox-label">
-              <input 
-                v-model="settings.notifications.push" 
-                type="checkbox" 
-                class="setting-checkbox"
-              >
+              <input v-model="settings.notifications.push" type="checkbox" class="setting-checkbox">
               <span class="checkmark"></span>
               <span class="checkbox-text">푸시 알림</span>
             </label>
@@ -167,11 +135,7 @@
         <div class="setting-item">
           <div class="checkbox-group">
             <label class="checkbox-label">
-              <input 
-                v-model="settings.notifications.budgetWarning" 
-                type="checkbox" 
-                class="setting-checkbox"
-              >
+              <input v-model="settings.notifications.budgetWarning" type="checkbox" class="setting-checkbox">
               <span class="checkmark"></span>
               <span class="checkbox-text">예산 경고 알림</span>
             </label>
@@ -181,11 +145,7 @@
         <div class="setting-item">
           <div class="checkbox-group">
             <label class="checkbox-label">
-              <input 
-                v-model="settings.notifications.monthlyReport" 
-                type="checkbox" 
-                class="setting-checkbox"
-              >
+              <input v-model="settings.notifications.monthlyReport" type="checkbox" class="setting-checkbox">
               <span class="checkmark"></span>
               <span class="checkbox-text">월간 리포트 알림</span>
             </label>
@@ -199,25 +159,15 @@
         <div class="setting-item">
           <label class="setting-label">
             <span class="label-text">세션 만료 시간 (분)</span>
-            <input 
-              v-model.number="settings.security.sessionTimeout" 
-              type="number" 
-              min="5" 
-              max="480"
-              class="setting-input"
-              placeholder="30"
-            >
+            <input v-model.number="settings.security.sessionTimeout" type="number" min="5" max="480"
+              class="setting-input" placeholder="30">
           </label>
         </div>
 
         <div class="setting-item">
           <div class="checkbox-group">
             <label class="checkbox-label">
-              <input 
-                v-model="settings.security.twoFactorAuth" 
-                type="checkbox" 
-                class="setting-checkbox"
-              >
+              <input v-model="settings.security.twoFactorAuth" type="checkbox" class="setting-checkbox">
               <span class="checkmark"></span>
               <span class="checkbox-text">2단계 인증 활성화</span>
             </label>
@@ -227,11 +177,7 @@
         <div class="setting-item">
           <div class="checkbox-group">
             <label class="checkbox-label">
-              <input 
-                v-model="settings.security.loginNotification" 
-                type="checkbox" 
-                class="setting-checkbox"
-              >
+              <input v-model="settings.security.loginNotification" type="checkbox" class="setting-checkbox">
               <span class="checkmark"></span>
               <span class="checkbox-text">로그인 알림</span>
             </label>
@@ -251,14 +197,8 @@
         <div class="setting-item">
           <label class="setting-label">
             <span class="label-text">데이터 보관 기간 (개월)</span>
-            <input 
-              v-model.number="settings.data.retentionPeriod" 
-              type="number" 
-              min="1" 
-              max="120"
-              class="setting-input"
-              placeholder="12"
-            >
+            <input v-model.number="settings.data.retentionPeriod" type="number" min="1" max="120" class="setting-input"
+              placeholder="12">
           </label>
           <span class="setting-description">이 기간이 지난 데이터는 자동으로 아카이브됩니다</span>
         </div>
@@ -323,10 +263,10 @@ export default {
   name: 'Settings',
   setup() {
     const showPasswordModal = ref(false)
-    
+
     // 사용자 정보 가져오기
     const userInfo = ref(null)
-    
+
     // 로컬 스토리지에서 사용자 정보 로드
     const loadUserInfo = () => {
       const storedUserInfo = localStorage.getItem('userInfo')
@@ -334,7 +274,7 @@ export default {
         userInfo.value = JSON.parse(storedUserInfo)
       }
     }
-    
+
     // 로그인 시간 포맷팅
     const formatLoginTime = (loginTime) => {
       if (!loginTime) return '알 수 없음'
@@ -347,10 +287,10 @@ export default {
         minute: '2-digit'
       })
     }
-    
+
     // 컴포넌트 마운트 시 사용자 정보 로드
     loadUserInfo()
-    
+
     const settings = ref({
       general: {
         companyName: '우리학교',
@@ -585,7 +525,8 @@ export default {
   font-size: 0.95rem;
 }
 
-.setting-input, .setting-select {
+.setting-input,
+.setting-select {
   padding: 12px 16px;
   border: 1px solid #ddd;
   border-radius: 8px;
@@ -593,7 +534,8 @@ export default {
   transition: border-color 0.3s ease;
 }
 
-.setting-input:focus, .setting-select:focus {
+.setting-input:focus,
+.setting-select:focus {
   outline: none;
   border-color: #1976d2;
 }
@@ -633,12 +575,12 @@ export default {
   transition: all 0.3s ease;
 }
 
-.setting-checkbox:checked + .checkmark {
+.setting-checkbox:checked+.checkmark {
   background: #1976d2;
   border-color: #1976d2;
 }
 
-.setting-checkbox:checked + .checkmark:after {
+.setting-checkbox:checked+.checkmark:after {
   content: '';
   position: absolute;
   left: 6px;
@@ -676,7 +618,8 @@ export default {
   flex-wrap: wrap;
 }
 
-.export-btn, .backup-btn {
+.export-btn,
+.backup-btn {
   background: #1976d2;
   color: white;
   border: none;
@@ -687,7 +630,8 @@ export default {
   transition: background 0.3s ease;
 }
 
-.export-btn:hover, .backup-btn:hover {
+.export-btn:hover,
+.backup-btn:hover {
   background: #1565c0;
 }
 
@@ -786,7 +730,8 @@ export default {
   margin-top: 2rem;
 }
 
-.cancel-btn, .save-btn {
+.cancel-btn,
+.save-btn {
   padding: 12px 24px;
   border: none;
   border-radius: 6px;
@@ -820,30 +765,33 @@ export default {
     grid-template-columns: repeat(2, 1fr);
     gap: 2.5rem;
   }
-  
+
   .settings-section {
     padding: 2.5rem;
   }
-  
+
   .settings-section h3 {
     font-size: 1.4rem;
     margin-bottom: 2rem;
   }
-  
+
   .setting-item {
     margin-bottom: 2rem;
   }
-  
-  .setting-input, .setting-select {
+
+  .setting-input,
+  .setting-select {
     padding: 14px 18px;
     font-size: 1.1rem;
   }
-  
+
   .data-actions {
     gap: 1.5rem;
   }
-  
-  .export-btn, .backup-btn, .change-password-btn {
+
+  .export-btn,
+  .backup-btn,
+  .change-password-btn {
     padding: 14px 24px;
     font-size: 1.1rem;
   }
@@ -854,7 +802,7 @@ export default {
   .settings-container {
     gap: 2rem;
   }
-  
+
   .settings-section {
     padding: 2rem;
   }
@@ -867,70 +815,72 @@ export default {
     align-items: stretch;
     gap: 1rem;
   }
-  
+
   .save-all-btn {
     width: 100%;
     padding: 14px 20px;
     font-size: 1.1rem;
   }
-  
+
   .settings-container {
     gap: 1.5rem;
   }
-  
+
   .settings-section {
     padding: 1.8rem;
   }
-  
+
   .settings-section h3 {
     font-size: 1.2rem;
   }
-  
+
   .setting-item {
     margin-bottom: 1.8rem;
   }
-  
-  .setting-input, .setting-select {
+
+  .setting-input,
+  .setting-select {
     padding: 14px 16px;
     font-size: 1rem;
   }
-  
+
   .checkbox-label {
     padding: 0.5rem 0;
   }
-  
+
   .checkmark {
     width: 22px;
     height: 22px;
     margin-right: 15px;
   }
-  
+
   .checkbox-text {
     font-size: 1rem;
   }
-  
+
   .change-password-btn {
     width: 100%;
     padding: 14px 20px;
     font-size: 1.1rem;
   }
-  
+
   .data-actions {
     flex-direction: column;
     gap: 1rem;
   }
-  
-  .export-btn, .backup-btn {
+
+  .export-btn,
+  .backup-btn {
     width: 100%;
     padding: 14px 20px;
     font-size: 1.1rem;
   }
-  
+
   .danger-actions {
     flex-direction: column;
     gap: 1rem;
   }
-  
+
   .danger-btn {
     width: 100%;
     padding: 12px 16px;
@@ -943,55 +893,56 @@ export default {
   .page-header h2 {
     font-size: 1.5rem;
   }
-  
+
   .settings-section {
     padding: 1.2rem;
   }
-  
+
   .settings-section h3 {
     font-size: 1.1rem;
   }
-  
+
   .setting-item {
     margin-bottom: 1.5rem;
   }
-  
+
   .label-text {
     font-size: 0.9rem;
   }
-  
+
   .setting-description {
     font-size: 0.8rem;
   }
-  
+
   .danger-zone {
     padding: 1.2rem;
   }
-  
+
   .danger-zone h4 {
     font-size: 1rem;
   }
-  
+
   .modal-content {
     padding: 1.5rem;
     margin: 1rem;
   }
-  
+
   .form-group {
     margin-bottom: 1.2rem;
   }
-  
+
   .form-group input {
     padding: 14px 16px;
     font-size: 1rem;
   }
-  
+
   .form-actions {
     flex-direction: column;
     gap: 0.8rem;
   }
-  
-  .cancel-btn, .save-btn {
+
+  .cancel-btn,
+  .save-btn {
     width: 100%;
     padding: 14px 20px;
   }
