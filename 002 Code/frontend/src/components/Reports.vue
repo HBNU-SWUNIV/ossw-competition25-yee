@@ -243,30 +243,33 @@
         <div class="max-h-96 overflow-y-auto">
           <!-- 데스크톱 테이블 -->
           <div class="hidden lg:block">
-            <div class="grid grid-cols-5 gap-4 p-4 bg-gray-50 font-semibold text-gray-700 border-b">
+            <div class="grid grid-cols-6 gap-4 p-4 bg-gray-50 font-semibold text-gray-700 border-b">
               <div>날짜</div>
               <div>카테고리</div>
               <div>내용</div>
-              <div>부서</div>
+              <div>상점명</div>
+              <div>연락처</div>
               <div class="text-right">금액</div>
             </div>
             <div class="divide-y divide-gray-200">
-              <div 
-                v-for="(expense, index) in detailedData" 
+              <div
+                v-for="(expense, index) in detailedData"
                 :key="index"
-                class="grid grid-cols-5 gap-4 p-4 hover:bg-gray-50 transition-colors duration-200"
+                class="grid grid-cols-6 gap-4 p-4 hover:bg-gray-50 transition-colors duration-200"
               >
                 <div class="text-sm text-gray-600">{{ formatDate(expense.date) }}</div>
                 <div>
-                  <span 
+                  <span
                     class="inline-block px-3 py-1 rounded-full text-xs font-medium text-white"
                     :class="{
                       'bg-orange-500': expense.category === '식비',
                       'bg-blue-500': expense.category === '교통비',
                       'bg-green-500': expense.category === '사무용품',
-                      'bg-purple-500': expense.category === '마케팅',
-                      'bg-red-500': expense.category === '인건비',
-                      'bg-yellow-600': expense.category === '임대료',
+                      'bg-purple-500': expense.category === '회식',
+                      'bg-red-500': expense.category === '공과금',
+                      'bg-yellow-600': expense.category === '유흥',
+                      'bg-indigo-500': expense.category === '교육',
+                      'bg-pink-500': expense.category === '의료',
                       'bg-gray-500': expense.category === '기타'
                     }"
                   >
@@ -274,7 +277,11 @@
                   </span>
             </div>
                 <div class="font-medium">{{ expense.description }}</div>
-                <div class="text-sm text-gray-600">{{ expense.department }}</div>
+                <div class="text-sm">
+                  <div class="font-medium text-gray-900">{{ expense.department }}</div>
+                  <div v-if="expense.store_address" class="text-xs text-gray-500">{{ expense.store_address }}</div>
+                </div>
+                <div class="text-sm text-gray-600">{{ expense.store_phone_number || '-' }}</div>
                 <div class="text-right font-semibold text-red-600">₩{{ expense.amount.toLocaleString() }}</div>
           </div>
         </div>
@@ -282,29 +289,33 @@
 
           <!-- 모바일 카드 -->
           <div class="lg:hidden space-y-4">
-            <div 
-              v-for="(expense, index) in detailedData" 
+            <div
+              v-for="(expense, index) in detailedData"
               :key="index"
               class="border border-gray-200 rounded-lg p-4 hover:shadow-soft transition-shadow duration-200"
             >
               <div class="flex justify-between items-start mb-3">
                 <div>
                   <h4 class="font-semibold text-gray-900">{{ expense.description }}</h4>
-                  <p class="text-sm text-gray-600">{{ expense.department }}</p>
+                  <p class="text-sm text-gray-700">{{ expense.department }}</p>
+                  <p v-if="expense.store_address" class="text-xs text-gray-500 mt-1">{{ expense.store_address }}</p>
+                  <p v-if="expense.store_phone_number" class="text-xs text-gray-500">{{ expense.store_phone_number }}</p>
           </div>
                 <span class="text-lg font-bold text-red-600">₩{{ expense.amount.toLocaleString() }}</span>
               </div>
               <div class="flex justify-between items-center">
                 <span class="text-sm text-gray-600">{{ formatDate(expense.date) }}</span>
-                <span 
+                <span
                   class="inline-block px-3 py-1 rounded-full text-xs font-medium text-white"
                   :class="{
                     'bg-orange-500': expense.category === '식비',
                     'bg-blue-500': expense.category === '교통비',
                     'bg-green-500': expense.category === '사무용품',
-                    'bg-purple-500': expense.category === '마케팅',
-                    'bg-red-500': expense.category === '인건비',
-                    'bg-yellow-600': expense.category === '임대료',
+                    'bg-purple-500': expense.category === '회식',
+                    'bg-red-500': expense.category === '공과금',
+                    'bg-yellow-600': expense.category === '유흥',
+                    'bg-indigo-500': expense.category === '교육',
+                    'bg-pink-500': expense.category === '의료',
                     'bg-gray-500': expense.category === '기타'
                   }"
                 >
@@ -320,9 +331,10 @@
 </template>
 
 <script>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
+import { expenseAPI } from '../api/expense'
 
 export default {
   name: 'Reports',
@@ -333,9 +345,11 @@ export default {
     const selectedDay = ref('')
     const selectedCategory = ref('')
     const showExportMenu = ref(false)
+    const loading = ref(false)
 
     // 사용 가능한 옵션들
-    const availableYears = ref([2024, 2023, 2022])
+    const now = new Date()
+    const availableYears = ref([now.getFullYear(), now.getFullYear() - 1, now.getFullYear() - 2])
     const availableMonths = ref([
       { value: 1, label: '1월' },
       { value: 2, label: '2월' },
@@ -351,47 +365,27 @@ export default {
       { value: 12, label: '12월' }
     ])
     const availableDays = ref([])
-    const availableCategories = ref(['식비', '교통비', '사무용품', '마케팅', '인건비', '임대료', '기타'])
+    const availableCategories = ref(['식비', '사무용품', '회식', '교통비', '공과금', '유흥', '교육', '의료', '기타'])
 
-    // 현재 데이터 (실제로는 API에서 가져올 데이터)
+    // API에서 가져온 데이터
+    const statistics = ref(null)
+    const expenses = ref([])
+    const previousStatistics = ref(null)
+
+    // 현재 데이터 (계산됨)
     const currentData = ref({
-      totalExpense: 12500000,
-      averageExpense: 1250000,
-      transactionCount: 45,
-      budgetUsage: 75,
-      expenseChange: 12
+      totalExpense: 0,
+      averageExpense: 0,
+      transactionCount: 0,
+      budgetUsage: 0,
+      expenseChange: 0
     })
 
-    // 차트 데이터
-    const departmentData = ref([
-      { name: '개발팀', amount: 4500000 },
-      { name: '마케팅팀', amount: 3200000 },
-      { name: '영업팀', amount: 2800000 },
-      { name: '인사팀', amount: 2000000 }
-    ])
-
-    const trendData = ref([
-      { label: '1월', amount: 1200000 },
-      { label: '2월', amount: 1500000 },
-      { label: '3월', amount: 1100000 },
-      { label: '4월', amount: 1800000 },
-      { label: '5월', amount: 1600000 },
-      { label: '6월', amount: 1900000 }
-    ])
-
-    const categoryData = ref([
-      { name: '식비', amount: 3500000, trend: 5 },
-      { name: '교통비', amount: 2800000, trend: -2 },
-      { name: '사무용품', amount: 2200000, trend: 8 },
-      { name: '마케팅', amount: 4000000, trend: 15 }
-    ])
-
-    const detailedData = ref([
-      { date: '2024-01-15', category: '식비', description: '팀 회식비', department: '개발팀', amount: 150000 },
-      { date: '2024-01-14', category: '교통비', description: '택시비', department: '마케팅팀', amount: 25000 },
-      { date: '2024-01-13', category: '사무용품', description: '문구류 구매', department: '인사팀', amount: 80000 },
-      { date: '2024-01-12', category: '마케팅', description: '광고비', department: '마케팅팀', amount: 500000 }
-    ])
+    // 차트 데이터 (계산됨)
+    const departmentData = ref([])
+    const trendData = ref([])
+    const categoryData = ref([])
+    const detailedData = ref([])
 
     // 계산된 속성들
     const getCurrentPeriodTitle = () => {
@@ -482,23 +476,137 @@ export default {
     }
 
     // 이벤트 핸들러들
+    // API 데이터 로드 함수
+    const loadData = async () => {
+      loading.value = true
+      try {
+        // 날짜 범위 계산
+        const { start_date, end_date } = getDateRange()
+
+        // 통계 데이터 가져오기
+        const statsResult = await expenseAPI.getStatistics({
+          start_date: start_date?.toISOString(),
+          end_date: end_date?.toISOString()
+        })
+
+        if (statsResult.success) {
+          statistics.value = statsResult.data
+
+          // 카테고리 데이터 업데이트
+          categoryData.value = statistics.value.by_category.map(cat => ({
+            name: cat.category,
+            amount: cat.total_amount,
+            trend: 0 // 트렌드는 이전 기간 데이터와 비교해서 계산 필요
+          }))
+
+          // 현재 데이터 업데이트
+          currentData.value = {
+            totalExpense: statistics.value.total_amount || 0,
+            averageExpense: calculateAverage(statistics.value.total_amount),
+            transactionCount: statistics.value.total_count || 0,
+            budgetUsage: 75, // TODO: 예산 기능 구현 시 실제 값으로 대체
+            expenseChange: 0 // TODO: 이전 기간과 비교
+          }
+        }
+
+        // 상세 내역 가져오기
+        const expensesResult = await expenseAPI.getExpenses({
+          start_date: start_date?.toISOString(),
+          end_date: end_date?.toISOString(),
+          category: selectedCategory.value || undefined,
+          limit: 1000
+        })
+
+        if (expensesResult.success) {
+          expenses.value = expensesResult.data
+          detailedData.value = expenses.value.map(exp => ({
+            date: exp.date,
+            category: exp.category,
+            description: exp.description || exp.item_name || exp.store_name,
+            department: exp.store_name, // 부서 대신 상점명 사용
+            amount: exp.amount,
+            store_address: exp.store_address || '',
+            store_phone_number: exp.store_phone_number || ''
+          }))
+        }
+      } catch (error) {
+        console.error('데이터 로드 실패:', error)
+        alert('데이터를 불러오는데 실패했습니다.')
+      } finally {
+        loading.value = false
+      }
+    }
+
+    const getDateRange = () => {
+      if (!selectedYear.value) {
+        // 전체 기간
+        return { start_date: null, end_date: null }
+      }
+
+      const year = parseInt(selectedYear.value)
+
+      if (selectedDay.value && selectedMonth.value) {
+        // 특정 일
+        const month = parseInt(selectedMonth.value)
+        const day = parseInt(selectedDay.value)
+        const start_date = new Date(year, month - 1, day, 0, 0, 0)
+        const end_date = new Date(year, month - 1, day, 23, 59, 59)
+        return { start_date, end_date }
+      } else if (selectedMonth.value) {
+        // 특정 월
+        const month = parseInt(selectedMonth.value)
+        const start_date = new Date(year, month - 1, 1)
+        const end_date = new Date(year, month, 0, 23, 59, 59)
+        return { start_date, end_date }
+      } else {
+        // 특정 년도
+        const start_date = new Date(year, 0, 1)
+        const end_date = new Date(year, 11, 31, 23, 59, 59)
+        return { start_date, end_date }
+      }
+    }
+
+    const calculateAverage = (total) => {
+      if (!selectedYear.value) {
+        // 전체 기간: 월 평균
+        const months = 12 // TODO: 실제 데이터가 있는 월 수로 계산
+        return Math.round(total / months)
+      }
+
+      if (selectedDay.value && selectedMonth.value) {
+        // 특정 일: 해당 일 금액
+        return total
+      } else if (selectedMonth.value) {
+        // 특정 월: 일 평균
+        const year = parseInt(selectedYear.value)
+        const month = parseInt(selectedMonth.value)
+        const daysInMonth = new Date(year, month, 0).getDate()
+        return Math.round(total / daysInMonth)
+      } else {
+        // 특정 년도: 월 평균
+        return Math.round(total / 12)
+      }
+    }
+
     const onYearChange = () => {
       selectedMonth.value = ''
       selectedDay.value = ''
       updateAvailableDays()
+      loadData()
     }
 
     const onMonthChange = () => {
       selectedDay.value = ''
       updateAvailableDays()
+      loadData()
     }
 
     const onDayChange = () => {
-      // 일 변경 시 처리
+      loadData()
     }
 
     const onCategoryChange = () => {
-      // 카테고리 변경 시 처리
+      loadData()
     }
 
     const toggleExportMenu = () => {
@@ -573,24 +681,27 @@ export default {
     }
 
     const generateCSVContent = () => {
-      const headers = ['날짜', '카테고리', '내용', '부서', '금액']
+      const headers = ['날짜', '카테고리', '내용', '상점명', '주소', '전화번호', '금액']
       const rows = detailedData.value.map(expense => [
         expense.date,
         expense.category,
         expense.description,
         expense.department,
+        expense.store_address || '',
+        expense.store_phone_number || '',
         expense.amount
       ])
-      
+
       return [headers, ...rows].map(row => row.join(',')).join('\n')
     }
 
     // 컴포넌트 마운트 시 초기화
-    onMounted(() => {
+    onMounted(async () => {
       const now = new Date()
       selectedYear.value = now.getFullYear().toString()
       selectedMonth.value = (now.getMonth() + 1).toString()
       updateAvailableDays()
+      await loadData()
     })
 
     return {
@@ -599,6 +710,7 @@ export default {
       selectedDay,
       selectedCategory,
       showExportMenu,
+      loading,
       availableYears,
       availableMonths,
       availableDays,
@@ -625,7 +737,8 @@ export default {
       formatDate,
       exportAsPDF,
       exportAsExcelCSV,
-      exportAsCSV
+      exportAsCSV,
+      loadData
     }
   }
 }
