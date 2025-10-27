@@ -5,28 +5,27 @@
       <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">리포트</h2>
       <div class="flex flex-col xl:flex-row gap-4">
         <!-- 날짜 필터 -->
-        <div class="flex flex-col sm:flex-row gap-3">
+        <div class="grid grid-cols-4 gap-2 sm:flex sm:gap-3">
           <select v-model="selectedYear" @change="onYearChange" class="input-field w-full sm:w-32">
-            <option value="">연도 선택</option>
+            <option value="">연도</option>
             <option v-for="year in availableYears" :key="year" :value="year">{{ year }}년</option>
           </select>
           <select v-model="selectedMonth" @change="onMonthChange" class="input-field w-full sm:w-32"
             :disabled="!selectedYear">
-            <option value="">월 선택</option>
+            <option value="">월</option>
             <option v-for="month in availableMonths" :key="month.value" :value="month.value">{{ month.label }}</option>
           </select>
           <select v-model="selectedDay" @change="onDayChange" class="input-field w-full sm:w-32"
             :disabled="!selectedMonth">
-            <option value="">일 선택</option>
+            <option value="">일</option>
             <option v-for="day in availableDays" :key="day" :value="day">{{ day }}일</option>
           </select>
+          <!-- 카테고리 필터를 날짜 필터와 같은 행에 배치 -->
+          <select v-model="selectedCategory" @change="onCategoryChange" class="input-field w-full sm:w-48">
+            <option value="">카테고리</option>
+            <option v-for="category in availableCategories" :key="category" :value="category">{{ category }}</option>
+          </select>
         </div>
-
-        <!-- 카테고리 필터 -->
-        <select v-model="selectedCategory" @change="onCategoryChange" class="input-field w-full sm:w-48">
-          <option value="">전체 카테고리</option>
-          <option v-for="category in availableCategories" :key="category" :value="category">{{ category }}</option>
-        </select>
 
         <!-- 내보내기 드롭다운 -->
         <div class="relative" :class="{ 'z-50': showExportMenu }">
@@ -78,12 +77,12 @@
     </div>
 
     <!-- 요약 카드 -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <div class="card p-6 hover:shadow-medium transition-shadow duration-200">
+    <div class="grid grid-cols-2 md:grid-cols-2 gap-4 md:gap-6">
+      <div class="card p-4 md:p-6 hover:shadow-medium transition-shadow duration-200">
         <div>
-          <h3 class="text-sm font-medium text-gray-600 mb-1">총 지출</h3>
-          <p class="text-2xl font-bold text-gray-900">₩{{ currentData.totalExpense.toLocaleString() }}</p>
-          <span class="text-sm" :class="{
+          <h3 class="text-xs md:text-sm font-medium text-gray-600 mb-1">총 지출</h3>
+          <p class="text-lg md:text-2xl font-bold text-gray-900">₩{{ currentData.totalExpense.toLocaleString() }}</p>
+          <span class="text-xs md:text-sm" :class="{
             'text-red-600': currentData.expenseChange > 0,
             'text-green-600': currentData.expenseChange < 0,
             'text-gray-600': currentData.expenseChange === 0
@@ -94,27 +93,27 @@
         </div>
       </div>
 
-      <div class="card p-6 hover:shadow-medium transition-shadow duration-200">
+      <div class="card p-4 md:p-6 hover:shadow-medium transition-shadow duration-200">
         <div>
-          <h3 class="text-sm font-medium text-gray-600 mb-1">평균 {{ getAverageText() }}</h3>
-          <p class="text-2xl font-bold text-gray-900">₩{{ currentData.averageExpense.toLocaleString() }}</p>
-          <span class="text-sm text-gray-600">{{ getAverageDescription() }}</span>
+          <h3 class="text-xs md:text-sm font-medium text-gray-600 mb-1">평균 {{ getAverageText() }}</h3>
+          <p class="text-lg md:text-2xl font-bold text-gray-900">₩{{ currentData.averageExpense.toLocaleString() }}</p>
+          <span class="text-xs md:text-sm text-gray-600">{{ getAverageDescription() }}</span>
         </div>
       </div>
 
-      <div class="card p-6 hover:shadow-medium transition-shadow duration-200">
+      <div class="card p-4 md:p-6 hover:shadow-medium transition-shadow duration-200">
         <div>
-          <h3 class="text-sm font-medium text-gray-600 mb-1">지출 건수</h3>
-          <p class="text-2xl font-bold text-gray-900">{{ currentData.transactionCount }}건</p>
-          <span class="text-sm text-gray-600">{{ getTransactionDescription() }}</span>
+          <h3 class="text-xs md:text-sm font-medium text-gray-600 mb-1">지출 건수</h3>
+          <p class="text-lg md:text-2xl font-bold text-gray-900">{{ currentData.transactionCount }}건</p>
+          <span class="text-xs md:text-sm text-gray-600">{{ getTransactionDescription() }}</span>
         </div>
       </div>
 
-      <div class="card p-6 hover:shadow-medium transition-shadow duration-200">
+      <div class="card p-4 md:p-6 hover:shadow-medium transition-shadow duration-200">
         <div>
-          <h3 class="text-sm font-medium text-gray-600 mb-1">예산 대비</h3>
-          <p class="text-2xl font-bold text-gray-900">{{ currentData.budgetUsage }}%</p>
-          <span class="text-sm" :class="{
+          <h3 class="text-xs md:text-sm font-medium text-gray-600 mb-1">예산 대비</h3>
+          <p class="text-lg md:text-2xl font-bold text-gray-900">{{ currentData.budgetUsage }}%</p>
+          <span class="text-xs md:text-sm" :class="{
             'text-red-600': currentData.budgetUsage > 80,
             'text-green-600': currentData.budgetUsage < 50,
             'text-gray-600': currentData.budgetUsage >= 50 && currentData.budgetUsage <= 80
