@@ -227,5 +227,111 @@ class ReceiptService:
         except Exception as e:
             raise Exception(f"영수증 삭제 실패: {str(e)}")
 
+    async def find_matching_receipt(
+        self,
+        user_id: str,
+        store_name: str,
+        amount: float,
+        date: datetime,
+        tolerance_days: int = 1,
+        amount_tolerance_percent: float = 5.0
+    ) -> Optional[Dict[str, Any]]:
+        """
+        지출 내역과 매칭되는 영수증 찾기
+
+        Args:
+            user_id: 사용자 ID
+            store_name: 상호명
+            amount: 금액
+            date: 날짜
+            tolerance_days: 날짜 허용 오차 (일)
+            amount_tolerance_percent: 금액 허용 오차 (%)
+
+        Returns:
+            매칭되는 영수증 또는 None
+        """
+        try:
+            print(f"[Receipt Match] 영수증 매칭 시도 - user: {user_id}, store: {store_name}, amount: {amount}, date: {date}")
+
+            # user_id로 필터링
+            receipts_ref = self.db.collection(self.collection).where("user_id", "==", user_id)
+            receipts = receipts_ref.stream()
+
+            # 날짜 범위 계산
+            from datetime import timedelta
+            date_min = date - timedelta(days=tolerance_days)
+            date_max = date + timedelta(days=tolerance_days)
+
+            # 금액 범위 계산
+            amount_min = amount * (1 - amount_tolerance_percent / 100)
+            amount_max = amount * (1 + amount_tolerance_percent / 100)
+
+            best_match = None
+            best_score = 0
+
+            for receipt_doc in receipts:
+                receipt_data = receipt_doc.to_dict()
+                receipt_data["id"] = receipt_doc.id
+
+                # image_url이 없는 receipt는 스킵
+                if not receipt_data.get("image_url"):
+                    continue
+
+                # 매칭 점수 계산
+                score = 0
+
+                # 1. 상호명 매칭 (50점)
+                receipt_store = receipt_data.get("store_name", "")
+                if receipt_store and store_name:
+                    if receipt_store.lower() == store_name.lower():
+                        score += 50
+                    elif receipt_store.lower() in store_name.lower() or store_name.lower() in receipt_store.lower():
+                        score += 30
+
+                # 2. 금액 매칭 (30점)
+                receipt_amount = receipt_data.get("total_amount", 0)
+                if amount_min <= receipt_amount <= amount_max:
+                    # 금액이 정확할수록 높은 점수
+                    amount_diff_percent = abs(receipt_amount - amount) / amount * 100 if amount > 0 else 100
+                    amount_score = max(0, 30 - amount_diff_percent)
+                    score += amount_score
+                    print(f"[Receipt Match] 금액 매칭: receipt={receipt_amount}, expense={amount}, diff={amount_diff_percent:.2f}%, score={amount_score}")
+
+                # 3. 날짜 매칭 (20점)
+                receipt_date = receipt_data.get("purchase_date")
+                # 날짜 타입 변환
+                if receipt_date and not isinstance(receipt_date, datetime):
+                    try:
+                        if isinstance(receipt_date, str):
+                            receipt_date = datetime.fromisoformat(receipt_date.replace('Z', '+00:00'))
+                    except:
+                        receipt_date = None
+
+                if receipt_date and isinstance(receipt_date, datetime):
+                    if date_min <= receipt_date <= date_max:
+                        # 날짜가 정확할수록 높은 점수
+                        days_diff = abs((receipt_date - date).days)
+                        date_score = max(0, 20 - days_diff * 5)
+                        score += date_score
+                        print(f"[Receipt Match] 날짜 매칭: receipt={receipt_date}, expense={date}, diff={days_diff}일, score={date_score}")
+
+                print(f"[Receipt Match] Receipt {receipt_doc.id}: total_score={score}, store={receipt_store}, amount={receipt_amount}")
+
+                # 최고 점수 업데이트 (최소 50점 이상으로 완화)
+                if score > best_score and score >= 50:
+                    best_score = score
+                    best_match = receipt_data
+
+            if best_match:
+                print(f"[Receipt Match] 매칭 성공! Receipt ID: {best_match['id']}, score: {best_score}")
+                return best_match
+            else:
+                print(f"[Receipt Match] 매칭 실패 - 적합한 영수증을 찾지 못함")
+                return None
+
+        except Exception as e:
+            print(f"[Receipt Match] 에러: {str(e)}")
+            return None
+
 
 receipt_service = ReceiptService()

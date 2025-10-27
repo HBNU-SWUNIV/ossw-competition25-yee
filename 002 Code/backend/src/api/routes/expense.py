@@ -223,26 +223,73 @@ async def export_report_pdf(
         expense_ids: 지출 내역 ID 리스트
     """
     try:
+        print(f"[PDF] 리포트 생성 요청 받음, expense_ids: {expense_ids}")
+
         if not expense_ids:
             raise HTTPException(status_code=400, detail="선택된 지출 내역이 없습니다")
-        
-        # 지출 내역들 조회
+
+        # 지출 내역들 조회 및 영수증 이미지 URL 추가
         expenses = []
         for expense_id in expense_ids:
+            print(f"[PDF] 지출 내역 조회 중: {expense_id}")
             expense = await expense_service.get_expense(expense_id)
             if expense:
+                # receipt_id로 영수증 조회하여 image_url 추가
+                receipt_id = expense.get('receipt_id')
+                if receipt_id:
+                    print(f"[PDF] 영수증 조회 중: {receipt_id}")
+                    receipt = await receipt_service.get_receipt(receipt_id)
+
+                    if receipt and receipt.get('image_url'):
+                        expense['receipt_url'] = receipt.get('image_url')
+                        print(f"[PDF] 영수증 이미지 URL 추가: {receipt.get('image_url')}")
+                    elif receipt_id.startswith('manual-'):
+                        # manual receipt인 경우 자동 매칭 시도
+                        print(f"[PDF] Manual receipt 감지 - 자동 매칭 시도")
+                        expense_date = expense.get('date')
+                        if isinstance(expense_date, str):
+                            try:
+                                expense_date = datetime.fromisoformat(expense_date.replace('Z', '+00:00'))
+                            except:
+                                expense_date = datetime.utcnow()
+
+                        matched_receipt = await receipt_service.find_matching_receipt(
+                            user_id=expense.get('user_id'),
+                            store_name=expense.get('store_name', ''),
+                            amount=expense.get('amount', 0),
+                            date=expense_date
+                        )
+
+                        if matched_receipt and matched_receipt.get('image_url'):
+                            expense['receipt_url'] = matched_receipt.get('image_url')
+                            print(f"[PDF] 매칭된 영수증 이미지 URL 추가: {matched_receipt.get('image_url')}")
+                        else:
+                            print(f"[PDF] 매칭되는 영수증 없음")
+                            expense['receipt_url'] = None
+                    else:
+                        print(f"[PDF] 영수증 이미지 없음")
+                        expense['receipt_url'] = None
+                else:
+                    print(f"[PDF] receipt_id 없음")
+                    expense['receipt_url'] = None
+
                 expenses.append(expense)
-        
+                print(f"[PDF] 지출 내역 추가: {expense.get('store_name', 'N/A')}")
+
         if not expenses:
             raise HTTPException(status_code=404, detail="유효한 지출 내역을 찾을 수 없습니다")
-        
+
+        print(f"[PDF] 총 {len(expenses)}개 지출 내역으로 PDF 생성 시작")
+
         # 리포트 PDF 생성
         pdf_bytes = await pdf_service.generate_report_pdf(expenses)
-        
+
+        print(f"[PDF] PDF 생성 완료, 크기: {len(pdf_bytes)} bytes")
+
         # 파일명 생성
         today = datetime.now().strftime('%Y%m%d')
         filename = f"expense_report_{today}.pdf"
-        
+
         return Response(
             content=pdf_bytes,
             media_type="application/pdf",
@@ -250,8 +297,11 @@ async def export_report_pdf(
                 "Content-Disposition": f"attachment; filename={filename}"
             }
         )
-        
+
     except HTTPException:
         raise
     except Exception as e:
+        print(f"[PDF] 에러 발생: {type(e).__name__}: {str(e)}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"리포트 PDF 생성 실패: {str(e)}")

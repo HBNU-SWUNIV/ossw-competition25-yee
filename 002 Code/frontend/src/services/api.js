@@ -1,5 +1,5 @@
 // API 서비스 - 백엔드와 통신하는 함수들
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://ec2-43-203-136-37.ap-northeast-2.compute.amazonaws.com:8000/api'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
 // API 요청 헬퍼 함수
 const apiRequest = async (endpoint, options = {}) => {

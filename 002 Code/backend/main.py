@@ -21,13 +21,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 라우터 등록
-app.include_router(auth.router, prefix="/api")
-app.include_router(budget.router, prefix="/api")
-app.include_router(receipt.router, prefix="/api")
-app.include_router(expense.router, prefix="/api")
-app.include_router(department.router, prefix="/api")
-app.include_router(admin.router, prefix="/api")
+# 라우터 등록 - prefix는 각 라우터에 이미 정의되어 있음
+app.include_router(auth.router)
+app.include_router(budget.router)
+app.include_router(receipt.router)
+app.include_router(expense.router)
+app.include_router(department.router)
+app.include_router(admin.router)
 
 
 @app.get("/")

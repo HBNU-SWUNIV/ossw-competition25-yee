@@ -83,7 +83,7 @@ class PDFService:
             styles = self._get_styles()
 
             # 제목
-            title = Paragraph("지출 내역서", styles['Title'])
+            title = Paragraph("지출 내역서", styles['CustomTitle'])
             elements.append(title)
             elements.append(Spacer(1, 10*mm))
 
@@ -126,53 +126,58 @@ class PDFService:
         """PDF 스타일 정의"""
         styles = getSampleStyleSheet()
 
-        # 제목 스타일
-        styles.add(ParagraphStyle(
-            name='Title',
-            parent=styles['Heading1'],
-            fontName=self.font_name,
-            fontSize=24,
-            alignment=TA_CENTER,
-            spaceAfter=12,
-            textColor=colors.HexColor('#1e3a8a')
-        ))
+        # 제목 스타일 - 이미 존재하면 덮어쓰기
+        if 'CustomTitle' not in styles:
+            styles.add(ParagraphStyle(
+                name='CustomTitle',
+                parent=styles['Heading1'],
+                fontName=self.font_name,
+                fontSize=24,
+                alignment=TA_CENTER,
+                spaceAfter=12,
+                textColor=colors.HexColor('#1e3a8a')
+            ))
 
         # 본문 스타일
-        styles.add(ParagraphStyle(
-            name='Korean',
-            parent=styles['Normal'],
-            fontName=self.font_name,
-            fontSize=11,
-            leading=14
-        ))
+        if 'Korean' not in styles:
+            styles.add(ParagraphStyle(
+                name='Korean',
+                parent=styles['Normal'],
+                fontName=self.font_name,
+                fontSize=11,
+                leading=14
+            ))
 
         # 테이블 헤더 스타일
-        styles.add(ParagraphStyle(
-            name='TableHeader',
-            parent=styles['Normal'],
-            fontName=self.font_name,
-            fontSize=11,
-            textColor=colors.white,
-            alignment=TA_CENTER
-        ))
+        if 'TableHeader' not in styles:
+            styles.add(ParagraphStyle(
+                name='TableHeader',
+                parent=styles['Normal'],
+                fontName=self.font_name,
+                fontSize=11,
+                textColor=colors.white,
+                alignment=TA_CENTER
+            ))
 
         # 테이블 셀 스타일
-        styles.add(ParagraphStyle(
-            name='TableCell',
-            parent=styles['Normal'],
-            fontName=self.font_name,
-            fontSize=10
-        ))
+        if 'TableCell' not in styles:
+            styles.add(ParagraphStyle(
+                name='TableCell',
+                parent=styles['Normal'],
+                fontName=self.font_name,
+                fontSize=10
+            ))
 
         # 푸터 스타일
-        styles.add(ParagraphStyle(
-            name='Footer',
-            parent=styles['Normal'],
-            fontName=self.font_name,
-            fontSize=9,
-            alignment=TA_RIGHT,
-            textColor=colors.grey
-        ))
+        if 'Footer' not in styles:
+            styles.add(ParagraphStyle(
+                name='Footer',
+                parent=styles['Normal'],
+                fontName=self.font_name,
+                fontSize=9,
+                alignment=TA_RIGHT,
+                textColor=colors.grey
+            ))
 
         return styles
 
@@ -192,24 +197,35 @@ class PDFService:
             if img.mode != 'RGB':
                 img = img.convert('RGB')
 
-            # 이미지 리사이즈 (A4 용지에 맞게)
-            max_width = int(150 * mm * 72 / 25.4)  # mm를 픽셀로 변환
-            max_height = int(100 * mm * 72 / 25.4)
+            # 이미지 리사이즈 (A4 용지에 맞게 - 여백 고려하여 더 작게)
+            # A4 페이지 너비에서 좌우 여백(40mm)을 빼면 약 170mm
+            # 안전하게 140mm로 제한
+            max_width_mm = 140  # mm
+            max_height_mm = 180  # mm
 
-            img.thumbnail((max_width, max_height), Image.Resampling.LANCZOS)
+            # mm를 픽셀로 변환 (72 DPI 기준)
+            max_width_px = int(max_width_mm * 72 / 25.4)
+            max_height_px = int(max_height_mm * 72 / 25.4)
+
+            # 비율 유지하면서 리사이즈
+            img.thumbnail((max_width_px, max_height_px), Image.Resampling.LANCZOS)
 
             # BytesIO로 변환
             img_buffer = io.BytesIO()
             img.save(img_buffer, format='JPEG', quality=85)
             img_buffer.seek(0)
 
-            # ReportLab Image 객체 생성 (크기 조정)
-            width_mm = img.width * 25.4 / 72  # 픽셀을 mm로 변환
-            height_mm = img.height * 25.4 / 72
-            
+            # ReportLab Image 객체 생성 (thumbnail 후의 실제 크기 사용)
+            actual_width = img.width
+            actual_height = img.height
+
+            # 픽셀을 mm로 변환
+            width_mm = actual_width * 25.4 / 72
+            height_mm = actual_height * 25.4 / 72
+
             rl_img = RLImage(img_buffer, width=width_mm*mm, height=height_mm*mm)
-            
-            print(f"[PDF] 이미지 추가 성공: {img.width}x{img.height}")
+
+            print(f"[PDF] 이미지 추가 성공: {actual_width}x{actual_height} (원본에서 리사이즈됨)")
             return rl_img
             
         except Exception as e:
@@ -305,17 +321,18 @@ class PDFService:
             styles = self._get_styles()
 
             # 제목
-            title = Paragraph("지출 내역 리포트", styles['Title'])
+            title = Paragraph("지출 내역 리포트", styles['CustomTitle'])
             elements.append(title)
             elements.append(Spacer(1, 10*mm))
 
             # 요약 정보
             total_amount = sum(exp.get('amount', 0) for exp in expenses)
+            avg_amount = total_amount / len(expenses) if len(expenses) > 0 else 0
             summary_data = [
                 [Paragraph("항목", styles['TableHeader']), Paragraph("내용", styles['TableHeader'])],
                 [Paragraph("총 지출 건수", styles['TableCell']), Paragraph(f"{len(expenses)}건", styles['TableCell'])],
                 [Paragraph("총 지출 금액", styles['TableCell']), Paragraph(f"₩ {total_amount:,.0f}", styles['TableCell'])],
-                [Paragraph("평균 지출", styles['TableCell']), Paragraph(f"₩ {total_amount/len(expenses):,.0f}", styles['TableCell'])],
+                [Paragraph("평균 지출", styles['TableCell']), Paragraph(f"₩ {avg_amount:,.0f}", styles['TableCell'])],
                 [Paragraph("생성일", styles['TableCell']), Paragraph(datetime.now().strftime('%Y년 %m월 %d일'), styles['TableCell'])]
             ]
 
@@ -337,7 +354,7 @@ class PDFService:
             elements.append(Spacer(1, 10*mm))
 
             # 상세 내역 테이블
-            detail_title = Paragraph("상세 내역", styles['Title'])
+            detail_title = Paragraph("상세 내역", styles['CustomTitle'])
             elements.append(detail_title)
             elements.append(Spacer(1, 5*mm))
 
@@ -389,6 +406,45 @@ class PDFService:
 
             elements.append(detail_table)
             elements.append(Spacer(1, 10*mm))
+
+            # 영수증 이미지 섹션 추가
+            receipt_title = Paragraph("영수증 이미지", styles['CustomTitle'])
+            elements.append(receipt_title)
+            elements.append(Spacer(1, 5*mm))
+
+            # 각 지출 내역의 영수증 이미지 추가
+            for idx, expense in enumerate(expenses, 1):
+                # 지출 정보 헤더
+                expense_date = expense.get('date')
+                if isinstance(expense_date, datetime):
+                    date_str = expense_date.strftime('%Y-%m-%d')
+                else:
+                    try:
+                        date_obj = datetime.fromisoformat(str(expense_date).replace('Z', '+00:00'))
+                        date_str = date_obj.strftime('%Y-%m-%d')
+                    except:
+                        date_str = str(expense_date)
+
+                info_text = f"{idx}. {date_str} - {expense.get('store_name', '-')} (₩ {expense.get('amount', 0):,.0f})"
+                info_para = Paragraph(info_text, styles['Korean'])
+                elements.append(info_para)
+                elements.append(Spacer(1, 3*mm))
+
+                # 영수증 이미지 추가 (있는 경우)
+                receipt_url = expense.get('receipt_url')
+                if receipt_url:
+                    receipt_img = self._add_receipt_image(receipt_url)
+                    if receipt_img:
+                        elements.append(receipt_img)
+                        elements.append(Spacer(1, 5*mm))
+                    else:
+                        no_img_text = Paragraph("영수증 이미지를 불러올 수 없습니다.", styles['TableCell'])
+                        elements.append(no_img_text)
+                        elements.append(Spacer(1, 5*mm))
+                else:
+                    no_receipt_text = Paragraph("영수증 이미지가 없습니다.", styles['TableCell'])
+                    elements.append(no_receipt_text)
+                    elements.append(Spacer(1, 5*mm))
 
             # 발행 정보
             footer_text = f"발행일: {datetime.now().strftime('%Y년 %m월 %d일')}"

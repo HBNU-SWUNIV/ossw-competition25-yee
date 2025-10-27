@@ -255,7 +255,7 @@ export default {
         }
 
         // JWT 토큰 저장
-        localStorage.setItem('accessToken', result.data.access_token)
+        localStorage.setItem('access_token', result.data.access_token)
         localStorage.setItem('isLoggedIn', 'true')
 
         // 사용자 정보 조회

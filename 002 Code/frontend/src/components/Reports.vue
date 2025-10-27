@@ -299,7 +299,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
-import { expenseAPI } from '../api/expense'
+import { expenseAPI } from '../services/api'
 
 export default {
   name: 'Reports',
@@ -456,98 +456,105 @@ export default {
           end_date: end_date?.toISOString()
         })
 
-        if (statsResult.success) {
-          statistics.value = statsResult.data
+        statistics.value = statsResult
 
-          // 카테고리 데이터 업데이트
-          categoryData.value = statistics.value.by_category.map(cat => ({
-            name: cat.category,
-            amount: cat.total_amount,
-            trend: 0 // 트렌드는 이전 기간 데이터와 비교해서 계산 필요
-          }))
+        // 카테고리 데이터 업데이트
+        categoryData.value = statistics.value.by_category.map(cat => ({
+          name: cat.category,
+          amount: cat.total_amount,
+          trend: 0 // 트렌드는 이전 기간 데이터와 비교해서 계산 필요
+        }))
 
-          // 현재 데이터 업데이트
-          currentData.value = {
-            totalExpense: statistics.value.total_amount || 0,
-            averageExpense: calculateAverage(statistics.value.total_amount),
-            transactionCount: statistics.value.total_count || 0,
-            budgetUsage: 75, // TODO: 예산 기능 구현 시 실제 값으로 대체
-            expenseChange: 0 // TODO: 이전 기간과 비교
-          }
+        // 현재 데이터 업데이트
+        currentData.value = {
+          totalExpense: statistics.value.total_amount || 0,
+          averageExpense: calculateAverage(statistics.value.total_amount),
+          transactionCount: statistics.value.total_count || 0,
+          budgetUsage: 75, // TODO: 예산 기능 구현 시 실제 값으로 대체
+          expenseChange: 0 // TODO: 이전 기간과 비교
         }
 
         // 상세 내역 가져오기
-        const expensesResult = await expenseAPI.getExpenses({
+        const params = {
           start_date: start_date?.toISOString(),
           end_date: end_date?.toISOString(),
-          category: selectedCategory.value || undefined,
           limit: 1000
-        })
+        }
 
-        if (expensesResult.success) {
-          expenses.value = expensesResult.data
-          detailedData.value = expenses.value.map(exp => ({
-            id: exp.id,
-            date: exp.date,
-            category: exp.category,
-            description: exp.description || exp.item_name || exp.store_name,
-            department: exp.store_name, // 부서 대신 상점명 사용
-            amount: exp.amount,
-            store_name: exp.store_name,
-            store_address: exp.store_address || '',
-            store_phone_number: exp.store_phone_number || ''
-          }))
+        // category가 있을 때만 추가
+        if (selectedCategory.value) {
+          params.category = selectedCategory.value
+        }
 
-          // 부서별 데이터 계산 (임시로 상점명 기준으로 그룹화)
-          if (expenses.value.length > 0) {
-            const deptMap = {}
-            expenses.value.forEach(exp => {
-              const dept = exp.store_name || '기타'
-              if (!deptMap[dept]) {
-                deptMap[dept] = 0
-              }
-              deptMap[dept] += exp.amount
-            })
-            departmentData.value = Object.entries(deptMap).map(([name, amount]) => ({
-              name,
-              amount
-            })).sort((a, b) => b.amount - a.amount)
-          } else {
-            departmentData.value = []
-          }
+        const expensesResult = await expenseAPI.getAll(params)
 
-          // 트렌드 데이터 계산 (임시 데이터)
-          if (expenses.value.length > 0) {
-            const dates = expenses.value.map(exp => new Date(exp.date))
-            const validDates = dates.filter(d => !isNaN(d.getTime()))
+        console.log('[Reports] expensesResult:', expensesResult)
+        console.log('[Reports] expensesResult type:', typeof expensesResult, Array.isArray(expensesResult))
 
-            if (validDates.length > 0) {
-              // 월별로 그룹화
-              const trendMap = {}
-              expenses.value.forEach(exp => {
-                const date = new Date(exp.date)
-                if (!isNaN(date.getTime())) {
-                  const key = `${date.getFullYear()}-${date.getMonth() + 1}`
-                  if (!trendMap[key]) {
-                    trendMap[key] = 0
-                  }
-                  trendMap[key] += exp.amount
-                }
-              })
+        expenses.value = expensesResult
+        console.log('[Reports] expenses.value:', expenses.value)
 
-              trendData.value = Object.entries(trendMap).map(([key, amount]) => {
-                const [year, month] = key.split('-')
-                return {
-                  label: `${year}-${month.padStart(2, '0')}`,
-                  amount
-                }
-              }).sort((a, b) => a.label.localeCompare(b.label))
-            } else {
-              trendData.value = []
+        detailedData.value = expenses.value.map(exp => ({
+          id: exp.id,
+          date: exp.date,
+          category: exp.category,
+          description: exp.description || exp.item_name || exp.store_name,
+          department: exp.store_name, // 부서 대신 상점명 사용
+          amount: exp.amount,
+          store_name: exp.store_name,
+          store_address: exp.store_address || '',
+          store_phone_number: exp.store_phone_number || ''
+        }))
+
+        // 부서별 데이터 계산 (임시로 상점명 기준으로 그룹화)
+        if (expenses.value.length > 0) {
+          const deptMap = {}
+          expenses.value.forEach(exp => {
+            const dept = exp.store_name || '기타'
+            if (!deptMap[dept]) {
+              deptMap[dept] = 0
             }
+            deptMap[dept] += exp.amount
+          })
+          departmentData.value = Object.entries(deptMap).map(([name, amount]) => ({
+            name,
+            amount
+          })).sort((a, b) => b.amount - a.amount)
+        } else {
+          departmentData.value = []
+        }
+
+        // 트렌드 데이터 계산 (임시 데이터)
+        if (expenses.value.length > 0) {
+          const dates = expenses.value.map(exp => new Date(exp.date))
+          const validDates = dates.filter(d => !isNaN(d.getTime()))
+
+          if (validDates.length > 0) {
+            // 월별로 그룹화
+            const trendMap = {}
+            expenses.value.forEach(exp => {
+              const date = new Date(exp.date)
+              if (!isNaN(date.getTime())) {
+                const key = `${date.getFullYear()}-${date.getMonth() + 1}`
+                if (!trendMap[key]) {
+                  trendMap[key] = 0
+                }
+                trendMap[key] += exp.amount
+              }
+            })
+
+            trendData.value = Object.entries(trendMap).map(([key, amount]) => {
+              const [year, month] = key.split('-')
+              return {
+                label: `${year}-${month.padStart(2, '0')}`,
+                amount
+              }
+            }).sort((a, b) => a.label.localeCompare(b.label))
           } else {
             trendData.value = []
           }
+        } else {
+          trendData.value = []
         }
       } catch (error) {
         console.error('데이터 로드 실패:', error)
@@ -783,16 +790,27 @@ export default {
       isAllSelected.value = !isAllSelected.value
     }
 
+    // CSV 값 이스케이프 처리 (쉼표, 줄바꿈, 따옴표 처리)
+    const escapeCSVValue = (value) => {
+      if (value == null) return ''
+      const stringValue = String(value)
+      // 쉼표, 줄바꿈, 따옴표가 있으면 따옴표로 감싸고, 내부 따옴표는 두 개로 변경
+      if (stringValue.includes(',') || stringValue.includes('\n') || stringValue.includes('"')) {
+        return `"${stringValue.replace(/"/g, '""')}"`
+      }
+      return stringValue
+    }
+
     const generateSelectedCSVContent = () => {
       const headers = ['날짜', '카테고리', '내용', '상점명', '주소', '전화번호', '금액']
       const rows = selectedExpenses.value.map(expense => [
-        expense.date,
-        expense.category,
-        expense.description,
-        expense.department,
-        expense.store_address || '',
-        expense.store_phone_number || '',
-        expense.amount
+        escapeCSVValue(expense.date),
+        escapeCSVValue(expense.category),
+        escapeCSVValue(expense.description),
+        escapeCSVValue(expense.department),
+        escapeCSVValue(expense.store_address || ''),
+        escapeCSVValue(expense.store_phone_number || ''),
+        escapeCSVValue(expense.amount)
       ])
 
       return [headers, ...rows].map(row => row.join(',')).join('\n')
@@ -801,13 +819,13 @@ export default {
     const generateCSVContent = () => {
       const headers = ['날짜', '카테고리', '내용', '상점명', '주소', '전화번호', '금액']
       const rows = detailedData.value.map(expense => [
-        expense.date,
-        expense.category,
-        expense.description,
-        expense.department,
-        expense.store_address || '',
-        expense.store_phone_number || '',
-        expense.amount
+        escapeCSVValue(expense.date),
+        escapeCSVValue(expense.category),
+        escapeCSVValue(expense.description),
+        escapeCSVValue(expense.department),
+        escapeCSVValue(expense.store_address || ''),
+        escapeCSVValue(expense.store_phone_number || ''),
+        escapeCSVValue(expense.amount)
       ])
 
       return [headers, ...rows].map(row => row.join(',')).join('\n')

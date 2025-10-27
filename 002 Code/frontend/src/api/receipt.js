@@ -14,7 +14,7 @@ export const receiptAPI = {
       const formData = new FormData()
       formData.append('file', file)
 
-      const response = await apiClient.post('/api/receipt/ocr', formData, {
+      const response = await apiClient.post('/receipt/ocr', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
@@ -60,7 +60,7 @@ export const receiptAPI = {
       const formData = new FormData()
       formData.append('file', file)
 
-      const response = await apiClient.post('/api/receipt/upload', formData, {
+      const response = await apiClient.post('/receipt/upload', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
@@ -105,7 +105,7 @@ export const receiptAPI = {
    */
   async getReceipts(params = {}) {
     try {
-      const response = await apiClient.get('/api/receipt/', { params })
+      const response = await apiClient.get('/receipt/', { params })
       return {
         success: true,
         data: response.data
@@ -126,7 +126,7 @@ export const receiptAPI = {
    */
   async getReceipt(receiptId, includeExpenses = false) {
     try {
-      const response = await apiClient.get(`/api/receipt/${receiptId}`, {
+      const response = await apiClient.get(`/receipt/${receiptId}`, {
         params: { include_expenses: includeExpenses }
       })
       return {
@@ -149,7 +149,7 @@ export const receiptAPI = {
    */
   async deleteReceipt(receiptId, deleteExpenses = true) {
     try {
-      const response = await apiClient.delete(`/api/receipt/${receiptId}`, {
+      const response = await apiClient.delete(`/receipt/${receiptId}`, {
         params: { delete_expenses: deleteExpenses }
       })
       return {
