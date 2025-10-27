@@ -15,9 +15,11 @@ class Settings(BaseSettings):
     FIREBASE_PROJECT_ID: Optional[str] = None
     FIREBASE_PRIVATE_KEY: Optional[str] = None
     FIREBASE_CLIENT_EMAIL: Optional[str] = None
+    FIREBASE_STORAGE_BUCKET: Optional[str] = None
 
-    # OCR 설정
-    # PaddleOCR 사용 (오픈소스, 설정 불필요)
+    # Azure OCR 설정
+    AZURE_OCR_ENDPOINT: Optional[str] = None
+    AZURE_OCR_KEY: Optional[str] = None
 
     # CORS 설정
     ALLOWED_ORIGINS: str = "http://localhost:3000,http://localhost:8080,http://localhost:5173"

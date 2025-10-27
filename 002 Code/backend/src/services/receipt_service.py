@@ -38,7 +38,18 @@ class ReceiptService:
             처리 결과 (receipt, expenses)
         """
         try:
-            # 1. OCR 처리
+            # 1. 이미지를 Firebase Storage에 업로드
+            uploaded_image_url = None
+            if image_data:
+                uploaded_image_url = firebase_client.upload_image(
+                    image_data=image_data,
+                    user_id=user_id
+                )
+                if uploaded_image_url:
+                    print(f"[Storage] 이미지 업로드 완료: {uploaded_image_url}")
+                    image_url = uploaded_image_url
+
+            # 2. OCR 처리
             print(f"[OCR] Receipt OCR processing started...")
             ocr_result = await ocr_service.process_receipt(image_data=image_data)
 
@@ -48,12 +59,20 @@ class ReceiptService:
             ocr_data = ocr_result["data"]
 
             # 2. Receipt 데이터 생성
+            # OCR 데이터에서 날짜 처리
+            if isinstance(ocr_data["date"], datetime):
+                purchase_date = ocr_data["date"]
+            else:
+                purchase_date = datetime.strptime(ocr_data["date"], "%Y-%m-%d")
+
             receipt_data = {
                 "user_id": user_id,
                 "store_name": ocr_data["store_name"],
+                "store_address": ocr_data.get("store_address", ""),
+                "store_phone_number": ocr_data.get("store_phone_number", ""),
                 "total_amount": ocr_data["total_amount"],
-                "purchase_date": datetime.strptime(ocr_data["date"], "%Y-%m-%d"),
-                "items": ocr_data["items"],
+                "purchase_date": purchase_date,
+                "items": [],  # 개별 품목은 저장하지 않음
                 "image_url": image_url,
                 "ocr_raw_data": ocr_result.get("raw_ocr_response"),
                 "ocr_status": "completed",
@@ -69,38 +88,38 @@ class ReceiptService:
 
             print(f"[SUCCESS] Receipt saved: {receipt_ref.id}")
 
-            # 4. 각 품목별로 Expense 자동 생성
+            # 4. 총액으로 단일 Expense 자동 생성
             created_expenses = []
 
-            for item in ocr_data["items"]:
-                # 카테고리 자동 분류
-                category, confidence = category_service.classify(
-                    store_name=ocr_data["store_name"],
-                    item_name=item["name"],
-                    amount=item["price"]
-                )
+            # 카테고리 자동 분류
+            category, confidence = category_service.classify(
+                store_name=ocr_data["store_name"],
+                item_name="",
+                amount=ocr_data["total_amount"]
+            )
 
-                # Expense 생성
-                expense = await expense_service.create_expense(
-                    user_id=user_id,
-                    receipt_id=receipt_ref.id,
-                    store_name=ocr_data["store_name"],
-                    amount=item["price"],
-                    date=receipt_data["purchase_date"],
-                    item_name=item["name"],
-                    category=category,
-                    description=f"{ocr_data['store_name']}에서 구매"
-                )
+            # Expense 생성
+            expense = await expense_service.create_expense(
+                user_id=user_id,
+                receipt_id=receipt_ref.id,
+                store_name=ocr_data["store_name"],
+                store_address=ocr_data.get("store_address", ""),
+                store_phone_number=ocr_data.get("store_phone_number", ""),
+                amount=ocr_data["total_amount"],
+                date=receipt_data["purchase_date"],
+                item_name="",
+                category=category,
+                description=f"{ocr_data['store_name']}에서 구매"
+            )
 
-                created_expenses.append(expense)
-                # 한글 인코딩 문제 방지를 위해 영문으로 출력
-                print(f"[EXPENSE] Created: {category} - {item['price']} KRW")
+            created_expenses.append(expense)
+            print(f"[EXPENSE] Created: {category} - {ocr_data['total_amount']} KRW")
 
             return {
                 "status": "success",
                 "receipt": receipt_data,
                 "expenses": created_expenses,
-                "message": f"영수증 처리 완료: {len(created_expenses)}개의 지출 내역이 생성되었습니다"
+                "message": f"영수증 처리 완료: 총 {ocr_data['total_amount']}원의 지출 내역이 생성되었습니다"
             }
 
         except Exception as e:
@@ -108,6 +127,8 @@ class ReceiptService:
             error_receipt_data = {
                 "user_id": user_id,
                 "store_name": "",
+                "store_address": "",
+                "store_phone_number": "",
                 "total_amount": 0,
                 "purchase_date": datetime.utcnow(),
                 "items": [],

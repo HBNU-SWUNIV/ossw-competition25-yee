@@ -9,6 +9,8 @@ class ExpenseBase(BaseModel):
     amount: float = Field(..., gt=0)
     date: datetime
     store_name: str = Field(..., min_length=1, max_length=100)
+    store_address: Optional[str] = Field(None, max_length=200)
+    store_phone_number: Optional[str] = Field(None, max_length=50)
     description: Optional[str] = Field(None, max_length=500)
     item_name: Optional[str] = Field(None, max_length=200)
 
@@ -24,6 +26,8 @@ class ExpenseUpdate(BaseModel):
     amount: Optional[float] = Field(None, gt=0)
     date: Optional[datetime] = None
     store_name: Optional[str] = Field(None, min_length=1, max_length=100)
+    store_address: Optional[str] = Field(None, max_length=200)
+    store_phone_number: Optional[str] = Field(None, max_length=50)
     description: Optional[str] = Field(None, max_length=500)
     item_name: Optional[str] = Field(None, max_length=200)
 

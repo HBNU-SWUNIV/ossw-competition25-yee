@@ -16,6 +16,8 @@ class ReceiptBase(BaseModel):
     total_amount: float = Field(..., gt=0)
     purchase_date: datetime
     items: List[ReceiptItem]
+    store_address: Optional[str] = None
+    store_phone_number: Optional[str] = None
 
 
 class ReceiptCreate(BaseModel):
@@ -30,6 +32,8 @@ class ReceiptUpdate(BaseModel):
     total_amount: Optional[float] = Field(None, gt=0)
     purchase_date: Optional[datetime] = None
     items: Optional[List[ReceiptItem]] = None
+    store_address: Optional[str] = None
+    store_phone_number: Optional[str] = None
     budget_id: Optional[str] = None
 
 

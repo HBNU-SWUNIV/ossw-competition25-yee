@@ -1,30 +1,48 @@
 import io
+import os
 import re
+import cv2
 from datetime import datetime
-from typing import Dict, Any, List
-from paddleocr import PaddleOCR
+from typing import Dict, Any, Optional
 from PIL import Image
+from azure.core.credentials import AzureKeyCredential
+from azure.ai.documentintelligence import DocumentIntelligenceClient
+from azure.ai.documentintelligence.models import AnalyzeResult
+from dotenv import load_dotenv
+
+# .env 파일 로드
+load_dotenv()
 
 
 class OCRService:
-    """PaddleOCR 기반 영수증 OCR 서비스 (오픈소스)"""
+    """Azure Document Intelligence 기반 영수증 OCR 서비스"""
 
     def __init__(self):
-        # PaddleOCR 초기화 (한글 + 영어)
-        # use_angle_cls=True: 이미지 회전 감지 및 보정
-        # lang='korean': 한글 모델 사용
-        print("[OCR] Initializing PaddleOCR...")
-        self.ocr = PaddleOCR(
-            use_angle_cls=True,
-            lang='korean',
-            show_log=False,
-            use_gpu=False  # CPU 사용 (GPU가 있으면 True로 변경)
+        """Azure Document Intelligence 클라이언트 초기화"""
+        print("[OCR] Initializing Azure Document Intelligence...")
+
+        # 환경 변수에서 Azure 자격증명 가져오기
+        self.endpoint = os.getenv("AZURE_OCR_ENDPOINT")
+        self.key = os.getenv("AZURE_OCR_KEY")
+
+        if not self.endpoint or not self.key:
+            raise ValueError(
+                "Azure OCR 자격증명이 설정되지 않았습니다.\n"
+                ".env 파일에 다음을 추가하세요:\n"
+                "AZURE_OCR_ENDPOINT=your-endpoint-url\n"
+                "AZURE_OCR_KEY=your-api-key"
+            )
+
+        self.client = DocumentIntelligenceClient(
+            endpoint=self.endpoint,
+            credential=AzureKeyCredential(self.key)
         )
-        print("[OCR] PaddleOCR initialized successfully")
+        self.file_limit_mb = 4
+        print("[OCR] Azure Document Intelligence initialized successfully")
 
     async def process_receipt(self, image_data: bytes = None, image_path: str = None) -> Dict[str, Any]:
         """
-        영수증 이미지를 OCR 처리하여 구조화된 데이터 추출
+        영수증 이미지를 Azure OCR 처리하여 구조화된 데이터 추출
 
         Args:
             image_data: 이미지 바이트 데이터
@@ -34,52 +52,45 @@ class OCRService:
             OCR 결과 딕셔너리
         """
         try:
-            # 이미지 로드
+            # 이미지 데이터 준비
             if image_data:
-                image = Image.open(io.BytesIO(image_data))
+                image_bytes = image_data
             elif image_path:
-                image = Image.open(image_path)
+                with open(image_path, "rb") as f:
+                    image_bytes = f.read()
             else:
                 raise ValueError("image_data 또는 image_path가 필요합니다")
 
-            # 이미지를 numpy array로 변환
-            import numpy as np
-            image_np = np.array(image)
+            # 파일 크기 확인 및 압축
+            file_size_mb = len(image_bytes) / (1024 * 1024)
+            content_type = "application/octet-stream"
 
-            # PaddleOCR 실행
-            print("[OCR] Running PaddleOCR on image...")
-            result = self.ocr.ocr(image_np, cls=True)
+            if file_size_mb > self.file_limit_mb:
+                print(f"[OCR] 파일 크기({file_size_mb:.2f} MB)가 {self.file_limit_mb}MB를 초과합니다. 압축을 시도합니다.")
+                image_bytes = self._compress_image(image_bytes)
+                file_size_mb = len(image_bytes) / (1024 * 1024)
+                print(f"[OCR] 압축 완료. (새 용량: {file_size_mb:.2f} MB)")
+                content_type = "image/jpeg"
 
-            # OCR 결과에서 텍스트 추출
-            if not result or not result[0]:
-                return {
-                    "status": "error",
-                    "message": "텍스트를 찾을 수 없습니다",
-                    "data": None
-                }
+            # Azure Document Intelligence API 호출
+            print("[OCR] Azure Document Intelligence로 영수증 분석 중...")
+            poller = self.client.begin_analyze_document(
+                "prebuilt-receipt",
+                body=image_bytes,
+                content_type=content_type
+            )
 
-            # 모든 텍스트 라인 추출
-            all_text_lines = []
-            for line in result[0]:
-                text = line[1][0]  # (bbox, (text, confidence))
-                confidence = line[1][1]
-                all_text_lines.append({
-                    "text": text,
-                    "confidence": confidence
-                })
+            result: AnalyzeResult = poller.result()
 
-            print(f"[OCR] Extracted {len(all_text_lines)} text lines")
-
-            # 영수증 정보 파싱
-            parsed_data = self._parse_receipt(all_text_lines)
+            # Azure OCR 결과 파싱
+            parsed_data = self._parse_azure_receipt(result)
 
             return {
                 "status": "success",
                 "data": parsed_data,
                 "raw_ocr_response": {
-                    "engine": "PaddleOCR",
-                    "version": "2.7.0",
-                    "lines": all_text_lines
+                    "engine": "Azure Document Intelligence",
+                    "confidence": result.documents[0].confidence if result.documents else 0
                 }
             }
 
@@ -91,191 +102,139 @@ class OCRService:
                 "data": None
             }
 
-    def _parse_receipt(self, text_lines: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def _compress_image(self, image_bytes: bytes) -> bytes:
         """
-        OCR 텍스트 라인에서 영수증 정보 추출
+        이미지 압축 (4MB 초과 시)
 
         Args:
-            text_lines: OCR로 추출한 텍스트 라인 리스트
+            image_bytes: 원본 이미지 바이트
+
+        Returns:
+            압축된 이미지 바이트
+        """
+        try:
+            image = cv2.imdecode(
+                __import__('numpy').frombuffer(image_bytes, __import__('numpy').uint8),
+                cv2.IMREAD_COLOR
+            )
+            if image is None:
+                return image_bytes
+
+            encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 85]
+            result, encoded_image = cv2.imencode('.jpg', image, encode_param)
+
+            if result:
+                return encoded_image.tobytes()
+            return image_bytes
+        except Exception as e:
+            print(f"[OCR] 이미지 압축 실패: {str(e)}")
+            return image_bytes
+
+    def _parse_azure_receipt(self, result: AnalyzeResult) -> Dict[str, Any]:
+        """
+        Azure Document Intelligence 결과에서 영수증 정보 추출
+
+        Args:
+            result: Azure AnalyzeResult 객체
 
         Returns:
             파싱된 영수증 데이터
         """
-        # 전체 텍스트 결합
-        full_text = "\n".join([line["text"] for line in text_lines])
+        if not result.documents or len(result.documents) == 0:
+            raise ValueError("영수증 정보를 추출할 수 없습니다")
 
-        # 1. 상호명 추출 (보통 첫 줄 또는 두 번째 줄)
-        store_name = self._extract_store_name(text_lines)
+        receipt = result.documents[0]
+        fields = receipt.fields
 
-        # 2. 날짜 추출
-        date = self._extract_date(full_text)
+        # 1. 상호명 추출
+        store_name = self._get_field_value(fields.get("MerchantName"))
 
-        # 3. 금액 추출
-        amounts = self._extract_amounts(text_lines)
+        # 2. 주소 추출
+        store_address = self._get_field_value(fields.get("MerchantAddress"))
 
-        # 4. 총액 추출 (가장 큰 금액 또는 "합계", "총액" 근처의 금액)
-        total_amount = self._extract_total_amount(text_lines, amounts)
+        # 3. 전화번호 추출
+        store_phone_number = self._get_field_value(fields.get("MerchantPhoneNumber"))
 
-        # 5. 품목 추출 (금액이 있는 라인들)
-        items = self._extract_items(text_lines, amounts)
+        # 4. 날짜 추출
+        date = self._extract_azure_date(
+            fields.get("TransactionDate"),
+            fields.get("TransactionTime")
+        )
+
+        # 5. 총액 추출
+        total_amount = self._extract_azure_total(fields.get("Total"))
 
         return {
-            "store_name": store_name,
+            "store_name": store_name or "미지정",
+            "store_address": store_address or "",
+            "store_phone_number": store_phone_number or "",
             "date": date,
-            "total_amount": total_amount,
-            "items": items
+            "total_amount": total_amount
         }
 
-    def _extract_store_name(self, text_lines: List[Dict[str, Any]]) -> str:
-        """상호명 추출 (상위 2-3줄에서 가장 신뢰도 높은 텍스트)"""
-        if not text_lines:
-            return "알 수 없음"
+    def _get_field_value(self, field) -> Optional[str]:
+        """Azure 필드에서 값 추출"""
+        if field is None:
+            return None
+        if hasattr(field, 'content'):
+            return field.content
+        if hasattr(field, 'value'):
+            return str(field.value)
+        return None
 
-        # 상위 3줄 중 가장 긴 텍스트를 상호명으로 추정
-        top_lines = text_lines[:3]
-        store_candidates = [
-            line["text"] for line in top_lines
-            if len(line["text"]) > 2 and line["confidence"] > 0.8
-        ]
+    def _extract_azure_date(self, date_field, time_field) -> datetime:
+        """Azure에서 추출한 날짜-시간 필드 파싱"""
+        try:
+            date_str = self._get_field_value(date_field) or ""
+            time_str = self._get_field_value(time_field) or ""
 
-        if store_candidates:
-            return max(store_candidates, key=len)
-        return text_lines[0]["text"] if text_lines else "알 수 없음"
+            # 날짜 형식: YYYY-MM-DD
+            if date_str:
+                date_obj = datetime.strptime(date_str, "%Y-%m-%d")
 
-    def _extract_date(self, text: str) -> str:
-        """날짜 추출 (YYYY-MM-DD, YYYY.MM.DD, YYYY/MM/DD 등)"""
-        # 날짜 패턴들
-        date_patterns = [
-            r'(\d{4})[-.년/\s](\d{1,2})[-.월/\s](\d{1,2})',  # 2024-01-15, 2024년 1월 15일
-            r'(\d{2})[-.년/\s](\d{1,2})[-.월/\s](\d{1,2})',  # 24-01-15
-        ]
-
-        for pattern in date_patterns:
-            match = re.search(pattern, text)
-            if match:
-                year, month, day = match.groups()
-                # 2자리 연도를 4자리로 변환
-                if len(year) == 2:
-                    year = f"20{year}"
-                try:
-                    # 유효한 날짜인지 확인
-                    date_obj = datetime(int(year), int(month), int(day))
-                    return date_obj.strftime("%Y-%m-%d")
-                except ValueError:
-                    continue
-
-        # 날짜를 찾지 못하면 오늘 날짜 반환
-        return datetime.now().strftime("%Y-%m-%d")
-
-    def _extract_amounts(self, text_lines: List[Dict[str, Any]]) -> List[int]:
-        """모든 금액 추출"""
-        amounts = []
-        for line in text_lines:
-            text = line["text"]
-            # 금액 패턴: 숫자 + 원, 또는 ,로 구분된 숫자
-            amount_matches = re.findall(r'([\d,]+)\s*원?', text)
-            for match in amount_matches:
-                try:
-                    amount = int(match.replace(',', ''))
-                    if 100 <= amount <= 10000000:  # 100원 ~ 1000만원 범위
-                        amounts.append(amount)
-                except ValueError:
-                    continue
-        return amounts
-
-    def _extract_total_amount(self, text_lines: List[Dict[str, Any]], amounts: List[int]) -> int:
-        """총액 추출 (합계, 총액, 받을금액 등의 키워드 근처)"""
-        total_keywords = ['합계금액', '받을금액', '결제금액', '총인금액', '합계', '총액', 'total', 'Total', '신용승인금액', '카드']
-
-        max_amount_with_keyword = 0
-
-        # 키워드가 있는 라인 및 다음 라인에서 금액 찾기
-        for i, line in enumerate(text_lines):
-            text = line["text"]
-            if any(keyword in text for keyword in total_keywords):
-                # 현재 라인에서 금액 추출
-                amount_matches = re.findall(r'([\d,]+)', text)
-                for match in amount_matches:
+                # 시간 형식: HH:MM 또는 HH:MM:SS
+                if time_str:
                     try:
-                        amount = int(match.replace(',', ''))
-                        if 1000 <= amount <= 10000000:  # 최소 1000원 이상
-                            max_amount_with_keyword = max(max_amount_with_keyword, amount)
-                    except ValueError:
-                        continue
-
-                # 다음 라인도 확인 (금액이 다음 줄에 있을 수 있음)
-                if i + 1 < len(text_lines):
-                    next_text = text_lines[i + 1]["text"]
-                    amount_matches = re.findall(r'([\d,]+)', next_text)
-                    for match in amount_matches:
+                        time_obj = datetime.strptime(time_str, "%H:%M:%S")
+                    except:
                         try:
-                            amount = int(match.replace(',', ''))
-                            if 1000 <= amount <= 10000000:
-                                max_amount_with_keyword = max(max_amount_with_keyword, amount)
-                        except ValueError:
-                            continue
+                            time_obj = datetime.strptime(time_str, "%H:%M")
+                        except:
+                            time_obj = datetime.strptime("00:00:00", "%H:%M:%S")
 
-        if max_amount_with_keyword > 0:
-            return max_amount_with_keyword
+                    date_obj = date_obj.replace(
+                        hour=time_obj.hour,
+                        minute=time_obj.minute,
+                        second=time_obj.second
+                    )
 
-        # 키워드를 못 찾으면 가장 큰 금액 반환 (10,000원 이상)
-        valid_amounts = [amt for amt in amounts if amt >= 10000]
-        if valid_amounts:
-            return max(valid_amounts)
-        elif amounts:
-            return max(amounts)
-        return 0
+                return date_obj
+        except Exception as e:
+            print(f"[OCR] 날짜 파싱 오류: {str(e)}")
 
-    def _extract_items(self, text_lines: List[Dict[str, Any]], amounts: List[int]) -> List[Dict[str, Any]]:
-        """품목 추출 (상품명 + 금액 조합)"""
-        items = []
-        skip_keywords = ['합계', '총액', '받을금액', '결제금액', '카드', '현금', '부가세', 'VAT', '할인', '과세', '면세', '세액', '승인']
-        seen_amounts = set()  # 중복 방지
+        return datetime.utcnow()
 
-        for i, line in enumerate(text_lines):
-            text = line["text"]
+    def _extract_azure_total(self, total_field) -> float:
+        """Azure에서 추출한 총액 필드 파싱"""
+        try:
+            if total_field is None:
+                return 0.0
 
-            # 스킵할 라인
-            if any(keyword in text for keyword in skip_keywords):
-                continue
+            # Amount 객체인 경우
+            if hasattr(total_field, 'value') and hasattr(total_field.value, 'amount'):
+                return float(total_field.value.amount)
 
-            # 너무 짧은 라인 스킵 (노이즈)
-            if len(text.strip()) < 2:
-                continue
+            # 문자열인 경우
+            if hasattr(total_field, 'content'):
+                content = total_field.content
+                # 숫자만 추출
+                numbers = re.findall(r'\d+(?:,\d+)*(?:\.\d+)?', content.replace(',', ''))
+                if numbers:
+                    return float(numbers[-1])
 
-            # 금액이 포함된 라인 (1000원 이상만)
-            amount_matches = re.findall(r'([\d,]+)', text)
-            for match in amount_matches:
-                try:
-                    amount = int(match.replace(',', ''))
-                    # 1000원 이상 100만원 이하, 이미 추가하지 않은 금액
-                    if 1000 <= amount <= 1000000 and amount not in seen_amounts:
-                        # 상품명 추출 (금액을 제거한 텍스트)
-                        item_name = re.sub(r'[\d,]+', '', text).strip()
-                        # 특수문자, 공백만 있는 경우 제외
-                        item_name = re.sub(r'[^\w가-힣\s]', '', item_name).strip()
-
-                        if len(item_name) >= 2:  # 최소 2글자 이상
-                            items.append({
-                                "name": item_name,
-                                "price": amount
-                            })
-                            seen_amounts.add(amount)
-                            break  # 한 라인에서 하나의 품목만 추출
-                except ValueError:
-                    continue
-
-        # 품목이 없거나 너무 적으면 총액을 단일 품목으로 처리
-        if len(items) == 0:
-            valid_amounts = [amt for amt in amounts if amt >= 1000]
-            if valid_amounts:
-                max_amount = max(valid_amounts)
-                items = [{
-                    "name": "구매 상품",
-                    "price": max_amount
-                }]
-
-        return items
-
+            return 0.0
+        except Exception as e:
+            print(f"[OCR] 총액 파싱 오류: {str(e)}")
+            return 0.0
 
 ocr_service = OCRService()

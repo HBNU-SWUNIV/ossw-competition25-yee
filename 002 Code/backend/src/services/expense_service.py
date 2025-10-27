@@ -18,6 +18,8 @@ class ExpenseService:
         store_name: str,
         amount: float,
         date: datetime,
+        store_address: str = None,
+        store_phone_number: str = None,
         item_name: str = None,
         category: str = None,
         description: str = None
@@ -59,6 +61,8 @@ class ExpenseService:
                 "amount": amount,
                 "date": date,
                 "store_name": store_name,
+                "store_address": store_address or "",
+                "store_phone_number": store_phone_number or "",
                 "description": description,
                 "item_name": item_name,
                 "classification_method": classification_method,

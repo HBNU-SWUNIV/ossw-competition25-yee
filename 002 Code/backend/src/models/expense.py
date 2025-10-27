@@ -14,6 +14,8 @@ class Expense:
         amount: float,
         date: datetime,
         store_name: str,
+        store_address: Optional[str] = None,
+        store_phone_number: Optional[str] = None,
         description: Optional[str] = None,
         item_name: Optional[str] = None,
         classification_method: str = "auto",  # auto, manual
@@ -28,6 +30,8 @@ class Expense:
         self.amount = amount
         self.date = date
         self.store_name = store_name
+        self.store_address = store_address
+        self.store_phone_number = store_phone_number
         self.description = description
         self.item_name = item_name
         self.classification_method = classification_method
@@ -45,6 +49,8 @@ class Expense:
             "amount": self.amount,
             "date": self.date.isoformat(),
             "store_name": self.store_name,
+            "store_address": self.store_address,
+            "store_phone_number": self.store_phone_number,
             "description": self.description,
             "item_name": self.item_name,
             "classification_method": self.classification_method,
