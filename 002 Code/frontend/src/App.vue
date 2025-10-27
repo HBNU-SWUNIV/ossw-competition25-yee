@@ -97,7 +97,7 @@
 
     <!-- 메인 콘텐츠 -->
     <main class="min-h-screen transition-all duration-300" :class="{ 'ml-0': !sidebarOpen, 'lg:ml-80': sidebarOpen }">
-      <div class="flex justify-center px-4 sm:px-6 lg:px-8 pt-8 sm:pt-12 pb-12">
+      <div class="flex justify-center px-4 sm:px-6 lg:px-8 pt-20 sm:pt-24 pb-12">
         <div class="w-full max-w-6xl">
           <!-- 대시보드 메인 화면 -->
           <div v-if="activeMenu === 'home'" class="space-y-8">
