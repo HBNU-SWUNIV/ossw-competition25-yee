@@ -58,7 +58,7 @@
     <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden">
       <!-- 데스크톱 테이블 -->
       <div class="hidden lg:block">
-        <div class="grid grid-cols-7 gap-4 p-4 bg-gray-50 font-semibold text-gray-700 border-b">
+        <div class="grid grid-cols-8 gap-4 p-4 bg-gray-50 font-semibold text-gray-700 border-b">
           <div>날짜</div>
           <div>카테고리</div>
           <div>내용</div>
@@ -66,10 +66,11 @@
           <div>주소</div>
           <div>연락처</div>
           <div class="text-right">금액</div>
+          <div class="text-right">작업</div>
         </div>
         <div class="divide-y divide-gray-200">
           <div v-for="expense in filteredExpenses" :key="expense.id"
-            class="grid grid-cols-7 gap-4 p-4 hover:bg-gray-50 transition-colors duration-200">
+            class="grid grid-cols-8 gap-4 p-4 hover:bg-gray-50 transition-colors duration-200">
             <div class="text-sm text-gray-600">{{ formatDate(expense.date) }}</div>
             <div>
               <span class="inline-block px-3 py-1 rounded-full text-xs font-medium text-white" :class="{

@@ -111,44 +111,6 @@
               <div class="absolute -bottom-4 -right-4 w-24 h-24 bg-white opacity-10 rounded-full"></div>
             </div>
 
-            <!-- 주요 통계 카드 -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div
-                class="bg-white rounded-2xl p-6 border border-gray-100 hover:border-blue-200 hover:shadow-lg transition-all duration-200">
-                <div class="mb-4">
-                  <p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">총 예산</p>
-                  <p class="text-xl font-bold text-gray-900">-</p>
-                </div>
-                <p class="text-xs text-gray-500">예산을 등록해보세요</p>
-              </div>
-
-              <div
-                class="bg-white rounded-2xl p-6 border border-gray-100 hover:border-red-200 hover:shadow-lg transition-all duration-200">
-                <div class="mb-4">
-                  <p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">이번 달 지출</p>
-                  <p class="text-xl font-bold text-gray-900">-</p>
-                </div>
-                <p class="text-xs text-gray-500">지출 내역을 추가해보세요</p>
-              </div>
-
-              <div
-                class="bg-white rounded-2xl p-6 border border-gray-100 hover:border-green-200 hover:shadow-lg transition-all duration-200">
-                <div class="mb-4">
-                  <p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">남은 예산</p>
-                  <p class="text-xl font-bold text-gray-900">-</p>
-                </div>
-                <p class="text-xs text-gray-500">예산 현황을 확인하세요</p>
-              </div>
-
-              <div
-                class="bg-white rounded-2xl p-6 border border-gray-100 hover:border-purple-200 hover:shadow-lg transition-all duration-200">
-                <div class="mb-4">
-                  <p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">자치기구</p>
-                  <p class="text-xl font-bold text-gray-900">-</p>
-                </div>
-                <p class="text-xs text-gray-500">자치기구를 관리하세요</p>
-              </div>
-            </div>
 
             <!-- 빠른 액션 버튼 -->
             <div class="bg-white rounded-2xl p-6 border border-gray-100">
