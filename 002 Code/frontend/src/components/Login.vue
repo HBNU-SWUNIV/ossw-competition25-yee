@@ -1,33 +1,27 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-primary-50 to-primary-100 flex items-center justify-center p-4">
+  <div class="min-h-screen bg-gray-50 flex items-center justify-center p-4">
     <div class="max-w-md w-full">
       <!-- 로고 및 제목 -->
       <div class="text-center mb-8">
-        <div class="w-20 h-20 bg-gradient-to-br from-primary-600 to-primary-700 rounded-2xl flex items-center justify-center text-4xl mx-auto mb-4 shadow-lg">
+        <div class="w-16 h-16 bg-blue-500 rounded-3xl flex items-center justify-center text-3xl mx-auto mb-6 shadow-lg">
           🏢
         </div>
-        <h1 class="text-3xl font-bold text-gray-900 mb-2">예산 관리 시스템</h1>
-        <p class="text-gray-600">{{ isRegistering ? '새 계정 만들기' : '로그인하여 시스템에 접속하세요' }}</p>
+        <h1 class="text-2xl font-bold text-gray-900 mb-2">예산 관리 시스템</h1>
+        <p class="text-gray-500 text-sm">{{ isRegistering ? '새 계정을 만들어보세요' : '계정에 로그인하세요' }}</p>
       </div>
 
       <!-- 로그인/회원가입 폼 -->
-      <div class="card p-8">
+      <div class="bg-white rounded-3xl p-8 shadow-lg border border-gray-100">
         <!-- 탭 전환 -->
-        <div class="flex mb-6 bg-gray-100 rounded-lg p-1">
-          <button
-            type="button"
-            @click="isRegistering = false"
-            class="flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all"
-            :class="!isRegistering ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'"
-          >
+        <div class="flex mb-8 bg-gray-50 rounded-2xl p-1">
+          <button type="button" @click="isRegistering = false"
+            class="flex-1 py-3 px-4 rounded-xl text-sm font-semibold transition-all"
+            :class="!isRegistering ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'">
             로그인
           </button>
-          <button
-            type="button"
-            @click="isRegistering = true"
-            class="flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all"
-            :class="isRegistering ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'"
-          >
+          <button type="button" @click="isRegistering = true"
+            class="flex-1 py-3 px-4 rounded-xl text-sm font-semibold transition-all"
+            :class="isRegistering ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'">
             회원가입
           </button>
         </div>
@@ -39,14 +33,8 @@
             <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
               이메일
             </label>
-            <input
-              id="email"
-              v-model="loginForm.email"
-              type="email"
-              required
-              class="input-field"
-              placeholder="이메일을 입력하세요"
-            />
+            <input id="email" v-model="loginForm.email" type="email" required class="input-field"
+              placeholder="이메일을 입력하세요" />
           </div>
 
           <!-- 비밀번호 입력 -->
@@ -55,19 +43,10 @@
               비밀번호
             </label>
             <div class="relative">
-              <input
-                id="password"
-                v-model="loginForm.password"
-                :type="showPassword ? 'text' : 'password'"
-                required
-                class="input-field pr-12"
-                placeholder="비밀번호를 입력하세요"
-              />
-              <button
-                type="button"
-                @click="showPassword = !showPassword"
-                class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-200"
-              >
+              <input id="password" v-model="loginForm.password" :type="showPassword ? 'text' : 'password'" required
+                class="input-field pr-12" placeholder="비밀번호를 입력하세요" />
+              <button type="button" @click="showPassword = !showPassword"
+                class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-200">
                 <span v-if="showPassword" class="text-xl">👁️</span>
                 <span v-else class="text-xl">👁️‍🗨️</span>
               </button>
@@ -76,24 +55,16 @@
 
           <!-- 로그인 유지 -->
           <div class="flex items-center">
-            <input
-              id="remember"
-              v-model="loginForm.remember"
-              type="checkbox"
-              class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-            />
+            <input id="remember" v-model="loginForm.remember" type="checkbox"
+              class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded" />
             <label for="remember" class="ml-2 block text-sm text-gray-700">
               로그인 상태 유지
             </label>
           </div>
 
           <!-- 로그인 버튼 -->
-          <button
-            type="submit"
-            :disabled="isLoading"
-            class="w-full btn-primary flex items-center justify-center gap-2"
-            :class="{ 'opacity-50 cursor-not-allowed': isLoading }"
-          >
+          <button type="submit" :disabled="isLoading" class="w-full btn-primary flex items-center justify-center gap-2"
+            :class="{ 'opacity-50 cursor-not-allowed': isLoading }">
             <span v-if="isLoading" class="animate-spin">⏳</span>
             <span v-else>🔐</span>
             {{ isLoading ? '로그인 중...' : '로그인' }}
@@ -115,14 +86,8 @@
             <label for="register-name" class="block text-sm font-medium text-gray-700 mb-2">
               이름
             </label>
-            <input
-              id="register-name"
-              v-model="registerForm.name"
-              type="text"
-              required
-              class="input-field"
-              placeholder="이름을 입력하세요"
-            />
+            <input id="register-name" v-model="registerForm.name" type="text" required class="input-field"
+              placeholder="이름을 입력하세요" />
           </div>
 
           <!-- 이메일 입력 -->
@@ -130,14 +95,8 @@
             <label for="register-email" class="block text-sm font-medium text-gray-700 mb-2">
               이메일
             </label>
-            <input
-              id="register-email"
-              v-model="registerForm.email"
-              type="email"
-              required
-              class="input-field"
-              placeholder="이메일을 입력하세요"
-            />
+            <input id="register-email" v-model="registerForm.email" type="email" required class="input-field"
+              placeholder="이메일을 입력하세요" />
           </div>
 
           <!-- 비밀번호 입력 -->
@@ -145,14 +104,8 @@
             <label for="register-password" class="block text-sm font-medium text-gray-700 mb-2">
               비밀번호
             </label>
-            <input
-              id="register-password"
-              v-model="registerForm.password"
-              type="password"
-              required
-              class="input-field"
-              placeholder="비밀번호를 입력하세요"
-            />
+            <input id="register-password" v-model="registerForm.password" type="password" required class="input-field"
+              placeholder="비밀번호를 입력하세요" />
           </div>
 
           <!-- 비밀번호 확인 -->
@@ -160,23 +113,13 @@
             <label for="register-password-confirm" class="block text-sm font-medium text-gray-700 mb-2">
               비밀번호 확인
             </label>
-            <input
-              id="register-password-confirm"
-              v-model="registerForm.passwordConfirm"
-              type="password"
-              required
-              class="input-field"
-              placeholder="비밀번호를 다시 입력하세요"
-            />
+            <input id="register-password-confirm" v-model="registerForm.passwordConfirm" type="password" required
+              class="input-field" placeholder="비밀번호를 다시 입력하세요" />
           </div>
 
           <!-- 회원가입 버튼 -->
-          <button
-            type="submit"
-            :disabled="isLoading"
-            class="w-full btn-primary flex items-center justify-center gap-2"
-            :class="{ 'opacity-50 cursor-not-allowed': isLoading }"
-          >
+          <button type="submit" :disabled="isLoading" class="w-full btn-primary flex items-center justify-center gap-2"
+            :class="{ 'opacity-50 cursor-not-allowed': isLoading }">
             <span v-if="isLoading" class="animate-spin">⏳</span>
             <span v-else>✨</span>
             {{ isLoading ? '가입 중...' : '회원가입' }}

@@ -6,12 +6,13 @@
   <div v-else id="app" class="min-h-screen bg-gray-50">
     <!-- 햄버거 메뉴 버튼 -->
     <button
-      class="fixed top-5 left-5 z-50 bg-primary-600 hover:bg-primary-700 text-white w-11 h-11 rounded-lg flex flex-col justify-center items-center gap-1 transition-all duration-300 shadow-lg hover:shadow-xl"
+      class="fixed top-6 left-6 z-50 bg-white hover:bg-gray-50 text-gray-700 w-12 h-12 rounded-2xl flex flex-col justify-center items-center gap-1 transition-all duration-300 shadow-medium border border-gray-200"
       @click="toggleSidebar" :class="{ 'active': sidebarOpen }">
-      <span class="w-6 h-0.5 bg-white rounded transition-all duration-300"
+      <span class="w-5 h-0.5 bg-gray-600 rounded transition-all duration-300"
         :class="{ 'rotate-45 translate-y-1.5': sidebarOpen }"></span>
-      <span class="w-6 h-0.5 bg-white rounded transition-all duration-300" :class="{ 'opacity-0': sidebarOpen }"></span>
-      <span class="w-6 h-0.5 bg-white rounded transition-all duration-300"
+      <span class="w-5 h-0.5 bg-gray-600 rounded transition-all duration-300"
+        :class="{ 'opacity-0': sidebarOpen }"></span>
+      <span class="w-5 h-0.5 bg-gray-600 rounded transition-all duration-300"
         :class="{ '-rotate-45 -translate-y-1.5': sidebarOpen }"></span>
     </button>
 
@@ -20,61 +21,77 @@
       @click="closeSidebar"></div>
 
     <!-- 사이드바 -->
-    <nav class="fixed top-0 left-0 h-full w-80 bg-white shadow-strong z-50 sidebar-transition transform"
+    <nav
+      class="fixed top-0 left-0 h-full w-80 bg-white shadow-toss z-50 sidebar-transition transform border-r border-gray-100"
       :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'">
-      <div class="flex items-center justify-between p-5 bg-primary-600 text-white border-b border-primary-700">
+      <div class="flex items-center justify-between p-6 border-b border-gray-100">
         <button @click="selectMenu('home')"
-          class="flex items-center gap-3 hover:bg-white hover:bg-opacity-10 rounded-lg p-2 -m-2 transition-colors duration-200 cursor-pointer">
-          <div class="w-12 h-12 bg-white bg-opacity-20 rounded-lg flex items-center justify-center text-2xl">
+          class="flex items-center gap-3 hover:bg-gray-50 rounded-2xl p-3 -m-3 transition-colors duration-200 cursor-pointer">
+          <div class="w-10 h-10 bg-blue-500 rounded-2xl flex items-center justify-center text-xl">
             🏢
           </div>
-          <h2 class="text-lg font-semibold leading-tight">예산 관리 시스템</h2>
+          <h2 class="text-lg font-bold text-gray-900 leading-tight">예산 관리</h2>
         </button>
         <button
-          class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white hover:bg-opacity-20 transition-colors duration-200"
+          class="w-10 h-10 flex items-center justify-center rounded-2xl hover:bg-gray-100 transition-colors duration-200"
           @click="closeSidebar">
-          <span class="text-xl">&times;</span>
+          <span class="text-xl text-gray-400">&times;</span>
         </button>
       </div>
 
-      <ul class="py-2">
+      <ul class="px-4 py-2 space-y-1">
         <li>
           <a href="#" @click="selectMenu('budget')"
-            class="flex items-center gap-3 px-5 py-4 text-gray-700 hover:bg-gray-50 hover:text-primary-600 transition-colors duration-200"
-            :class="{ 'bg-primary-50 text-primary-600 border-r-4 border-primary-600': activeMenu === 'budget' }">
-            <span class="text-xl">💰</span>
+            class="flex items-center gap-4 px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-2xl transition-all duration-200 group"
+            :class="{ 'bg-blue-50 text-blue-600 font-semibold': activeMenu === 'budget' }">
+            <div class="w-8 h-8 flex items-center justify-center rounded-xl transition-colors duration-200"
+              :class="activeMenu === 'budget' ? 'bg-blue-100' : 'group-hover:bg-gray-100'">
+              <span class="text-lg">💰</span>
+            </div>
             <span class="font-medium">예산관리</span>
           </a>
         </li>
         <li>
           <a href="#" @click="selectMenu('expenses')"
-            class="flex items-center gap-3 px-5 py-4 text-gray-700 hover:bg-gray-50 hover:text-primary-600 transition-colors duration-200"
-            :class="{ 'bg-primary-50 text-primary-600 border-r-4 border-primary-600': activeMenu === 'expenses' }">
-            <span class="text-xl">📊</span>
+            class="flex items-center gap-4 px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-2xl transition-all duration-200 group"
+            :class="{ 'bg-blue-50 text-blue-600 font-semibold': activeMenu === 'expenses' }">
+            <div class="w-8 h-8 flex items-center justify-center rounded-xl transition-colors duration-200"
+              :class="activeMenu === 'expenses' ? 'bg-blue-100' : 'group-hover:bg-gray-100'">
+              <span class="text-lg">📊</span>
+            </div>
             <span class="font-medium">지출내역</span>
           </a>
         </li>
         <li>
           <a href="#" @click="selectMenu('reports')"
-            class="flex items-center gap-3 px-5 py-4 text-gray-700 hover:bg-gray-50 hover:text-primary-600 transition-colors duration-200"
-            :class="{ 'bg-primary-50 text-primary-600 border-r-4 border-primary-600': activeMenu === 'reports' }">
-            <span class="text-xl">📈</span>
+            class="flex items-center gap-4 px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-2xl transition-all duration-200 group"
+            :class="{ 'bg-blue-50 text-blue-600 font-semibold': activeMenu === 'reports' }">
+            <div class="w-8 h-8 flex items-center justify-center rounded-xl transition-colors duration-200"
+              :class="activeMenu === 'reports' ? 'bg-blue-100' : 'group-hover:bg-gray-100'">
+              <span class="text-lg">📈</span>
+            </div>
             <span class="font-medium">리포트</span>
           </a>
         </li>
         <li>
           <a href="#" @click="selectMenu('departments')"
-            class="flex items-center gap-3 px-5 py-4 text-gray-700 hover:bg-gray-50 hover:text-primary-600 transition-colors duration-200"
-            :class="{ 'bg-primary-50 text-primary-600 border-r-4 border-primary-600': activeMenu === 'departments' }">
-            <span class="text-xl">🏢</span>
+            class="flex items-center gap-4 px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-2xl transition-all duration-200 group"
+            :class="{ 'bg-blue-50 text-blue-600 font-semibold': activeMenu === 'departments' }">
+            <div class="w-8 h-8 flex items-center justify-center rounded-xl transition-colors duration-200"
+              :class="activeMenu === 'departments' ? 'bg-blue-100' : 'group-hover:bg-gray-100'">
+              <span class="text-lg">🏢</span>
+            </div>
             <span class="font-medium">자치기구 관리</span>
           </a>
         </li>
         <li>
           <a href="#" @click="selectMenu('settings')"
-            class="flex items-center gap-3 px-5 py-4 text-gray-700 hover:bg-gray-50 hover:text-primary-600 transition-colors duration-200"
-            :class="{ 'bg-primary-50 text-primary-600 border-r-4 border-primary-600': activeMenu === 'settings' }">
-            <span class="text-xl">⚙️</span>
+            class="flex items-center gap-4 px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-2xl transition-all duration-200 group"
+            :class="{ 'bg-blue-50 text-blue-600 font-semibold': activeMenu === 'settings' }">
+            <div class="w-8 h-8 flex items-center justify-center rounded-xl transition-colors duration-200"
+              :class="activeMenu === 'settings' ? 'bg-blue-100' : 'group-hover:bg-gray-100'">
+              <span class="text-lg">⚙️</span>
+            </div>
             <span class="font-medium">설정</span>
           </a>
         </li>
@@ -83,27 +100,27 @@
 
     <!-- 메인 콘텐츠 -->
     <main class="min-h-screen transition-all duration-300" :class="{ 'ml-0': !sidebarOpen, 'lg:ml-80': sidebarOpen }">
-      <header class="bg-white shadow-soft sticky top-0 z-30">
-        <div class="pl-20 pr-4 sm:pl-24 sm:pr-6 lg:pr-8 py-6">
+      <header class="bg-white border-b border-gray-100 sticky top-0 z-30">
+        <div class="pl-24 pr-6 py-4">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-4">
               <button @click="selectMenu('home')"
-                class="w-14 h-14 bg-gradient-to-br from-primary-600 to-primary-700 rounded-xl flex items-center justify-center text-3xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 cursor-pointer">
+                class="w-12 h-12 bg-blue-500 hover:bg-blue-600 rounded-2xl flex items-center justify-center text-2xl shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer">
                 🏢
               </button>
-              <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">{{ getPageTitle() }}</h1>
+              <h1 class="text-xl font-bold text-gray-900">{{ getPageTitle() }}</h1>
             </div>
 
             <!-- 사용자 정보 및 로그아웃 -->
             <div class="flex items-center gap-4">
-              <div class="text-right">
-                <p class="text-sm font-medium text-gray-900">{{ userInfo?.name }}</p>
+              <div class="text-right hidden sm:block">
+                <p class="text-sm font-semibold text-gray-900">{{ userInfo?.name }}</p>
                 <p class="text-xs text-gray-500">{{ userInfo?.role === 'admin' ? '관리자' : '사용자' }}</p>
               </div>
               <button @click="handleLogout"
-                class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors duration-200">
+                class="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-gray-600 hover:text-gray-800 hover:bg-gray-50 rounded-2xl transition-all duration-200">
                 <span>🚪</span>
-                로그아웃
+                <span class="hidden sm:inline">로그아웃</span>
               </button>
             </div>
           </div>
@@ -114,212 +131,139 @@
         <!-- 대시보드 메인 화면 -->
         <div v-if="activeMenu === 'home'" class="space-y-8">
           <!-- 환영 메시지 -->
-          <div class="bg-gradient-to-r from-primary-600 to-primary-700 rounded-xl p-8 text-white">
-            <div class="flex items-center justify-between">
-              <div>
-                <h2 class="text-3xl font-bold mb-2">안녕하세요, {{ userInfo?.name }}님!</h2>
-                <p class="text-primary-100 text-lg">오늘도 효율적인 예산 관리를 시작해보세요.</p>
-              </div>
-              <div class="text-6xl opacity-20">🏢</div>
+          <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-3xl p-8 text-white relative overflow-hidden">
+            <div class="relative z-10">
+              <h2 class="text-2xl font-bold mb-2">안녕하세요, {{ userInfo?.name }}님!</h2>
+              <p class="text-blue-100 text-base opacity-90">효율적인 예산 관리를 시작해보세요</p>
             </div>
+            <div class="absolute top-4 right-4 text-4xl opacity-20">🏢</div>
+            <div class="absolute -bottom-4 -right-4 w-24 h-24 bg-white opacity-10 rounded-full"></div>
           </div>
 
           <!-- 주요 통계 카드 -->
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div class="bg-white rounded-xl p-6 shadow-soft hover:shadow-medium transition-shadow duration-300">
-              <div class="flex items-center justify-between">
-                <div>
-                  <p class="text-sm font-medium text-gray-600">총 예산</p>
-                  <p class="text-2xl font-bold text-gray-900">₩10,000,000</p>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div
+              class="bg-white rounded-2xl p-6 border border-gray-100 hover:border-blue-200 hover:shadow-lg transition-all duration-200">
+              <div class="flex items-center justify-between mb-4">
+                <div class="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center">
+                  <span class="text-2xl">💰</span>
                 </div>
-                <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center text-2xl">💰</div>
-              </div>
-              <div class="mt-4">
-                <div class="flex items-center text-sm text-green-600">
-                  <span class="mr-1">↗</span>
-                  <span>전월 대비 5% 증가</span>
+                <div class="text-right">
+                  <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">총 예산</p>
+                  <p class="text-xl font-bold text-gray-900">-</p>
                 </div>
               </div>
+              <p class="text-xs text-gray-500">예산을 등록해보세요</p>
             </div>
 
-            <div class="bg-white rounded-xl p-6 shadow-soft hover:shadow-medium transition-shadow duration-300">
-              <div class="flex items-center justify-between">
-                <div>
-                  <p class="text-sm font-medium text-gray-600">이번 달 지출</p>
-                  <p class="text-2xl font-bold text-gray-900">₩3,250,000</p>
+            <div
+              class="bg-white rounded-2xl p-6 border border-gray-100 hover:border-red-200 hover:shadow-lg transition-all duration-200">
+              <div class="flex items-center justify-between mb-4">
+                <div class="w-12 h-12 bg-red-50 rounded-xl flex items-center justify-center">
+                  <span class="text-2xl">📊</span>
                 </div>
-                <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center text-2xl">📊</div>
-              </div>
-              <div class="mt-4">
-                <div class="flex items-center text-sm text-red-600">
-                  <span class="mr-1">↗</span>
-                  <span>예산의 32.5% 사용</span>
+                <div class="text-right">
+                  <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">이번 달 지출</p>
+                  <p class="text-xl font-bold text-gray-900">-</p>
                 </div>
               </div>
+              <p class="text-xs text-gray-500">지출 내역을 추가해보세요</p>
             </div>
 
-            <div class="bg-white rounded-xl p-6 shadow-soft hover:shadow-medium transition-shadow duration-300">
-              <div class="flex items-center justify-between">
-                <div>
-                  <p class="text-sm font-medium text-gray-600">절약 금액</p>
-                  <p class="text-2xl font-bold text-gray-900">₩6,750,000</p>
+            <div
+              class="bg-white rounded-2xl p-6 border border-gray-100 hover:border-green-200 hover:shadow-lg transition-all duration-200">
+              <div class="flex items-center justify-between mb-4">
+                <div class="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center">
+                  <span class="text-2xl">📈</span>
                 </div>
-                <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center text-2xl">📈</div>
-              </div>
-              <div class="mt-4">
-                <div class="flex items-center text-sm text-green-600">
-                  <span class="mr-1">↗</span>
-                  <span>절약률 67.5%</span>
+                <div class="text-right">
+                  <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">남은 예산</p>
+                  <p class="text-xl font-bold text-gray-900">-</p>
                 </div>
               </div>
+              <p class="text-xs text-gray-500">예산 현황을 확인하세요</p>
             </div>
 
-            <div class="bg-white rounded-xl p-6 shadow-soft hover:shadow-medium transition-shadow duration-300">
-              <div class="flex items-center justify-between">
-                <div>
-                  <p class="text-sm font-medium text-gray-600">활성 자치 기구</p>
-                  <p class="text-2xl font-bold text-gray-900">12개</p>
+            <div
+              class="bg-white rounded-2xl p-6 border border-gray-100 hover:border-purple-200 hover:shadow-lg transition-all duration-200">
+              <div class="flex items-center justify-between mb-4">
+                <div class="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center">
+                  <span class="text-2xl">🏢</span>
                 </div>
-                <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center text-2xl">🏢</div>
-              </div>
-              <div class="mt-4">
-                <div class="flex items-center text-sm text-gray-600">
-                  <span class="mr-1">→</span>
-                  <span>전체 자치기구 운영 중</span>
+                <div class="text-right">
+                  <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">자치기구</p>
+                  <p class="text-xl font-bold text-gray-900">-</p>
                 </div>
               </div>
+              <p class="text-xs text-gray-500">자치기구를 관리하세요</p>
             </div>
           </div>
 
           <!-- 빠른 액션 버튼 -->
-          <div class="bg-white rounded-xl p-6 shadow-soft">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">빠른 작업</h3>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="bg-white rounded-2xl p-6 border border-gray-100">
+            <h3 class="text-lg font-bold text-gray-900 mb-6">빠른 작업</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               <button @click="selectMenu('budget')"
-                class="flex items-center gap-3 p-4 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors duration-200 text-left">
-                <div class="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center text-white text-lg">💰
+                class="group flex flex-col items-center p-6 bg-gray-50 hover:bg-blue-50 rounded-2xl transition-all duration-200 border border-transparent hover:border-blue-200">
+                <div
+                  class="w-14 h-14 bg-blue-500 group-hover:bg-blue-600 rounded-2xl flex items-center justify-center text-white text-2xl mb-3 transition-colors duration-200">
+                  💰
                 </div>
-                <div>
-                  <p class="font-medium text-gray-900">예산 등록</p>
-                  <p class="text-sm text-gray-600">새 예산 계획 수립</p>
-                </div>
+                <p class="font-semibold text-gray-900 text-center">예산 등록</p>
+                <p class="text-xs text-gray-500 text-center mt-1">새 예산 계획 수립</p>
               </button>
 
               <button @click="selectMenu('expenses')"
-                class="flex items-center gap-3 p-4 bg-red-50 hover:bg-red-100 rounded-lg transition-colors duration-200 text-left">
-                <div class="w-10 h-10 bg-red-500 rounded-lg flex items-center justify-center text-white text-lg">📊
+                class="group flex flex-col items-center p-6 bg-gray-50 hover:bg-red-50 rounded-2xl transition-all duration-200 border border-transparent hover:border-red-200">
+                <div
+                  class="w-14 h-14 bg-red-500 group-hover:bg-red-600 rounded-2xl flex items-center justify-center text-white text-2xl mb-3 transition-colors duration-200">
+                  📊
                 </div>
-                <div>
-                  <p class="font-medium text-gray-900">지출 추가</p>
-                  <p class="text-sm text-gray-600">새 지출 내역 등록</p>
-                </div>
+                <p class="font-semibold text-gray-900 text-center">지출 추가</p>
+                <p class="text-xs text-gray-500 text-center mt-1">새 지출 내역 등록</p>
               </button>
 
               <button @click="selectMenu('reports')"
-                class="flex items-center gap-3 p-4 bg-green-50 hover:bg-green-100 rounded-lg transition-colors duration-200 text-left">
-                <div class="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center text-white text-lg">📈
+                class="group flex flex-col items-center p-6 bg-gray-50 hover:bg-green-50 rounded-2xl transition-all duration-200 border border-transparent hover:border-green-200">
+                <div
+                  class="w-14 h-14 bg-green-500 group-hover:bg-green-600 rounded-2xl flex items-center justify-center text-white text-2xl mb-3 transition-colors duration-200">
+                  📈
                 </div>
-                <div>
-                  <p class="font-medium text-gray-900">리포트 보기</p>
-                  <p class="text-sm text-gray-600">상세 분석 리포트</p>
-                </div>
+                <p class="font-semibold text-gray-900 text-center">리포트 보기</p>
+                <p class="text-xs text-gray-500 text-center mt-1">상세 분석 리포트</p>
               </button>
 
               <button @click="selectMenu('departments')"
-                class="flex items-center gap-3 p-4 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors duration-200 text-left">
-                <div class="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center text-white text-lg">🏢
+                class="group flex flex-col items-center p-6 bg-gray-50 hover:bg-purple-50 rounded-2xl transition-all duration-200 border border-transparent hover:border-purple-200">
+                <div
+                  class="w-14 h-14 bg-purple-500 group-hover:bg-purple-600 rounded-2xl flex items-center justify-center text-white text-2xl mb-3 transition-colors duration-200">
+                  🏢
                 </div>
-                <div>
-                  <p class="font-medium text-gray-900">자치기구 관리</p>
-                  <p class="text-sm text-gray-600">자치기구 정보 확인</p>
-                </div>
+                <p class="font-semibold text-gray-900 text-center">자치기구 관리</p>
+                <p class="text-xs text-gray-500 text-center mt-1">자치기구 정보 확인</p>
               </button>
             </div>
           </div>
 
-          <!-- 최근 활동 -->
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div class="bg-white rounded-xl p-6 shadow-soft">
-              <h3 class="text-lg font-semibold text-gray-900 mb-4">최근 지출 내역</h3>
-              <div class="space-y-3">
-                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-sm">🖥️</div>
-                    <div>
-                      <p class="font-medium text-gray-900">사무용품 구매</p>
-                      <p class="text-sm text-gray-600">2024-01-15</p>
-                    </div>
-                  </div>
-                  <span class="font-semibold text-gray-900">₩150,000</span>
-                </div>
-
-                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center text-sm">🍽️</div>
-                    <div>
-                      <p class="font-medium text-gray-900">회의 식사비</p>
-                      <p class="text-sm text-gray-600">2024-01-14</p>
-                    </div>
-                  </div>
-                  <span class="font-semibold text-gray-900">₩80,000</span>
-                </div>
-
-                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center text-sm">🚗</div>
-                    <div>
-                      <p class="font-medium text-gray-900">교통비</p>
-                      <p class="text-sm text-gray-600">2024-01-13</p>
-                    </div>
-                  </div>
-                  <span class="font-semibold text-gray-900">₩45,000</span>
-                </div>
-              </div>
+          <!-- 시작하기 안내 -->
+          <div class="bg-white rounded-2xl p-8 border border-gray-100 text-center">
+            <div
+              class="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-3xl flex items-center justify-center text-4xl mx-auto mb-6">
+              🚀
             </div>
-
-            <div class="bg-white rounded-xl p-6 shadow-soft">
-              <h3 class="text-lg font-semibold text-gray-900 mb-4">자치기구 별 예산 현황</h3>
-              <div class="space-y-4">
-                <div>
-                  <div class="flex justify-between items-center mb-2">
-                    <span class="text-sm font-medium text-gray-700">개발팀</span>
-                    <span class="text-sm text-gray-600">75% 사용</span>
-                  </div>
-                  <div class="w-full bg-gray-200 rounded-full h-2">
-                    <div class="bg-blue-500 h-2 rounded-full" style="width: 75%"></div>
-                  </div>
-                </div>
-
-                <div>
-                  <div class="flex justify-between items-center mb-2">
-                    <span class="text-sm font-medium text-gray-700">마케팅팀</span>
-                    <span class="text-sm text-gray-600">45% 사용</span>
-                  </div>
-                  <div class="w-full bg-gray-200 rounded-full h-2">
-                    <div class="bg-green-500 h-2 rounded-full" style="width: 45%"></div>
-                  </div>
-                </div>
-
-                <div>
-                  <div class="flex justify-between items-center mb-2">
-                    <span class="text-sm font-medium text-gray-700">인사팀</span>
-                    <span class="text-sm text-gray-600">30% 사용</span>
-                  </div>
-                  <div class="w-full bg-gray-200 rounded-full h-2">
-                    <div class="bg-yellow-500 h-2 rounded-full" style="width: 30%"></div>
-                  </div>
-                </div>
-
-                <div>
-                  <div class="flex justify-between items-center mb-2">
-                    <span class="text-sm font-medium text-gray-700">총무팀</span>
-                    <span class="text-sm text-gray-600">60% 사용</span>
-                  </div>
-                  <div class="w-full bg-gray-200 rounded-full h-2">
-                    <div class="bg-purple-500 h-2 rounded-full" style="width: 60%"></div>
-                  </div>
-                </div>
-              </div>
+            <h3 class="text-xl font-bold text-gray-900 mb-3">예산 관리를 시작해보세요</h3>
+            <p class="text-gray-600 mb-6 max-w-md mx-auto">
+              효율적인 예산 관리를 위해 먼저 예산을 등록하고 지출 내역을 추가해보세요.
+            </p>
+            <div class="flex flex-col sm:flex-row gap-3 justify-center">
+              <button @click="selectMenu('budget')"
+                class="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-xl transition-colors duration-200">
+                예산 등록하기
+              </button>
+              <button @click="selectMenu('expenses')"
+                class="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition-colors duration-200">
+                지출 추가하기
+              </button>
             </div>
           </div>
         </div>

@@ -3,68 +3,72 @@
     <!-- 페이지 헤더 -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
       <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">예산 관리</h2>
-      <button 
-        class="btn-primary flex items-center gap-2 w-full sm:w-auto"
-        @click="showAddModal = true"
-      >
+      <button class="btn-primary flex items-center gap-2 w-full sm:w-auto" @click="showAddModal = true">
         <span class="text-lg">+</span>
         새 예산 추가
       </button>
     </div>
 
     <!-- 통계 카드 -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <div class="card p-6 hover:shadow-medium transition-shadow duration-200">
-        <div class="flex items-center gap-4">
-          <div class="text-4xl">💰</div>
-          <div>
-            <h3 class="text-sm font-medium text-gray-600 mb-1">총 예산</h3>
-            <p class="text-2xl font-bold text-gray-900">₩{{ totalBudget.toLocaleString() }}</p>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div
+        class="bg-white rounded-2xl p-6 border border-gray-100 hover:border-blue-200 hover:shadow-lg transition-all duration-200">
+        <div class="flex items-center justify-between mb-4">
+          <div class="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center">
+            <span class="text-2xl">💰</span>
+          </div>
+          <div class="text-right">
+            <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">총 예산</p>
+            <p class="text-xl font-bold text-gray-900">₩{{ totalBudget.toLocaleString() }}</p>
           </div>
         </div>
       </div>
-      
-      <div class="card p-6 hover:shadow-medium transition-shadow duration-200">
-        <div class="flex items-center gap-4">
-          <div class="text-4xl">📊</div>
-          <div>
-            <h3 class="text-sm font-medium text-gray-600 mb-1">사용된 예산</h3>
-            <p class="text-2xl font-bold text-red-600">₩{{ usedBudget.toLocaleString() }}</p>
+
+      <div
+        class="bg-white rounded-2xl p-6 border border-gray-100 hover:border-red-200 hover:shadow-lg transition-all duration-200">
+        <div class="flex items-center justify-between mb-4">
+          <div class="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center">
+            <span class="text-2xl">📊</span>
+          </div>
+          <div class="text-right">
+            <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">사용된 예산</p>
+            <p class="text-xl font-bold text-red-600">₩{{ usedBudget.toLocaleString() }}</p>
           </div>
         </div>
       </div>
-      
-      <div class="card p-6 hover:shadow-medium transition-shadow duration-200">
-        <div class="flex items-center gap-4">
-          <div class="text-4xl">💳</div>
-          <div>
-            <h3 class="text-sm font-medium text-gray-600 mb-1">남은 예산</h3>
-            <p class="text-2xl font-bold text-green-600">₩{{ remainingBudget.toLocaleString() }}</p>
+
+      <div
+        class="bg-white rounded-2xl p-6 border border-gray-100 hover:border-green-200 hover:shadow-lg transition-all duration-200">
+        <div class="flex items-center justify-between mb-4">
+          <div class="w-12 h-12 bg-green-50 rounded-2xl flex items-center justify-center">
+            <span class="text-2xl">💳</span>
+          </div>
+          <div class="text-right">
+            <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">남은 예산</p>
+            <p class="text-xl font-bold text-green-600">₩{{ remainingBudget.toLocaleString() }}</p>
           </div>
         </div>
       </div>
     </div>
 
     <!-- 부서별 예산 현황 -->
-    <div class="card p-6">
-      <h3 class="text-xl font-semibold text-gray-900 mb-6">부서별 예산 현황</h3>
+    <div class="bg-white rounded-2xl p-6 border border-gray-100">
+      <h3 class="text-xl font-bold text-gray-900 mb-6">부서별 예산 현황</h3>
 
       <!-- 예산 목록이 비어있을 때 -->
-      <div v-if="budgets.length === 0 && !isLoading" class="text-center py-12">
-        <div class="text-6xl mb-4">💸</div>
-        <p class="text-gray-600 mb-4">아직 등록된 예산이 없습니다</p>
+      <div v-if="budgets.length === 0 && !isLoading" class="text-center py-16">
+        <div class="w-20 h-20 bg-gray-100 rounded-3xl flex items-center justify-center text-4xl mx-auto mb-6">💸</div>
+        <h4 class="text-lg font-semibold text-gray-900 mb-2">예산을 등록해보세요</h4>
+        <p class="text-gray-500 mb-6">첫 번째 예산을 등록하여 관리를 시작하세요</p>
         <button class="btn-primary" @click="showAddModal = true">
-          첫 예산 추가하기
+          예산 추가하기
         </button>
       </div>
 
       <!-- 예산 목록 -->
       <div v-else class="space-y-4">
-        <div
-          v-for="budget in budgets"
-          :key="budget.id"
-          class="border border-gray-200 rounded-lg p-6 hover:border-primary-300 hover:shadow-soft transition-all duration-200"
-        >
+        <div v-for="budget in budgets" :key="budget.id"
+          class="border border-gray-200 rounded-2xl p-6 hover:border-blue-300 hover:shadow-md transition-all duration-200">
           <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
             <div class="flex-1">
               <h4 class="text-lg font-semibold text-gray-900 mb-1">{{ budget.name }}</h4>
@@ -80,31 +84,23 @@
                 <span class="text-lg font-semibold text-red-600">₩{{ budget.spent.toLocaleString() }}</span>
               </div>
               <div class="flex gap-2">
-                <button
-                  @click="editBudget(budget)"
-                  class="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
-                >
+                <button @click="editBudget(budget)"
+                  class="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200">
                   수정
                 </button>
-                <button
-                  @click="deleteBudget(budget.id)"
-                  class="px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200"
-                >
+                <button @click="deleteBudget(budget.id)"
+                  class="px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200">
                   삭제
                 </button>
               </div>
             </div>
           </div>
           <div class="w-full bg-gray-200 rounded-full h-2">
-            <div
-              class="h-2 rounded-full transition-all duration-300"
-              :class="{
-                'bg-green-500': (budget.spent / budget.amount) < 0.7,
-                'bg-yellow-500': (budget.spent / budget.amount) >= 0.7 && (budget.spent / budget.amount) < 0.9,
-                'bg-red-500': (budget.spent / budget.amount) >= 0.9
-              }"
-              :style="{ width: Math.min((budget.spent / budget.amount * 100), 100) + '%' }"
-            ></div>
+            <div class="h-2 rounded-full transition-all duration-300" :class="{
+              'bg-green-500': (budget.spent / budget.amount) < 0.7,
+              'bg-yellow-500': (budget.spent / budget.amount) >= 0.7 && (budget.spent / budget.amount) < 0.9,
+              'bg-red-500': (budget.spent / budget.amount) >= 0.9
+            }" :style="{ width: Math.min((budget.spent / budget.amount * 100), 100) + '%' }"></div>
           </div>
           <div class="flex justify-between items-center mt-2">
             <span class="text-sm text-gray-600">
@@ -120,20 +116,14 @@
 
     <!-- 예산 추가/수정 모달 -->
     <div v-if="showAddModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div class="bg-white rounded-xl p-8 max-w-md w-full">
-        <h3 class="text-2xl font-bold text-gray-900 mb-6">
+      <div class="bg-white rounded-3xl p-8 max-w-md w-full shadow-strong">
+        <h3 class="text-xl font-bold text-gray-900 mb-6">
           {{ editingBudget ? '예산 수정' : '새 예산 추가' }}
         </h3>
         <form @submit.prevent="saveBudget" class="space-y-4">
           <div>
             <label class="block text-sm font-semibold text-gray-900 mb-2">예산 이름</label>
-            <input
-              v-model="budgetForm.name"
-              type="text"
-              required
-              class="input-field"
-              placeholder="예: 마케팅 부서, IT 부서"
-            />
+            <input v-model="budgetForm.name" type="text" required class="input-field" placeholder="예: 마케팅 부서, IT 부서" />
           </div>
           <div>
             <label class="block text-sm font-semibold text-gray-900 mb-2">카테고리</label>
@@ -149,14 +139,8 @@
           </div>
           <div>
             <label class="block text-sm font-semibold text-gray-900 mb-2">예산 금액 (원)</label>
-            <input
-              v-model.number="budgetForm.amount"
-              type="number"
-              required
-              min="1"
-              class="input-field"
-              placeholder="1000000"
-            />
+            <input v-model.number="budgetForm.amount" type="number" required min="1" class="input-field"
+              placeholder="1000000" />
           </div>
           <div class="flex gap-3 mt-6">
             <button type="submit" class="btn-primary flex-1">

@@ -17,18 +17,42 @@
     </div>
 
     <!-- 요약 카드 -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <div class="card p-6 text-center">
-        <h3 class="text-sm font-medium text-gray-600 mb-2">총 지출</h3>
-        <p class="text-3xl font-bold text-red-600">₩{{ totalExpense.toLocaleString() }}</p>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div
+        class="bg-white rounded-2xl p-6 border border-gray-100 hover:border-red-200 hover:shadow-lg transition-all duration-200">
+        <div class="flex items-center justify-between mb-4">
+          <div class="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center">
+            <span class="text-2xl">💸</span>
+          </div>
+          <div class="text-right">
+            <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">총 지출</p>
+            <p class="text-xl font-bold text-red-600">₩{{ totalExpense.toLocaleString() }}</p>
+          </div>
+        </div>
       </div>
-      <div class="card p-6 text-center">
-        <h3 class="text-sm font-medium text-gray-600 mb-2">평균 지출</h3>
-        <p class="text-3xl font-bold text-blue-600">₩{{ avgExpense.toLocaleString() }}</p>
+      <div
+        class="bg-white rounded-2xl p-6 border border-gray-100 hover:border-blue-200 hover:shadow-lg transition-all duration-200">
+        <div class="flex items-center justify-between mb-4">
+          <div class="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center">
+            <span class="text-2xl">📊</span>
+          </div>
+          <div class="text-right">
+            <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">평균 지출</p>
+            <p class="text-xl font-bold text-blue-600">₩{{ avgExpense.toLocaleString() }}</p>
+          </div>
+        </div>
       </div>
-      <div class="card p-6 text-center">
-        <h3 class="text-sm font-medium text-gray-600 mb-2">지출 건수</h3>
-        <p class="text-3xl font-bold text-green-600">{{ expenses.length }}건</p>
+      <div
+        class="bg-white rounded-2xl p-6 border border-gray-100 hover:border-green-200 hover:shadow-lg transition-all duration-200">
+        <div class="flex items-center justify-between mb-4">
+          <div class="w-12 h-12 bg-green-50 rounded-2xl flex items-center justify-center">
+            <span class="text-2xl">📈</span>
+          </div>
+          <div class="text-right">
+            <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">지출 건수</p>
+            <p class="text-xl font-bold text-green-600">{{ expenses.length }}건</p>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -46,7 +70,7 @@
     </div>
 
     <!-- 지출 목록 -->
-    <div class="card overflow-hidden">
+    <div class="bg-white rounded-2xl border border-gray-100 overflow-hidden">
       <!-- 데스크톱 테이블 -->
       <div class="hidden lg:block">
         <div class="grid grid-cols-7 gap-4 p-4 bg-gray-50 font-semibold text-gray-700 border-b">
