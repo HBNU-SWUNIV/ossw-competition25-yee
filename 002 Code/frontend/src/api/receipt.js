@@ -36,6 +36,15 @@ export const receiptAPI = {
       }
     } catch (error) {
       console.error('[receiptAPI] 에러:', error)
+
+      // 타임아웃 에러 처리
+      if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+        return {
+          success: false,
+          error: 'OCR 처리 시간이 초과되었습니다. 이미지 크기를 줄이거나 다시 시도해주세요.'
+        }
+      }
+
       return {
         success: false,
         error: error.response?.data?.detail || '영수증 업로드에 실패했습니다.'

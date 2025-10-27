@@ -367,18 +367,70 @@ export default {
     })
 
     // 파일 선택
-    const handleFileSelect = (event) => {
+    const handleFileSelect = async (event) => {
       const file = event.target.files[0]
       if (file) {
         uploadedFile.value = file
+
+        // OCR 처리는 즉시 시작 (이미지 미리보기와 병렬 처리)
+        performOcrAnalysis(file)
+
+        // 이미지 미리보기는 비동기로 처리 (OCR 처리를 방해하지 않음)
         const reader = new FileReader()
         reader.onload = (e) => {
           imagePreview.value = e.target.result
         }
         reader.readAsDataURL(file)
-        // TODO: 백엔드 OCR API 호출
-        performOcrAnalysis(file)
       }
+    }
+
+    // 이미지 압축 함수
+    const compressImage = (file, maxSize = 800, quality = 0.8) => {
+      return new Promise((resolve) => {
+        const reader = new FileReader()
+        reader.onload = (e) => {
+          const img = new Image()
+          img.onload = () => {
+            const canvas = document.createElement('canvas')
+            let width = img.width
+            let height = img.height
+
+            // 비율 유지하면서 리사이즈
+            if (width > height) {
+              if (width > maxSize) {
+                height = (height * maxSize) / width
+                width = maxSize
+              }
+            } else {
+              if (height > maxSize) {
+                width = (width * maxSize) / height
+                height = maxSize
+              }
+            }
+
+            canvas.width = width
+            canvas.height = height
+            const ctx = canvas.getContext('2d')
+            ctx.drawImage(img, 0, 0, width, height)
+
+            // Canvas를 Blob으로 변환 (JPEG, 품질 0.8)
+            canvas.toBlob(
+              (blob) => {
+                const compressedFile = new File([blob], file.name, {
+                  type: 'image/jpeg',
+                  lastModified: Date.now()
+                })
+                console.log('[이미지 압축] 원본:', (file.size / 1024).toFixed(2), 'KB -> 압축:', (compressedFile.size / 1024).toFixed(2), 'KB')
+                resolve(compressedFile)
+              },
+              'image/jpeg',
+              quality
+            )
+          }
+          img.src = e.target.result
+        }
+        reader.readAsDataURL(file)
+      })
     }
 
     // 카메라 캡처
