@@ -185,31 +185,52 @@ class OCRService:
 
     def _extract_total_amount(self, text_lines: List[Dict[str, Any]], amounts: List[int]) -> int:
         """총액 추출 (합계, 총액, 받을금액 등의 키워드 근처)"""
-        total_keywords = ['합계', '총액', '받을금액', '결제금액', 'total', 'Total']
+        total_keywords = ['합계금액', '받을금액', '결제금액', '총인금액', '합계', '총액', 'total', 'Total', '신용승인금액', '카드']
 
-        # 키워드가 있는 라인에서 금액 찾기
-        for line in text_lines:
+        max_amount_with_keyword = 0
+
+        # 키워드가 있는 라인 및 다음 라인에서 금액 찾기
+        for i, line in enumerate(text_lines):
             text = line["text"]
             if any(keyword in text for keyword in total_keywords):
-                # 해당 라인에서 금액 추출
-                amount_matches = re.findall(r'([\d,]+)\s*원?', text)
+                # 현재 라인에서 금액 추출
+                amount_matches = re.findall(r'([\d,]+)', text)
                 for match in amount_matches:
                     try:
                         amount = int(match.replace(',', ''))
-                        if 100 <= amount <= 10000000:
-                            return amount
+                        if 1000 <= amount <= 10000000:  # 최소 1000원 이상
+                            max_amount_with_keyword = max(max_amount_with_keyword, amount)
                     except ValueError:
                         continue
 
-        # 키워드를 못 찾으면 가장 큰 금액 반환
-        if amounts:
+                # 다음 라인도 확인 (금액이 다음 줄에 있을 수 있음)
+                if i + 1 < len(text_lines):
+                    next_text = text_lines[i + 1]["text"]
+                    amount_matches = re.findall(r'([\d,]+)', next_text)
+                    for match in amount_matches:
+                        try:
+                            amount = int(match.replace(',', ''))
+                            if 1000 <= amount <= 10000000:
+                                max_amount_with_keyword = max(max_amount_with_keyword, amount)
+                        except ValueError:
+                            continue
+
+        if max_amount_with_keyword > 0:
+            return max_amount_with_keyword
+
+        # 키워드를 못 찾으면 가장 큰 금액 반환 (10,000원 이상)
+        valid_amounts = [amt for amt in amounts if amt >= 10000]
+        if valid_amounts:
+            return max(valid_amounts)
+        elif amounts:
             return max(amounts)
         return 0
 
     def _extract_items(self, text_lines: List[Dict[str, Any]], amounts: List[int]) -> List[Dict[str, Any]]:
         """품목 추출 (상품명 + 금액 조합)"""
         items = []
-        skip_keywords = ['합계', '총액', '받을금액', '결제금액', '카드', '현금', '부가세', 'VAT']
+        skip_keywords = ['합계', '총액', '받을금액', '결제금액', '카드', '현금', '부가세', 'VAT', '할인', '과세', '면세', '세액', '승인']
+        seen_amounts = set()  # 중복 방지
 
         for i, line in enumerate(text_lines):
             text = line["text"]
@@ -218,29 +239,41 @@ class OCRService:
             if any(keyword in text for keyword in skip_keywords):
                 continue
 
-            # 금액이 포함된 라인
-            amount_matches = re.findall(r'([\d,]+)\s*원?', text)
+            # 너무 짧은 라인 스킵 (노이즈)
+            if len(text.strip()) < 2:
+                continue
+
+            # 금액이 포함된 라인 (1000원 이상만)
+            amount_matches = re.findall(r'([\d,]+)', text)
             for match in amount_matches:
                 try:
                     amount = int(match.replace(',', ''))
-                    if 100 <= amount <= 10000000 and amount in amounts:
-                        # 상품명 추출 (금액 앞의 텍스트)
-                        item_name = re.sub(r'[\d,]+\s*원?', '', text).strip()
-                        if len(item_name) > 1:
+                    # 1000원 이상 100만원 이하, 이미 추가하지 않은 금액
+                    if 1000 <= amount <= 1000000 and amount not in seen_amounts:
+                        # 상품명 추출 (금액을 제거한 텍스트)
+                        item_name = re.sub(r'[\d,]+', '', text).strip()
+                        # 특수문자, 공백만 있는 경우 제외
+                        item_name = re.sub(r'[^\w가-힣\s]', '', item_name).strip()
+
+                        if len(item_name) >= 2:  # 최소 2글자 이상
                             items.append({
                                 "name": item_name,
                                 "price": amount
                             })
-                            break
+                            seen_amounts.add(amount)
+                            break  # 한 라인에서 하나의 품목만 추출
                 except ValueError:
                     continue
 
-        # 품목이 없으면 더미 데이터 생성
-        if not items and amounts:
-            items = [{
-                "name": "상품",
-                "price": amounts[0] if amounts else 0
-            }]
+        # 품목이 없거나 너무 적으면 총액을 단일 품목으로 처리
+        if len(items) == 0:
+            valid_amounts = [amt for amt in amounts if amt >= 1000]
+            if valid_amounts:
+                max_amount = max(valid_amounts)
+                items = [{
+                    "name": "구매 상품",
+                    "price": max_amount
+                }]
 
         return items
 
