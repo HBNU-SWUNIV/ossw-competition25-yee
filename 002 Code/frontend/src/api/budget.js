@@ -10,7 +10,7 @@ export const budgetAPI = {
    */
   async getBudgets() {
     try {
-      const response = await apiClient.get('/api/budget/')
+      const response = await apiClient.get('/budget/')
       return {
         success: true,
         data: response.data
@@ -30,7 +30,7 @@ export const budgetAPI = {
    */
   async getBudget(budgetId) {
     try {
-      const response = await apiClient.get(`/api/budget/${budgetId}`)
+      const response = await apiClient.get(`/budget/${budgetId}`)
       return {
         success: true,
         data: response.data
@@ -50,7 +50,7 @@ export const budgetAPI = {
    */
   async createBudget(budgetData) {
     try {
-      const response = await apiClient.post('/api/budget/', budgetData)
+      const response = await apiClient.post('/budget/', budgetData)
       return {
         success: true,
         data: response.data
@@ -71,7 +71,7 @@ export const budgetAPI = {
    */
   async updateBudget(budgetId, budgetData) {
     try {
-      const response = await apiClient.put(`/api/budget/${budgetId}`, budgetData)
+      const response = await apiClient.put(`/budget/${budgetId}`, budgetData)
       return {
         success: true,
         data: response.data
@@ -91,7 +91,7 @@ export const budgetAPI = {
    */
   async deleteBudget(budgetId) {
     try {
-      const response = await apiClient.delete(`/api/budget/${budgetId}`)
+      const response = await apiClient.delete(`/budget/${budgetId}`)
       return {
         success: true,
         data: response.data

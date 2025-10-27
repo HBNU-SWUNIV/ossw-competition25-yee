@@ -11,7 +11,7 @@ export const expenseAPI = {
    */
   async getExpenses(params = {}) {
     try {
-      const response = await apiClient.get('/api/expense/', { params })
+      const response = await apiClient.get('/expense/', { params })
       return {
         success: true,
         data: response.data
@@ -31,7 +31,7 @@ export const expenseAPI = {
    */
   async getExpense(expenseId) {
     try {
-      const response = await apiClient.get(`/api/expense/${expenseId}`)
+      const response = await apiClient.get(`/expense/${expenseId}`)
       return {
         success: true,
         data: response.data
@@ -51,7 +51,7 @@ export const expenseAPI = {
    */
   async createExpense(expenseData) {
     try {
-      const response = await apiClient.post('/api/expense/', expenseData)
+      const response = await apiClient.post('/expense/', expenseData)
       return {
         success: true,
         data: response.data
@@ -72,7 +72,7 @@ export const expenseAPI = {
    */
   async updateExpense(expenseId, expenseData) {
     try {
-      const response = await apiClient.put(`/api/expense/${expenseId}`, expenseData)
+      const response = await apiClient.put(`/expense/${expenseId}`, expenseData)
       return {
         success: true,
         data: response.data
@@ -92,7 +92,7 @@ export const expenseAPI = {
    */
   async deleteExpense(expenseId) {
     try {
-      const response = await apiClient.delete(`/api/expense/${expenseId}`)
+      const response = await apiClient.delete(`/expense/${expenseId}`)
       return {
         success: true,
         data: response.data
@@ -112,7 +112,7 @@ export const expenseAPI = {
    */
   async getStatistics(params = {}) {
     try {
-      const response = await apiClient.get('/api/expense/statistics', { params })
+      const response = await apiClient.get('/expense/statistics', { params })
       return {
         success: true,
         data: response.data
@@ -132,7 +132,7 @@ export const expenseAPI = {
    */
   async getExpensesByReceipt(receiptId) {
     try {
-      const response = await apiClient.get(`/api/expense/by-receipt/${receiptId}`)
+      const response = await apiClient.get(`/expense/by-receipt/${receiptId}`)
       return {
         success: true,
         data: response.data
@@ -152,7 +152,7 @@ export const expenseAPI = {
    */
   async exportExpensePDF(expenseId) {
     try {
-      const response = await apiClient.get(`/api/expense/${expenseId}/pdf`, {
+      const response = await apiClient.get(`/expense/${expenseId}/pdf`, {
         responseType: 'blob'
       })
 

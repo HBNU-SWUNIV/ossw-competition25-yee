@@ -15,7 +15,7 @@ const apiClient = axios.create({
 // 요청 인터셉터 - JWT 토큰 자동 추가
 apiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('accessToken')
+    const token = localStorage.getItem('access_token')
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
@@ -35,7 +35,7 @@ apiClient.interceptors.response.use(
     // 401 에러 (인증 실패) 처리
     if (error.response && error.response.status === 401) {
       // 로그아웃 처리
-      localStorage.removeItem('accessToken')
+      localStorage.removeItem('access_token')
       localStorage.removeItem('userInfo')
       localStorage.removeItem('isLoggedIn')
 

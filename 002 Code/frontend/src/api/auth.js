@@ -12,7 +12,7 @@ export const authAPI = {
    */
   async login(email, password) {
     try {
-      const response = await apiClient.post('/api/auth/login', {
+      const response = await apiClient.post('/auth/login', {
         email,
         password
       })
@@ -35,7 +35,7 @@ export const authAPI = {
    */
   async register(userData) {
     try {
-      const response = await apiClient.post('/api/auth/register', userData)
+      const response = await apiClient.post('/auth/register', userData)
       return {
         success: true,
         data: response.data
@@ -54,9 +54,9 @@ export const authAPI = {
    */
   async logout() {
     try {
-      await apiClient.post('/api/auth/logout')
+      await apiClient.post('/auth/logout')
       // 로컬 스토리지 정리
-      localStorage.removeItem('accessToken')
+      localStorage.removeItem('access_token')
       localStorage.removeItem('userInfo')
       localStorage.removeItem('isLoggedIn')
       return {
@@ -76,7 +76,7 @@ export const authAPI = {
    */
   async getCurrentUser() {
     try {
-      const response = await apiClient.get('/api/auth/me')
+      const response = await apiClient.get('/auth/me')
       return {
         success: true,
         data: response.data
