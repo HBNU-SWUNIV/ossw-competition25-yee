@@ -16,9 +16,8 @@ class Settings(BaseSettings):
     FIREBASE_PRIVATE_KEY: Optional[str] = None
     FIREBASE_CLIENT_EMAIL: Optional[str] = None
 
-    # NAVER Clover OCR 설정
-    NAVER_OCR_API_URL: Optional[str] = None
-    NAVER_OCR_SECRET_KEY: Optional[str] = None
+    # OCR 설정
+    # PaddleOCR 사용 (오픈소스, 설정 불필요)
 
     # CORS 설정
     ALLOWED_ORIGINS: str = "http://localhost:3000,http://localhost:8080,http://localhost:5173"

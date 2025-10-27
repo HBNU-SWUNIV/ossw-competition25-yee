@@ -6,7 +6,7 @@
 - **프레임워크**: Python 3.11+ / FastAPI 0.109.0
 - **데이터베이스**: Firebase Firestore
 - **인증**: JWT (JSON Web Token)
-- **OCR**: NAVER Clover OCR API
+- **OCR**: PaddleOCR (오픈소스)
 - **배포**: AWS EC2
 
 ### 설치 방법
@@ -34,8 +34,8 @@ cp .env.example .env
 
 # .env 파일을 열어 필요한 값들을 설정
 # - Firebase 프로젝트 정보
-# - NAVER OCR API 키
 # - JWT 시크릿 키
+# (주의: PaddleOCR은 API 키가 필요 없습니다)
 ```
 
 #### 4. 개발 서버 실행
@@ -138,3 +138,18 @@ pytest
 - **Firebase Admin SDK**: Apache License 2.0
 - **Pydantic**: MIT License
 - **Uvicorn**: BSD License
+- **PaddleOCR**: Apache License 2.0
+- **PaddlePaddle**: Apache License 2.0
+
+### OCR 기능
+이 프로젝트는 영수증 인식을 위해 **PaddleOCR** (오픈소스)을 사용합니다.
+
+#### PaddleOCR 특징
+- **완전 오픈소스**: Apache 2.0 라이선스
+- **API 키 불필요**: 로컬에서 직접 실행
+- **한글 지원 우수**: 한국어 영수증 인식 가능
+- **자동 영수증 파싱**: 상호명, 날짜, 금액, 품목 자동 추출
+
+#### 첫 실행 시 주의사항
+첫 실행 시 PaddleOCR이 한글 모델을 자동으로 다운로드합니다 (~100MB).
+네트워크 연결이 필요하며, 다운로드는 한 번만 수행됩니다.

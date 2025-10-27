@@ -1,125 +1,30 @@
-import requests
-import random
-from datetime import datetime, timedelta
+import io
+import re
+from datetime import datetime
 from typing import Dict, Any, List
-from src.core.config import settings
+from paddleocr import PaddleOCR
+from PIL import Image
 
 
 class OCRService:
-    """NAVER Clover OCR 서비스"""
+    """PaddleOCR 기반 영수증 OCR 서비스 (오픈소스)"""
 
     def __init__(self):
-        self.api_url = settings.NAVER_OCR_API_URL
-        self.secret_key = settings.NAVER_OCR_SECRET_KEY
-        # API 키가 없거나 더미 값이면 Mock 사용
-        self.use_mock = (
-            not self.api_url or
-            not self.secret_key or
-            "your-ocr-api-url" in str(self.api_url) or
-            "your-secret-key" in str(self.secret_key)
+        # PaddleOCR 초기화 (한글 + 영어)
+        # use_angle_cls=True: 이미지 회전 감지 및 보정
+        # lang='korean': 한글 모델 사용
+        print("[OCR] Initializing PaddleOCR...")
+        self.ocr = PaddleOCR(
+            use_angle_cls=True,
+            lang='korean',
+            show_log=False,
+            use_gpu=False  # CPU 사용 (GPU가 있으면 True로 변경)
         )
-
-    def _generate_mock_data(self) -> Dict[str, Any]:
-        """
-        테스트용 Mock OCR 데이터 생성
-        실제 영수증과 유사한 더미 데이터를 반환
-        """
-        # 다양한 상점 샘플
-        stores = [
-            {"name": "스타벅스 강남점", "category": "식비"},
-            {"name": "다이소 홍대점", "category": "사무용품"},
-            {"name": "삼겹살 맛집", "category": "회식"},
-            {"name": "GS25 편의점", "category": "식비"},
-            {"name": "맥도날드 역삼점", "category": "식비"},
-            {"name": "문구마트", "category": "사무용품"},
-            {"name": "카카오택시", "category": "교통비"},
-            {"name": "CU 편의점", "category": "식비"},
-        ]
-
-        store = random.choice(stores)
-
-        # 상점에 맞는 품목 생성
-        items_by_category = {
-            "식비": [
-                {"name": "아메리카노", "price": 4500},
-                {"name": "카페라떼", "price": 5000},
-                {"name": "샌드위치", "price": 6500},
-                {"name": "도시락", "price": 5500},
-                {"name": "김밥", "price": 3000},
-            ],
-            "사무용품": [
-                {"name": "볼펜 세트", "price": 5000},
-                {"name": "노트", "price": 3000},
-                {"name": "파일", "price": 2500},
-                {"name": "테이프", "price": 1500},
-            ],
-            "회식": [
-                {"name": "삼겹살", "price": 35000},
-                {"name": "소주", "price": 5000},
-                {"name": "맥주", "price": 5000},
-                {"name": "공기밥", "price": 2000},
-            ],
-            "교통비": [
-                {"name": "택시 요금", "price": 15000},
-            ]
-        }
-
-        # 카테고리에 맞는 품목 선택
-        category = store["category"]
-        available_items = items_by_category.get(category, items_by_category["식비"])
-
-        # 1~3개의 품목 무작위 선택
-        num_items = random.randint(1, min(3, len(available_items)))
-        selected_items = random.sample(available_items, num_items)
-
-        # 총액 계산
-        total_amount = sum(item["price"] for item in selected_items)
-
-        # 날짜 생성 (최근 30일 이내)
-        days_ago = random.randint(0, 30)
-        purchase_date = (datetime.now() - timedelta(days=days_ago)).strftime("%Y-%m-%d")
-
-        return {
-            "status": "success",
-            "data": {
-                "store_name": store["name"],
-                "date": purchase_date,
-                "total_amount": total_amount,
-                "items": selected_items,
-                "category_hint": category  # 분류 힌트 (실제 OCR에서는 없을 수 있음)
-            },
-            "raw_ocr_response": {
-                # 실제 NAVER OCR API 응답 형식 시뮬레이션
-                "version": "V2",
-                "requestId": f"mock-{datetime.now().timestamp()}",
-                "timestamp": int(datetime.now().timestamp() * 1000),
-                "images": [{
-                    "receipt": {
-                        "meta": {
-                            "estimatedLanguage": "ko"
-                        },
-                        "result": {
-                            "storeInfo": {
-                                "name": {"text": store["name"]}
-                            },
-                            "paymentInfo": {
-                                "date": {"text": purchase_date},
-                                "totalPrice": {"price": {"formatted": {"value": str(total_amount)}}}
-                            },
-                            "subResults": [{
-                                "items": [{"name": {"text": item["name"]},
-                                          "price": {"price": {"formatted": {"value": str(item["price"])}}}}
-                                         for item in selected_items]
-                            }]
-                        }
-                    }
-                }]
-            }
-        }
+        print("[OCR] PaddleOCR initialized successfully")
 
     async def process_receipt(self, image_data: bytes = None, image_path: str = None) -> Dict[str, Any]:
         """
-        영수증 이미지를 OCR 처리
+        영수증 이미지를 OCR 처리하여 구조화된 데이터 추출
 
         Args:
             image_data: 이미지 바이트 데이터
@@ -129,82 +34,215 @@ class OCRService:
             OCR 결과 딕셔너리
         """
         try:
-            # Mock 데이터 사용 (API 키가 없는 경우)
-            if self.use_mock:
-                print("[WARN] OCR API key not configured, using Mock data")
-                return self._generate_mock_data()
+            # 이미지 로드
+            if image_data:
+                image = Image.open(io.BytesIO(image_data))
+            elif image_path:
+                image = Image.open(image_path)
+            else:
+                raise ValueError("image_data 또는 image_path가 필요합니다")
 
-            # 실제 NAVER Clover OCR API 호출
-            # TODO: API 키가 발급되면 아래 코드 활성화
-            headers = {
-                "X-OCR-SECRET": self.secret_key,
-                "Content-Type": "application/json"
+            # 이미지를 numpy array로 변환
+            import numpy as np
+            image_np = np.array(image)
+
+            # PaddleOCR 실행
+            print("[OCR] Running PaddleOCR on image...")
+            result = self.ocr.ocr(image_np, cls=True)
+
+            # OCR 결과에서 텍스트 추출
+            if not result or not result[0]:
+                return {
+                    "status": "error",
+                    "message": "텍스트를 찾을 수 없습니다",
+                    "data": None
+                }
+
+            # 모든 텍스트 라인 추출
+            all_text_lines = []
+            for line in result[0]:
+                text = line[1][0]  # (bbox, (text, confidence))
+                confidence = line[1][1]
+                all_text_lines.append({
+                    "text": text,
+                    "confidence": confidence
+                })
+
+            print(f"[OCR] Extracted {len(all_text_lines)} text lines")
+
+            # 영수증 정보 파싱
+            parsed_data = self._parse_receipt(all_text_lines)
+
+            return {
+                "status": "success",
+                "data": parsed_data,
+                "raw_ocr_response": {
+                    "engine": "PaddleOCR",
+                    "version": "2.7.0",
+                    "lines": all_text_lines
+                }
             }
 
-            # 이미지 데이터 준비
-            files = {"file": image_data} if image_data else None
-
-            response = requests.post(self.api_url, headers=headers, files=files)
-            response.raise_for_status()
-
-            ocr_result = response.json()
-
-            # NAVER OCR 응답을 표준 형식으로 변환
-            return self._parse_naver_ocr_response(ocr_result)
-
         except Exception as e:
+            print(f"[OCR ERROR] {str(e)}")
             return {
                 "status": "error",
                 "message": str(e),
                 "data": None
             }
 
-    def _parse_naver_ocr_response(self, ocr_response: Dict[str, Any]) -> Dict[str, Any]:
+    def _parse_receipt(self, text_lines: List[Dict[str, Any]]) -> Dict[str, Any]:
         """
-        NAVER Clover OCR API 응답을 표준 형식으로 파싱
+        OCR 텍스트 라인에서 영수증 정보 추출
 
         Args:
-            ocr_response: NAVER OCR API 원본 응답
+            text_lines: OCR로 추출한 텍스트 라인 리스트
 
         Returns:
-            표준 형식의 영수증 데이터
+            파싱된 영수증 데이터
         """
-        try:
-            # NAVER OCR 응답 구조에 맞춰 파싱
-            # 실제 API 응답 구조에 따라 수정 필요
-            receipt_data = ocr_response["images"][0]["receipt"]["result"]
+        # 전체 텍스트 결합
+        full_text = "\n".join([line["text"] for line in text_lines])
 
-            store_name = receipt_data.get("storeInfo", {}).get("name", {}).get("text", "")
-            date = receipt_data.get("paymentInfo", {}).get("date", {}).get("text", "")
-            total_amount = float(receipt_data.get("paymentInfo", {}).get("totalPrice", {})
-                                .get("price", {}).get("formatted", {}).get("value", "0"))
+        # 1. 상호명 추출 (보통 첫 줄 또는 두 번째 줄)
+        store_name = self._extract_store_name(text_lines)
 
-            items = []
-            for item in receipt_data.get("subResults", [{}])[0].get("items", []):
-                items.append({
-                    "name": item.get("name", {}).get("text", ""),
-                    "price": float(item.get("price", {}).get("price", {})
-                                  .get("formatted", {}).get("value", "0"))
-                })
+        # 2. 날짜 추출
+        date = self._extract_date(full_text)
 
-            return {
-                "status": "success",
-                "data": {
-                    "store_name": store_name,
-                    "date": date,
-                    "total_amount": total_amount,
-                    "items": items
-                },
-                "raw_ocr_response": ocr_response
-            }
+        # 3. 금액 추출
+        amounts = self._extract_amounts(text_lines)
 
-        except Exception as e:
-            return {
-                "status": "error",
-                "message": f"OCR 응답 파싱 실패: {str(e)}",
-                "data": None,
-                "raw_ocr_response": ocr_response
-            }
+        # 4. 총액 추출 (가장 큰 금액 또는 "합계", "총액" 근처의 금액)
+        total_amount = self._extract_total_amount(text_lines, amounts)
+
+        # 5. 품목 추출 (금액이 있는 라인들)
+        items = self._extract_items(text_lines, amounts)
+
+        return {
+            "store_name": store_name,
+            "date": date,
+            "total_amount": total_amount,
+            "items": items
+        }
+
+    def _extract_store_name(self, text_lines: List[Dict[str, Any]]) -> str:
+        """상호명 추출 (상위 2-3줄에서 가장 신뢰도 높은 텍스트)"""
+        if not text_lines:
+            return "알 수 없음"
+
+        # 상위 3줄 중 가장 긴 텍스트를 상호명으로 추정
+        top_lines = text_lines[:3]
+        store_candidates = [
+            line["text"] for line in top_lines
+            if len(line["text"]) > 2 and line["confidence"] > 0.8
+        ]
+
+        if store_candidates:
+            return max(store_candidates, key=len)
+        return text_lines[0]["text"] if text_lines else "알 수 없음"
+
+    def _extract_date(self, text: str) -> str:
+        """날짜 추출 (YYYY-MM-DD, YYYY.MM.DD, YYYY/MM/DD 등)"""
+        # 날짜 패턴들
+        date_patterns = [
+            r'(\d{4})[-.년/\s](\d{1,2})[-.월/\s](\d{1,2})',  # 2024-01-15, 2024년 1월 15일
+            r'(\d{2})[-.년/\s](\d{1,2})[-.월/\s](\d{1,2})',  # 24-01-15
+        ]
+
+        for pattern in date_patterns:
+            match = re.search(pattern, text)
+            if match:
+                year, month, day = match.groups()
+                # 2자리 연도를 4자리로 변환
+                if len(year) == 2:
+                    year = f"20{year}"
+                try:
+                    # 유효한 날짜인지 확인
+                    date_obj = datetime(int(year), int(month), int(day))
+                    return date_obj.strftime("%Y-%m-%d")
+                except ValueError:
+                    continue
+
+        # 날짜를 찾지 못하면 오늘 날짜 반환
+        return datetime.now().strftime("%Y-%m-%d")
+
+    def _extract_amounts(self, text_lines: List[Dict[str, Any]]) -> List[int]:
+        """모든 금액 추출"""
+        amounts = []
+        for line in text_lines:
+            text = line["text"]
+            # 금액 패턴: 숫자 + 원, 또는 ,로 구분된 숫자
+            amount_matches = re.findall(r'([\d,]+)\s*원?', text)
+            for match in amount_matches:
+                try:
+                    amount = int(match.replace(',', ''))
+                    if 100 <= amount <= 10000000:  # 100원 ~ 1000만원 범위
+                        amounts.append(amount)
+                except ValueError:
+                    continue
+        return amounts
+
+    def _extract_total_amount(self, text_lines: List[Dict[str, Any]], amounts: List[int]) -> int:
+        """총액 추출 (합계, 총액, 받을금액 등의 키워드 근처)"""
+        total_keywords = ['합계', '총액', '받을금액', '결제금액', 'total', 'Total']
+
+        # 키워드가 있는 라인에서 금액 찾기
+        for line in text_lines:
+            text = line["text"]
+            if any(keyword in text for keyword in total_keywords):
+                # 해당 라인에서 금액 추출
+                amount_matches = re.findall(r'([\d,]+)\s*원?', text)
+                for match in amount_matches:
+                    try:
+                        amount = int(match.replace(',', ''))
+                        if 100 <= amount <= 10000000:
+                            return amount
+                    except ValueError:
+                        continue
+
+        # 키워드를 못 찾으면 가장 큰 금액 반환
+        if amounts:
+            return max(amounts)
+        return 0
+
+    def _extract_items(self, text_lines: List[Dict[str, Any]], amounts: List[int]) -> List[Dict[str, Any]]:
+        """품목 추출 (상품명 + 금액 조합)"""
+        items = []
+        skip_keywords = ['합계', '총액', '받을금액', '결제금액', '카드', '현금', '부가세', 'VAT']
+
+        for i, line in enumerate(text_lines):
+            text = line["text"]
+
+            # 스킵할 라인
+            if any(keyword in text for keyword in skip_keywords):
+                continue
+
+            # 금액이 포함된 라인
+            amount_matches = re.findall(r'([\d,]+)\s*원?', text)
+            for match in amount_matches:
+                try:
+                    amount = int(match.replace(',', ''))
+                    if 100 <= amount <= 10000000 and amount in amounts:
+                        # 상품명 추출 (금액 앞의 텍스트)
+                        item_name = re.sub(r'[\d,]+\s*원?', '', text).strip()
+                        if len(item_name) > 1:
+                            items.append({
+                                "name": item_name,
+                                "price": amount
+                            })
+                            break
+                except ValueError:
+                    continue
+
+        # 품목이 없으면 더미 데이터 생성
+        if not items and amounts:
+            items = [{
+                "name": "상품",
+                "price": amounts[0] if amounts else 0
+            }]
+
+        return items
 
 
 ocr_service = OCRService()
