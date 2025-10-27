@@ -44,11 +44,11 @@ class PDFService:
 
             if not self.font_name:
                 print("[PDF] 한글 폰트를 찾을 수 없습니다. 기본 폰트 사용")
-                self.font_name = 'Helvetica'
+                self.font_name = 'DejaVuSans'
                 
         except Exception as e:
             print(f"[PDF] 폰트 초기화 오류: {str(e)}")
-            self.font_name = 'Helvetica'
+            self.font_name = 'DejaVuSans'
 
     async def generate_expense_pdf(
         self,
