@@ -11,7 +11,7 @@ class ReceiptCleanupService:
 
     def __init__(self):
         self.db = firebase_client.db
-        self.storage = firebase_client.storage
+        self.storage = firebase_client.bucket
 
     async def cleanup_old_receipts(
         self,
