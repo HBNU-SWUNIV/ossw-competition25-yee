@@ -84,11 +84,6 @@
             <div class="text-right font-semibold text-red-600">₩{{ expense.amount.toLocaleString() }}</div>
             <div class="text-right">
               <div class="flex gap-2 justify-end">
-                <button @click="downloadPDF(expense.id)"
-                  class="px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-sm rounded-lg transition-colors duration-200"
-                  title="PDF 다운로드">
-                  📄 PDF
-                </button>
                 <button @click="openEditModal(expense)"
                   class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-lg transition-colors duration-200"
                   title="수정">
@@ -134,11 +129,6 @@
               }">
                 {{ expense.category }}
               </span>
-              <button @click="downloadPDF(expense.id)"
-                class="px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-xs rounded-lg transition-colors duration-200"
-                title="PDF 다운로드">
-                📄
-              </button>
               <button @click="openEditModal(expense)"
                 class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded-lg transition-colors duration-200"
                 title="수정">
@@ -803,46 +793,7 @@ export default {
       }
     }
 
-    // PDF 다운로드
-    const downloadPDF = async (expenseId) => {
-      try {
-        console.log('[PDF] 다운로드 시작:', expenseId)
 
-        // API 호출
-        const response = await expenseAPI.downloadPDF(expenseId)
-
-        // PDF 파일 다운로드
-        const blob = await response.blob()
-        const url = window.URL.createObjectURL(blob)
-
-        // 파일명 생성 (Content-Disposition 헤더에서 추출 또는 기본값 사용)
-        let filename = 'expense.pdf'
-        const contentDisposition = response.headers.get('Content-Disposition')
-        if (contentDisposition) {
-          const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/)
-          if (filenameMatch) {
-            filename = filenameMatch[1]
-          }
-        }
-
-        // 다운로드 링크 생성 및 클릭
-        const link = document.createElement('a')
-        link.href = url
-        link.download = filename
-        document.body.appendChild(link)
-        link.click()
-
-        // 정리
-        document.body.removeChild(link)
-        window.URL.revokeObjectURL(url)
-
-        console.log('[PDF] 다운로드 완료:', filename)
-
-      } catch (error) {
-        console.error('[PDF] 다운로드 실패:', error)
-        alert('PDF 다운로드에 실패했습니다: ' + error.message)
-      }
-    }
 
     // 컴포넌트 마운트 시 지출 목록 조회
     onMounted(() => {
@@ -882,8 +833,7 @@ export default {
       deleteExpense,
       openEditModal,
       closeEditModal,
-      updateExpense,
-      downloadPDF
+      updateExpense
     }
   }
 }

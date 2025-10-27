@@ -10,11 +10,13 @@
             <option value="">연도 선택</option>
             <option v-for="year in availableYears" :key="year" :value="year">{{ year }}년</option>
           </select>
-          <select v-model="selectedMonth" @change="onMonthChange" class="input-field w-full sm:w-32" :disabled="!selectedYear">
+          <select v-model="selectedMonth" @change="onMonthChange" class="input-field w-full sm:w-32"
+            :disabled="!selectedYear">
             <option value="">월 선택</option>
             <option v-for="month in availableMonths" :key="month.value" :value="month.value">{{ month.label }}</option>
           </select>
-          <select v-model="selectedDay" @change="onDayChange" class="input-field w-full sm:w-32" :disabled="!selectedMonth">
+          <select v-model="selectedDay" @change="onDayChange" class="input-field w-full sm:w-32"
+            :disabled="!selectedMonth">
             <option value="">일 선택</option>
             <option v-for="day in availableDays" :key="day" :value="day">{{ day }}일</option>
           </select>
@@ -22,43 +24,39 @@
 
         <!-- 카테고리 필터 -->
         <select v-model="selectedCategory" @change="onCategoryChange" class="input-field w-full sm:w-48">
-            <option value="">전체 카테고리</option>
-            <option v-for="category in availableCategories" :key="category" :value="category">{{ category }}</option>
-          </select>
+          <option value="">전체 카테고리</option>
+          <option v-for="category in availableCategories" :key="category" :value="category">{{ category }}</option>
+        </select>
 
         <!-- 내보내기 드롭다운 -->
         <div class="relative" :class="{ 'z-50': showExportMenu }">
-          <button 
-            class="btn-primary flex items-center gap-2 w-full sm:w-auto"
-            @click="toggleExportMenu"
-          >
+          <button class="btn-primary flex items-center gap-2 w-full sm:w-auto" @click="toggleExportMenu">
             <span class="text-lg">📊</span>
             {{ getExportButtonText() }}
             <span class="text-sm transition-transform duration-200" :class="{ 'rotate-180': showExportMenu }">▼</span>
           </button>
 
-          <div v-if="showExportMenu" class="absolute top-full left-0 right-0 mt-2 bg-white border-2 border-primary-500 rounded-lg shadow-strong overflow-hidden">
+          <div v-if="showExportMenu"
+            class="absolute top-full left-0 right-0 mt-2 bg-white border-2 border-primary-500 rounded-lg shadow-strong overflow-hidden">
             <div class="p-2 space-y-1">
               <button
                 class="w-full flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors duration-200"
-                @click="exportSelectedAsExcelCSV"
-              >
+                @click="exportSelectedAsExcelCSV">
                 <span class="text-xl">📊</span>
                 <div class="text-left">
                   <div class="font-semibold text-gray-900">선택 항목 Excel CSV</div>
                   <div class="text-sm text-gray-600">선택한 항목만 내보내기</div>
-              </div>
+                </div>
               </button>
 
               <button
                 class="w-full flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors duration-200"
-                @click="exportSelectedAsPDF"
-              >
+                @click="exportSelectedAsPDF">
                 <span class="text-xl">📄</span>
                 <div class="text-left">
                   <div class="font-semibold text-gray-900">선택 항목 PDF</div>
                   <div class="text-sm text-gray-600">선택한 항목만 PDF로</div>
-              </div>
+                </div>
               </button>
             </div>
           </div>
@@ -82,16 +80,14 @@
           <div class="flex-1">
             <h3 class="text-sm font-medium text-gray-600 mb-1">총 지출</h3>
             <p class="text-2xl font-bold text-gray-900">₩{{ currentData.totalExpense.toLocaleString() }}</p>
-            <span 
-              class="text-sm"
-              :class="{ 
-                'text-red-600': currentData.expenseChange > 0, 
-                'text-green-600': currentData.expenseChange < 0,
-                'text-gray-600': currentData.expenseChange === 0
-              }"
-            >
-              {{ currentData.expenseChange > 0 ? '+' : '' }}{{ currentData.expenseChange }}% {{ getPreviousPeriodText() }} 대비
-          </span>
+            <span class="text-sm" :class="{
+              'text-red-600': currentData.expenseChange > 0,
+              'text-green-600': currentData.expenseChange < 0,
+              'text-gray-600': currentData.expenseChange === 0
+            }">
+              {{ currentData.expenseChange > 0 ? '+' : '' }}{{ currentData.expenseChange }}% {{ getPreviousPeriodText()
+              }} 대비
+            </span>
           </div>
         </div>
       </div>
@@ -124,16 +120,13 @@
           <div class="flex-1">
             <h3 class="text-sm font-medium text-gray-600 mb-1">예산 대비</h3>
             <p class="text-2xl font-bold text-gray-900">{{ currentData.budgetUsage }}%</p>
-            <span 
-              class="text-sm"
-              :class="{ 
-                'text-red-600': currentData.budgetUsage > 80, 
-                'text-green-600': currentData.budgetUsage < 50,
-                'text-gray-600': currentData.budgetUsage >= 50 && currentData.budgetUsage <= 80
-              }"
-            >
-            {{ getBudgetStatusText() }}
-          </span>
+            <span class="text-sm" :class="{
+              'text-red-600': currentData.budgetUsage > 80,
+              'text-green-600': currentData.budgetUsage < 50,
+              'text-gray-600': currentData.budgetUsage >= 50 && currentData.budgetUsage <= 80
+            }">
+              {{ getBudgetStatusText() }}
+            </span>
           </div>
         </div>
       </div>
@@ -145,20 +138,15 @@
       <div class="card p-6">
         <h3 class="text-xl font-semibold text-gray-900 mb-6">{{ getChartTitle('department') }}</h3>
         <div class="space-y-4">
-          <div 
-            v-for="(dept, index) in departmentData" 
-            :key="index"
-            class="space-y-2"
-          >
+          <div v-for="(dept, index) in departmentData" :key="index" class="space-y-2">
             <div class="flex justify-between items-center">
               <span class="font-medium text-gray-900">{{ dept.name }}</span>
               <span class="font-semibold text-primary-600">₩{{ dept.amount.toLocaleString() }}</span>
-              </div>
+            </div>
             <div class="w-full bg-gray-200 rounded-full h-2">
-              <div 
-                class="h-2 rounded-full bg-primary-600 transition-all duration-300"
-                :style="{ width: Math.min((dept.amount / Math.max(...departmentData.map(d => d.amount)) * 100), 100) + '%' }"
-              ></div>
+              <div class="h-2 rounded-full bg-primary-600 transition-all duration-300"
+                :style="{ width: Math.min((dept.amount / Math.max(...departmentData.map(d => d.amount)) * 100), 100) + '%' }">
+              </div>
             </div>
           </div>
         </div>
@@ -168,15 +156,10 @@
       <div class="card p-6">
         <h3 class="text-xl font-semibold text-gray-900 mb-6">{{ getChartTitle('trend') }}</h3>
         <div class="h-48 flex items-end justify-between gap-2">
-          <div 
-            v-for="(period, index) in trendData" 
-            :key="index"
-            class="flex flex-col items-center flex-1"
-          >
-            <div 
+          <div v-for="(period, index) in trendData" :key="index" class="flex flex-col items-center flex-1">
+            <div
               class="w-full bg-gradient-to-t from-primary-600 to-primary-400 rounded-t transition-all duration-300 min-h-4"
-              :style="{ height: (period.amount / Math.max(...trendData.map(p => p.amount)) * 100) + '%' }"
-            ></div>
+              :style="{ height: (period.amount / Math.max(...trendData.map(p => p.amount)) * 100) + '%' }"></div>
             <div class="text-xs text-gray-600 mt-2 text-center">
               <div class="font-medium">{{ period.label }}</div>
               <div class="text-gray-500">₩{{ period.amount.toLocaleString() }}</div>
@@ -192,33 +175,26 @@
       <div class="card p-6">
         <h3 class="text-xl font-semibold text-gray-900 mb-6">카테고리별 분석</h3>
         <div class="space-y-4">
-          <div 
-            v-for="(category, index) in categoryData" 
-            :key="index"
-            class="border border-gray-200 rounded-lg p-4"
-          >
+          <div v-for="(category, index) in categoryData" :key="index" class="border border-gray-200 rounded-lg p-4">
             <div class="flex justify-between items-center mb-2">
               <span class="font-medium text-gray-900">{{ category.name }}</span>
               <span class="font-semibold text-red-600">₩{{ category.amount.toLocaleString() }}</span>
             </div>
             <div class="flex items-center gap-4 mb-2">
               <div class="flex-1 bg-gray-200 rounded-full h-2">
-                <div 
-                  class="h-2 rounded-full bg-primary-600 transition-all duration-300"
-                  :style="{ width: Math.min((category.amount / Math.max(...categoryData.map(c => c.amount)) * 100), 100) + '%' }"
-                ></div>
+                <div class="h-2 rounded-full bg-primary-600 transition-all duration-300"
+                  :style="{ width: Math.min((category.amount / Math.max(...categoryData.map(c => c.amount)) * 100), 100) + '%' }">
                 </div>
-              <span class="text-sm font-medium text-gray-600">{{ Math.round((category.amount / categoryData.reduce((sum, c) => sum + c.amount, 0)) * 100) }}%</span>
               </div>
+              <span class="text-sm font-medium text-gray-600">{{Math.round((category.amount / categoryData.reduce((sum,
+                c) => sum + c.amount, 0)) * 100) }}%</span>
+            </div>
             <div class="text-right">
-              <span 
-                class="text-sm font-medium"
-                :class="{ 
-                  'text-red-600': category.trend > 0, 
-                  'text-green-600': category.trend < 0,
-                  'text-gray-600': category.trend === 0
-                }"
-              >
+              <span class="text-sm font-medium" :class="{
+                'text-red-600': category.trend > 0,
+                'text-green-600': category.trend < 0,
+                'text-gray-600': category.trend === 0
+              }">
                 {{ category.trend > 0 ? '+' : '' }}{{ category.trend }}%
               </span>
             </div>
@@ -249,65 +225,14 @@
               <div class="text-right">금액</div>
             </div>
             <div class="divide-y divide-gray-200">
-              <div
-                v-for="(expense, index) in detailedData"
-                :key="index"
-                class="grid grid-cols-7 gap-4 p-4 hover:bg-gray-50 transition-colors duration-200"
-              >
+              <div v-for="(expense, index) in detailedData" :key="index"
+                class="grid grid-cols-7 gap-4 p-4 hover:bg-gray-50 transition-colors duration-200">
                 <div>
                   <input type="checkbox" v-model="selectedExpenses" :value="expense" class="rounded" />
                 </div>
                 <div class="text-sm text-gray-600">{{ formatDate(expense.date) }}</div>
                 <div>
-                  <span
-                    class="inline-block px-3 py-1 rounded-full text-xs font-medium text-white"
-                    :class="{
-                      'bg-orange-500': expense.category === '식비',
-                      'bg-blue-500': expense.category === '교통비',
-                      'bg-green-500': expense.category === '사무용품',
-                      'bg-purple-500': expense.category === '회식',
-                      'bg-red-500': expense.category === '공과금',
-                      'bg-yellow-600': expense.category === '유흥',
-                      'bg-indigo-500': expense.category === '교육',
-                      'bg-pink-500': expense.category === '의료',
-                      'bg-gray-500': expense.category === '기타'
-                    }"
-                  >
-                    {{ expense.category }}
-                  </span>
-            </div>
-                <div class="font-medium">{{ expense.description }}</div>
-                <div class="text-sm">
-                  <div class="font-medium text-gray-900">{{ expense.department }}</div>
-                  <div v-if="expense.store_address" class="text-xs text-gray-500">{{ expense.store_address }}</div>
-                </div>
-                <div class="text-sm text-gray-600">{{ expense.store_phone_number || '-' }}</div>
-                <div class="text-right font-semibold text-red-600">₩{{ expense.amount.toLocaleString() }}</div>
-          </div>
-        </div>
-      </div>
-
-          <!-- 모바일 카드 -->
-          <div class="lg:hidden space-y-4">
-            <div
-              v-for="(expense, index) in detailedData"
-              :key="index"
-              class="border border-gray-200 rounded-lg p-4 hover:shadow-soft transition-shadow duration-200"
-            >
-              <div class="flex justify-between items-start mb-3">
-                <div>
-                  <h4 class="font-semibold text-gray-900">{{ expense.description }}</h4>
-                  <p class="text-sm text-gray-700">{{ expense.department }}</p>
-                  <p v-if="expense.store_address" class="text-xs text-gray-500 mt-1">{{ expense.store_address }}</p>
-                  <p v-if="expense.store_phone_number" class="text-xs text-gray-500">{{ expense.store_phone_number }}</p>
-          </div>
-                <span class="text-lg font-bold text-red-600">₩{{ expense.amount.toLocaleString() }}</span>
-              </div>
-              <div class="flex justify-between items-center">
-                <span class="text-sm text-gray-600">{{ formatDate(expense.date) }}</span>
-                <span
-                  class="inline-block px-3 py-1 rounded-full text-xs font-medium text-white"
-                  :class="{
+                  <span class="inline-block px-3 py-1 rounded-full text-xs font-medium text-white" :class="{
                     'bg-orange-500': expense.category === '식비',
                     'bg-blue-500': expense.category === '교통비',
                     'bg-green-500': expense.category === '사무용품',
@@ -317,10 +242,50 @@
                     'bg-indigo-500': expense.category === '교육',
                     'bg-pink-500': expense.category === '의료',
                     'bg-gray-500': expense.category === '기타'
-                  }"
-                >
+                  }">
+                    {{ expense.category }}
+                  </span>
+                </div>
+                <div class="font-medium">{{ expense.description }}</div>
+                <div class="text-sm">
+                  <div class="font-medium text-gray-900">{{ expense.department }}</div>
+                  <div v-if="expense.store_address" class="text-xs text-gray-500">{{ expense.store_address }}</div>
+                </div>
+                <div class="text-sm text-gray-600">{{ expense.store_phone_number || '-' }}</div>
+                <div class="text-right font-semibold text-red-600">₩{{ expense.amount.toLocaleString() }}</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 모바일 카드 -->
+          <div class="lg:hidden space-y-4">
+            <div v-for="(expense, index) in detailedData" :key="index"
+              class="border border-gray-200 rounded-lg p-4 hover:shadow-soft transition-shadow duration-200">
+              <div class="flex justify-between items-start mb-3">
+                <div>
+                  <h4 class="font-semibold text-gray-900">{{ expense.description }}</h4>
+                  <p class="text-sm text-gray-700">{{ expense.department }}</p>
+                  <p v-if="expense.store_address" class="text-xs text-gray-500 mt-1">{{ expense.store_address }}</p>
+                  <p v-if="expense.store_phone_number" class="text-xs text-gray-500">{{ expense.store_phone_number }}
+                  </p>
+                </div>
+                <span class="text-lg font-bold text-red-600">₩{{ expense.amount.toLocaleString() }}</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-sm text-gray-600">{{ formatDate(expense.date) }}</span>
+                <span class="inline-block px-3 py-1 rounded-full text-xs font-medium text-white" :class="{
+                  'bg-orange-500': expense.category === '식비',
+                  'bg-blue-500': expense.category === '교통비',
+                  'bg-green-500': expense.category === '사무용품',
+                  'bg-purple-500': expense.category === '회식',
+                  'bg-red-500': expense.category === '공과금',
+                  'bg-yellow-600': expense.category === '유흥',
+                  'bg-indigo-500': expense.category === '교육',
+                  'bg-pink-500': expense.category === '의료',
+                  'bg-gray-500': expense.category === '기타'
+                }">
                   {{ expense.category }}
-              </span>
+                </span>
               </div>
             </div>
           </div>
@@ -555,7 +520,7 @@ export default {
           if (expenses.value.length > 0) {
             const dates = expenses.value.map(exp => new Date(exp.date))
             const validDates = dates.filter(d => !isNaN(d.getTime()))
-            
+
             if (validDates.length > 0) {
               // 월별로 그룹화
               const trendMap = {}
@@ -569,7 +534,7 @@ export default {
                   trendMap[key] += exp.amount
                 }
               })
-              
+
               trendData.value = Object.entries(trendMap).map(([key, amount]) => {
                 const [year, month] = key.split('-')
                 return {
@@ -688,7 +653,7 @@ export default {
         const element = document.querySelector('.space-y-8')
         const canvas = await html2canvas(element)
         const imgData = canvas.toDataURL('image/png')
-        
+
         const pdf = new jsPDF()
         const imgWidth = 210
         const pageHeight = 295
@@ -744,30 +709,58 @@ export default {
         alert('선택한 항목이 없습니다.')
         return
       }
+
       try {
         showExportMenu.value = false
-        
-        // 각 선택된 항목에 대해 PDF 다운로드
-        for (const expense of selectedExpenses.value) {
-          if (!expense.id) {
-            console.warn('Expense ID가 없습니다:', expense)
-            continue
-          }
-          
-          try {
-            await expenseAPI.exportExpensePDF(expense.id)
-          } catch (error) {
-            console.error(`Expense ${expense.id} PDF 다운로드 실패:`, error)
-          }
-          
-          // 다운로드 간 딜레이 (브라우저가 동시 다운로드를 처리할 수 있도록)
-          await new Promise(resolve => setTimeout(resolve, 500))
+
+        // 선택된 지출 내역의 ID 배열 생성
+        const expenseIds = selectedExpenses.value
+          .filter(expense => expense.id)
+          .map(expense => expense.id)
+
+        if (expenseIds.length === 0) {
+          alert('유효한 지출 내역이 없습니다.')
+          return
         }
-        
-        alert(`선택한 ${selectedExpenses.value.length}개 항목의 PDF 다운로드가 완료되었습니다.`)
+
+        console.log('[PDF] 리포트 다운로드 시작:', expenseIds)
+
+        // 리포트 PDF 다운로드
+        const response = await expenseAPI.downloadReportPDF(expenseIds)
+
+        // PDF 파일 다운로드
+        const blob = await response.blob()
+        const url = window.URL.createObjectURL(blob)
+
+        // 파일명 생성
+        const today = new Date().toISOString().split('T')[0].replace(/-/g, '')
+        let filename = `expense_report_${today}.pdf`
+
+        const contentDisposition = response.headers.get('Content-Disposition')
+        if (contentDisposition) {
+          const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/)
+          if (filenameMatch) {
+            filename = filenameMatch[1].replace(/['"]/g, '')
+          }
+        }
+
+        // 다운로드 링크 생성 및 클릭
+        const link = document.createElement('a')
+        link.href = url
+        link.download = filename
+        document.body.appendChild(link)
+        link.click()
+
+        // 정리
+        document.body.removeChild(link)
+        window.URL.revokeObjectURL(url)
+
+        console.log('[PDF] 리포트 다운로드 완료:', filename)
+        alert(`선택한 ${selectedExpenses.value.length}개 항목의 리포트 PDF가 다운로드되었습니다.`)
+
       } catch (error) {
-        console.error('PDF 생성 중 오류:', error)
-        alert('PDF 생성 중 오류가 발생했습니다.')
+        console.error('[PDF] 리포트 다운로드 실패:', error)
+        alert('PDF 다운로드에 실패했습니다: ' + error.message)
       }
     }
 

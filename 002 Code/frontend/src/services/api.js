@@ -169,6 +169,26 @@ export const expenseAPI = {
     }
 
     return response
+  },
+
+  // 리포트 PDF 다운로드
+  downloadReportPDF: async (expenseIds) => {
+    const token = localStorage.getItem('access_token')
+
+    const response = await fetch(`${API_BASE_URL}/expense/report/pdf`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { Authorization: `Bearer ${token}` })
+      },
+      body: JSON.stringify(expenseIds)
+    })
+
+    if (!response.ok) {
+      throw new Error(`리포트 PDF 다운로드 실패: ${response.status}`)
+    }
+
+    return response
   }
 }
 

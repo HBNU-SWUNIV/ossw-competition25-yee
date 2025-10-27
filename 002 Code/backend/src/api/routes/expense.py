@@ -209,3 +209,49 @@ async def export_expense_pdf(expense_id: str):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"PDF 생성 실패: {str(e)}")
+
+
+@router.post("/report/pdf")
+async def export_report_pdf(
+    expense_ids: List[str],
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    선택된 지출 내역들의 리포트 PDF 생성
+    
+    Args:
+        expense_ids: 지출 내역 ID 리스트
+    """
+    try:
+        if not expense_ids:
+            raise HTTPException(status_code=400, detail="선택된 지출 내역이 없습니다")
+        
+        # 지출 내역들 조회
+        expenses = []
+        for expense_id in expense_ids:
+            expense = await expense_service.get_expense(expense_id)
+            if expense:
+                expenses.append(expense)
+        
+        if not expenses:
+            raise HTTPException(status_code=404, detail="유효한 지출 내역을 찾을 수 없습니다")
+        
+        # 리포트 PDF 생성
+        pdf_bytes = await pdf_service.generate_report_pdf(expenses)
+        
+        # 파일명 생성
+        today = datetime.now().strftime('%Y%m%d')
+        filename = f"expense_report_{today}.pdf"
+        
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f"attachment; filename={filename}"
+            }
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"리포트 PDF 생성 실패: {str(e)}")

@@ -280,5 +280,130 @@ class PDFService:
 
         return table
 
+    async def generate_report_pdf(self, expenses: list) -> bytes:
+        """
+        여러 지출 내역의 리포트 PDF 생성
+        
+        Args:
+            expenses: 지출 내역 리스트
+            
+        Returns:
+            PDF 바이트 데이터
+        """
+        try:
+            buffer = io.BytesIO()
+            doc = SimpleDocTemplate(
+                buffer,
+                pagesize=A4,
+                rightMargin=20*mm,
+                leftMargin=20*mm,
+                topMargin=20*mm,
+                bottomMargin=20*mm
+            )
+
+            elements = []
+            styles = self._get_styles()
+
+            # 제목
+            title = Paragraph("지출 내역 리포트", styles['Title'])
+            elements.append(title)
+            elements.append(Spacer(1, 10*mm))
+
+            # 요약 정보
+            total_amount = sum(exp.get('amount', 0) for exp in expenses)
+            summary_data = [
+                [Paragraph("항목", styles['TableHeader']), Paragraph("내용", styles['TableHeader'])],
+                [Paragraph("총 지출 건수", styles['TableCell']), Paragraph(f"{len(expenses)}건", styles['TableCell'])],
+                [Paragraph("총 지출 금액", styles['TableCell']), Paragraph(f"₩ {total_amount:,.0f}", styles['TableCell'])],
+                [Paragraph("평균 지출", styles['TableCell']), Paragraph(f"₩ {total_amount/len(expenses):,.0f}", styles['TableCell'])],
+                [Paragraph("생성일", styles['TableCell']), Paragraph(datetime.now().strftime('%Y년 %m월 %d일'), styles['TableCell'])]
+            ]
+
+            summary_table = Table(summary_data, colWidths=[50*mm, 120*mm])
+            summary_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#3b82f6')),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+                ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                ('FONTNAME', (0, 0), (-1, -1), self.font_name),
+                ('FONTSIZE', (0, 0), (-1, -1), 10),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                ('TOPPADDING', (0, 0), (-1, 0), 12),
+                ('GRID', (0, 0), (-1, -1), 1, colors.grey),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f3f4f6')])
+            ]))
+
+            elements.append(summary_table)
+            elements.append(Spacer(1, 10*mm))
+
+            # 상세 내역 테이블
+            detail_title = Paragraph("상세 내역", styles['Title'])
+            elements.append(detail_title)
+            elements.append(Spacer(1, 5*mm))
+
+            # 테이블 헤더
+            detail_data = [
+                [
+                    Paragraph("날짜", styles['TableHeader']),
+                    Paragraph("상호명", styles['TableHeader']),
+                    Paragraph("카테고리", styles['TableHeader']),
+                    Paragraph("설명", styles['TableHeader']),
+                    Paragraph("금액", styles['TableHeader'])
+                ]
+            ]
+
+            # 데이터 행 추가
+            for expense in expenses:
+                expense_date = expense.get('date')
+                if isinstance(expense_date, datetime):
+                    date_str = expense_date.strftime('%Y-%m-%d')
+                else:
+                    try:
+                        date_obj = datetime.fromisoformat(str(expense_date).replace('Z', '+00:00'))
+                        date_str = date_obj.strftime('%Y-%m-%d')
+                    except:
+                        date_str = str(expense_date)
+
+                detail_data.append([
+                    Paragraph(date_str, styles['TableCell']),
+                    Paragraph(expense.get('store_name', '-'), styles['TableCell']),
+                    Paragraph(expense.get('category', '-'), styles['TableCell']),
+                    Paragraph(expense.get('description', '-'), styles['TableCell']),
+                    Paragraph(f"₩ {expense.get('amount', 0):,.0f}", styles['TableCell'])
+                ])
+
+            detail_table = Table(detail_data, colWidths=[30*mm, 40*mm, 25*mm, 50*mm, 25*mm])
+            detail_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#3b82f6')),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+                ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                ('ALIGN', (-1, 0), (-1, -1), 'RIGHT'),  # 금액 컬럼 우측 정렬
+                ('FONTNAME', (0, 0), (-1, -1), self.font_name),
+                ('FONTSIZE', (0, 0), (-1, -1), 9),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                ('TOPPADDING', (0, 0), (-1, 0), 12),
+                ('GRID', (0, 0), (-1, -1), 1, colors.grey),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f3f4f6')])
+            ]))
+
+            elements.append(detail_table)
+            elements.append(Spacer(1, 10*mm))
+
+            # 발행 정보
+            footer_text = f"발행일: {datetime.now().strftime('%Y년 %m월 %d일')}"
+            footer = Paragraph(footer_text, styles['Footer'])
+            elements.append(footer)
+
+            # PDF 생성
+            doc.build(elements)
+            pdf_bytes = buffer.getvalue()
+            buffer.close()
+
+            return pdf_bytes
+
+        except Exception as e:
+            raise Exception(f"리포트 PDF 생성 실패: {str(e)}")
+
 
 pdf_service = PDFService()
