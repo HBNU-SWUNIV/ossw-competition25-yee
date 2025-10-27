@@ -9,10 +9,7 @@
           <option value="last-month">지난 달</option>
           <option value="this-year">올해</option>
         </select>
-        <button 
-          class="btn-primary flex items-center gap-2 w-full sm:w-auto"
-          @click="showOcrModal = true"
-        >
+        <button class="btn-primary flex items-center gap-2 w-full sm:w-auto" @click="showOcrModal = true">
           <span class="text-lg">+</span>
           지출 등록 (OCR)
         </button>
@@ -37,12 +34,7 @@
 
     <!-- 필터 -->
     <div class="flex flex-col sm:flex-row gap-4">
-      <input 
-        v-model="searchQuery" 
-        type="text" 
-        placeholder="지출 내역 검색..." 
-        class="input-field flex-1"
-      >
+      <input v-model="searchQuery" type="text" placeholder="지출 내역 검색..." class="input-field flex-1">
       <select v-model="selectedCategory" class="input-field w-full sm:w-48">
         <option value="">모든 카테고리</option>
         <option value="식비">식비</option>
@@ -62,56 +54,49 @@
           <div>카테고리</div>
           <div>내용</div>
           <div>상점명</div>
+          <div>주소</div>
           <div>연락처</div>
           <div class="text-right">금액</div>
-          <div class="text-right">작업</div>
         </div>
         <div class="divide-y divide-gray-200">
-          <div
-            v-for="expense in filteredExpenses"
-            :key="expense.id"
-            class="grid grid-cols-7 gap-4 p-4 hover:bg-gray-50 transition-colors duration-200"
-          >
+          <div v-for="expense in filteredExpenses" :key="expense.id"
+            class="grid grid-cols-7 gap-4 p-4 hover:bg-gray-50 transition-colors duration-200">
             <div class="text-sm text-gray-600">{{ formatDate(expense.date) }}</div>
             <div>
-              <span
-                class="inline-block px-3 py-1 rounded-full text-xs font-medium text-white"
-                :class="{
-                  'bg-orange-500': expense.category === '식비',
-                  'bg-blue-500': expense.category === '교통비',
-                  'bg-green-500': expense.category === '사무용품',
-                  'bg-purple-500': expense.category === '회식',
-                  'bg-red-500': expense.category === '공과금',
-                  'bg-yellow-600': expense.category === '유흥',
-                  'bg-indigo-500': expense.category === '교육',
-                  'bg-pink-500': expense.category === '의료',
-                  'bg-gray-500': expense.category === '기타'
-                }"
-              >
+              <span class="inline-block px-3 py-1 rounded-full text-xs font-medium text-white" :class="{
+                'bg-orange-500': expense.category === '식비',
+                'bg-blue-500': expense.category === '교통비',
+                'bg-green-500': expense.category === '사무용품',
+                'bg-purple-500': expense.category === '회식',
+                'bg-red-500': expense.category === '공과금',
+                'bg-yellow-600': expense.category === '유흥',
+                'bg-indigo-500': expense.category === '교육',
+                'bg-pink-500': expense.category === '의료',
+                'bg-gray-500': expense.category === '기타'
+              }">
                 {{ expense.category }}
               </span>
             </div>
             <div class="font-medium">{{ expense.description || expense.store_name }}</div>
-            <div class="text-sm">
-              <div class="font-medium text-gray-900">{{ expense.store_name }}</div>
-              <div v-if="expense.store_address" class="text-xs text-gray-500">{{ expense.store_address }}</div>
-            </div>
+            <div class="text-sm font-medium text-gray-900">{{ expense.store_name }}</div>
+            <div class="text-sm text-gray-600">{{ expense.store_address || '-' }}</div>
             <div class="text-sm text-gray-600">{{ expense.store_phone_number || '-' }}</div>
             <div class="text-right font-semibold text-red-600">₩{{ expense.amount.toLocaleString() }}</div>
             <div class="text-right">
               <div class="flex gap-2 justify-end">
-                <button
-                  @click="openEditModal(expense)"
+                <button @click="downloadPDF(expense.id)"
+                  class="px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-sm rounded-lg transition-colors duration-200"
+                  title="PDF 다운로드">
+                  📄 PDF
+                </button>
+                <button @click="openEditModal(expense)"
                   class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-lg transition-colors duration-200"
-                  title="수정"
-                >
+                  title="수정">
                   ✏️ 수정
                 </button>
-                <button
-                  @click="deleteExpense(expense.id)"
+                <button @click="deleteExpense(expense.id)"
                   class="px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-sm rounded-lg transition-colors duration-200"
-                  title="삭제"
-                >
+                  title="삭제">
                   🗑️ 삭제
                 </button>
               </div>
@@ -122,11 +107,8 @@
 
       <!-- 모바일 카드 -->
       <div class="lg:hidden space-y-4 p-4">
-        <div
-          v-for="expense in filteredExpenses"
-          :key="expense.id"
-          class="border border-gray-200 rounded-lg p-4 hover:shadow-soft transition-shadow duration-200"
-        >
+        <div v-for="expense in filteredExpenses" :key="expense.id"
+          class="border border-gray-200 rounded-lg p-4 hover:shadow-soft transition-shadow duration-200">
           <div class="flex justify-between items-start mb-3">
             <div>
               <h4 class="font-semibold text-gray-900">{{ expense.description || expense.store_name }}</h4>
@@ -139,34 +121,32 @@
           <div class="flex justify-between items-center">
             <span class="text-sm text-gray-600">{{ formatDate(expense.date) }}</span>
             <div class="flex items-center gap-2">
-              <span
-                class="inline-block px-3 py-1 rounded-full text-xs font-medium text-white"
-                :class="{
-                  'bg-orange-500': expense.category === '식비',
-                  'bg-blue-500': expense.category === '교통비',
-                  'bg-green-500': expense.category === '사무용품',
-                  'bg-purple-500': expense.category === '회식',
-                  'bg-red-500': expense.category === '공과금',
-                  'bg-yellow-600': expense.category === '유흥',
-                  'bg-indigo-500': expense.category === '교육',
-                  'bg-pink-500': expense.category === '의료',
-                  'bg-gray-500': expense.category === '기타'
-                }"
-              >
+              <span class="inline-block px-3 py-1 rounded-full text-xs font-medium text-white" :class="{
+                'bg-orange-500': expense.category === '식비',
+                'bg-blue-500': expense.category === '교통비',
+                'bg-green-500': expense.category === '사무용품',
+                'bg-purple-500': expense.category === '회식',
+                'bg-red-500': expense.category === '공과금',
+                'bg-yellow-600': expense.category === '유흥',
+                'bg-indigo-500': expense.category === '교육',
+                'bg-pink-500': expense.category === '의료',
+                'bg-gray-500': expense.category === '기타'
+              }">
                 {{ expense.category }}
               </span>
-              <button
-                @click="openEditModal(expense)"
+              <button @click="downloadPDF(expense.id)"
+                class="px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-xs rounded-lg transition-colors duration-200"
+                title="PDF 다운로드">
+                📄
+              </button>
+              <button @click="openEditModal(expense)"
                 class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded-lg transition-colors duration-200"
-                title="수정"
-              >
+                title="수정">
                 ✏️
               </button>
-              <button
-                @click="deleteExpense(expense.id)"
+              <button @click="deleteExpense(expense.id)"
                 class="px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-xs rounded-lg transition-colors duration-200"
-                title="삭제"
-              >
+                title="삭제">
                 🗑️
               </button>
             </div>
@@ -176,7 +156,8 @@
     </div>
 
     <!-- OCR 등록 모달 -->
-    <div v-if="showOcrModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" @click.self="closeOcrModal">
+    <div v-if="showOcrModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+      @click.self="closeOcrModal">
       <div class="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-strong">
         <!-- 모달 헤더 -->
         <div class="flex items-center justify-between p-6 border-b border-gray-200 bg-gray-50 rounded-t-2xl">
@@ -184,10 +165,9 @@
             <span class="text-2xl">📷</span>
             지출 등록 (OCR)
           </h2>
-          <button 
+          <button
             class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-200 transition-colors duration-200"
-            @click="closeOcrModal"
-          >
+            @click="closeOcrModal">
             <span class="text-xl">&times;</span>
           </button>
         </div>
@@ -198,12 +178,14 @@
             <label class="block text-lg font-semibold text-gray-900 mb-3">영수증 업로드</label>
             <div
               class="relative border-2 border-dashed border-gray-300 rounded-xl p-8 text-center transition-all duration-300"
-              :class="{ 'border-primary-500 bg-primary-50': uploadedFile }"
-            >
+              :class="{ 'border-primary-500 bg-primary-50': uploadedFile }">
               <!-- OCR 처리 중 로딩 오버레이 -->
-              <div v-if="isLoading" class="absolute inset-0 bg-white bg-opacity-95 rounded-xl flex items-center justify-center z-10">
+              <div v-if="isLoading"
+                class="absolute inset-0 bg-white bg-opacity-95 rounded-xl flex items-center justify-center z-10">
                 <div class="text-center space-y-4">
-                  <div class="inline-block animate-spin rounded-full h-16 w-16 border-4 border-primary-500 border-t-transparent"></div>
+                  <div
+                    class="inline-block animate-spin rounded-full h-16 w-16 border-4 border-primary-500 border-t-transparent">
+                  </div>
                   <div>
                     <p class="text-lg font-semibold text-gray-900">OCR 처리 중...</p>
                     <p class="text-sm text-gray-600 mt-2">영수증을 분석하고 있습니다</p>
@@ -212,21 +194,9 @@
                 </div>
               </div>
 
-              <input
-                ref="fileInput"
-                type="file"
-                accept="image/*"
-                @change="handleFileSelect"
-                class="hidden"
-              >
-              <input
-                ref="cameraInput"
-                type="file"
-                accept="image/*"
-                capture="environment"
-                @change="handleCameraCapture"
-                class="hidden"
-              >
+              <input ref="fileInput" type="file" accept="image/*" @change="handleFileSelect" class="hidden">
+              <input ref="cameraInput" type="file" accept="image/*" capture="environment" @change="handleCameraCapture"
+                class="hidden">
 
               <div v-if="!uploadedFile" class="space-y-4">
                 <div class="text-5xl">📄</div>
@@ -239,14 +209,14 @@
                   <span class="font-medium text-gray-900 flex-1">{{ uploadedFile.name }}</span>
                   <button
                     class="w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors duration-200"
-                    @click="removeFile"
-                  >
+                    @click="removeFile">
                     ×
                   </button>
                 </div>
-                <img v-if="imagePreview" :src="imagePreview" alt="영수증 미리보기" class="max-w-full max-h-64 mx-auto rounded-lg shadow-soft">
+                <img v-if="imagePreview" :src="imagePreview" alt="영수증 미리보기"
+                  class="max-w-full max-h-64 mx-auto rounded-lg shadow-soft">
               </div>
-              
+
               <div class="flex flex-col sm:flex-row gap-3 justify-center mt-6">
                 <button class="btn-primary flex items-center gap-2" @click="triggerFileSelect">
                   <span class="text-lg">📁</span> 파일 선택
@@ -290,35 +260,18 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label class="block text-sm font-semibold text-gray-900 mb-2">날짜</label>
-                <input
-                  type="date"
-                  v-model="expenseForm.date"
-                  class="input-field"
-                  required
-                >
+                <input type="date" v-model="expenseForm.date" class="input-field" required>
               </div>
               <div>
                 <label class="block text-sm font-semibold text-gray-900 mb-2">금액(원)</label>
-                <input
-                  type="number"
-                  v-model="expenseForm.amount"
-                  class="input-field"
-                  placeholder="금액 입력"
-                  required
-                >
+                <input type="number" v-model="expenseForm.amount" class="input-field" placeholder="금액 입력" required>
               </div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label class="block text-sm font-semibold text-gray-900 mb-2">상호명</label>
-                <input
-                  type="text"
-                  v-model="expenseForm.merchant"
-                  class="input-field"
-                  placeholder="상호명"
-                  required
-                >
+                <input type="text" v-model="expenseForm.merchant" class="input-field" placeholder="상호명" required>
               </div>
               <div>
                 <label class="block text-sm font-semibold text-gray-900 mb-2">카테고리</label>
@@ -338,33 +291,17 @@
 
             <div>
               <label class="block text-sm font-semibold text-gray-900 mb-2">주소</label>
-              <input
-                type="text"
-                v-model="expenseForm.address"
-                class="input-field"
-                placeholder="주소 (OCR 또는 수동 입력)"
-              >
+              <input type="text" v-model="expenseForm.address" class="input-field" placeholder="주소 (OCR 또는 수동 입력)">
             </div>
 
             <div>
               <label class="block text-sm font-semibold text-gray-900 mb-2">전화번호</label>
-              <input
-                type="text"
-                v-model="expenseForm.phone"
-                class="input-field"
-                placeholder="전화번호 (OCR 또는 수동 입력)"
-              >
+              <input type="text" v-model="expenseForm.phone" class="input-field" placeholder="전화번호 (OCR 또는 수동 입력)">
             </div>
 
             <div>
               <label class="block text-sm font-semibold text-gray-900 mb-2">지출 설명</label>
-              <input
-                type="text"
-                v-model="expenseForm.description"
-                class="input-field"
-                placeholder="간단한 지출 목적"
-                required
-              >
+              <input type="text" v-model="expenseForm.description" class="input-field" placeholder="간단한 지출 목적" required>
             </div>
           </div>
         </div>
@@ -372,12 +309,8 @@
         <!-- 모달 푸터 -->
         <div class="flex justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50 rounded-b-2xl">
           <button class="btn-secondary" @click="closeOcrModal">취소</button>
-          <button
-            class="btn-primary"
-            @click="registerExpense"
-            :disabled="!isFormValid"
-            :class="{ 'opacity-50 cursor-not-allowed': !isFormValid }"
-          >
+          <button class="btn-primary" @click="registerExpense" :disabled="!isFormValid"
+            :class="{ 'opacity-50 cursor-not-allowed': !isFormValid }">
             등록하기
           </button>
         </div>
@@ -385,7 +318,8 @@
     </div>
 
     <!-- 지출 수정 모달 -->
-    <div v-if="showEditModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" @click.self="closeEditModal">
+    <div v-if="showEditModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+      @click.self="closeEditModal">
       <div class="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-strong">
         <!-- 모달 헤더 -->
         <div class="flex items-center justify-between p-6 border-b border-gray-200 bg-gray-50 rounded-t-2xl">
@@ -393,10 +327,9 @@
             <span class="text-2xl">✏️</span>
             지출 내역 수정
           </h2>
-          <button 
+          <button
             class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-200 transition-colors duration-200"
-            @click="closeEditModal"
-          >
+            @click="closeEditModal">
             <span class="text-xl">&times;</span>
           </button>
         </div>
@@ -407,35 +340,18 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label class="block text-sm font-semibold text-gray-900 mb-2">날짜</label>
-                <input
-                  type="date"
-                  v-model="editForm.date"
-                  class="input-field"
-                  required
-                >
+                <input type="date" v-model="editForm.date" class="input-field" required>
               </div>
               <div>
                 <label class="block text-sm font-semibold text-gray-900 mb-2">금액(원)</label>
-                <input
-                  type="number"
-                  v-model="editForm.amount"
-                  class="input-field"
-                  placeholder="금액 입력"
-                  required
-                >
+                <input type="number" v-model="editForm.amount" class="input-field" placeholder="금액 입력" required>
               </div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label class="block text-sm font-semibold text-gray-900 mb-2">상호명</label>
-                <input
-                  type="text"
-                  v-model="editForm.store_name"
-                  class="input-field"
-                  placeholder="상호명"
-                  required
-                >
+                <input type="text" v-model="editForm.store_name" class="input-field" placeholder="상호명" required>
               </div>
               <div>
                 <label class="block text-sm font-semibold text-gray-900 mb-2">카테고리</label>
@@ -455,33 +371,17 @@
 
             <div>
               <label class="block text-sm font-semibold text-gray-900 mb-2">주소</label>
-              <input
-                type="text"
-                v-model="editForm.store_address"
-                class="input-field"
-                placeholder="주소 (선택)"
-              >
+              <input type="text" v-model="editForm.store_address" class="input-field" placeholder="주소 (선택)">
             </div>
 
             <div>
               <label class="block text-sm font-semibold text-gray-900 mb-2">전화번호</label>
-              <input
-                type="text"
-                v-model="editForm.store_phone_number"
-                class="input-field"
-                placeholder="전화번호 (선택)"
-              >
+              <input type="text" v-model="editForm.store_phone_number" class="input-field" placeholder="전화번호 (선택)">
             </div>
 
             <div>
               <label class="block text-sm font-semibold text-gray-900 mb-2">지출 설명</label>
-              <input
-                type="text"
-                v-model="editForm.description"
-                class="input-field"
-                placeholder="간단한 지출 목적"
-                required
-              >
+              <input type="text" v-model="editForm.description" class="input-field" placeholder="간단한 지출 목적" required>
             </div>
           </div>
         </div>
@@ -489,12 +389,8 @@
         <!-- 모달 푸터 -->
         <div class="flex justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50 rounded-b-2xl">
           <button class="btn-secondary" @click="closeEditModal">취소</button>
-          <button
-            class="btn-primary"
-            @click="updateExpense"
-            :disabled="!isEditFormValid"
-            :class="{ 'opacity-50 cursor-not-allowed': !isEditFormValid }"
-          >
+          <button class="btn-primary" @click="updateExpense" :disabled="!isEditFormValid"
+            :class="{ 'opacity-50 cursor-not-allowed': !isEditFormValid }">
             수정하기
           </button>
         </div>
@@ -569,35 +465,35 @@ export default {
       }
     }
 
-    const totalExpense = computed(() => 
+    const totalExpense = computed(() =>
       expenses.value.reduce((sum, expense) => sum + expense.amount, 0)
     )
-    
-    const avgExpense = computed(() => 
+
+    const avgExpense = computed(() =>
       expenses.value.length > 0 ? Math.round(totalExpense.value / expenses.value.length) : 0
     )
 
     const filteredExpenses = computed(() => {
       return expenses.value.filter(expense => {
         const matchesSearch = expense.description.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-                            expense.department.toLowerCase().includes(searchQuery.value.toLowerCase())
+          expense.department.toLowerCase().includes(searchQuery.value.toLowerCase())
         const matchesCategory = selectedCategory.value === '' || expense.category === selectedCategory.value
         return matchesSearch && matchesCategory
       })
     })
 
     const isFormValid = computed(() => {
-      return expenseForm.value.date && 
-             expenseForm.value.amount && 
-             expenseForm.value.merchant && 
-             expenseForm.value.description
+      return expenseForm.value.date &&
+        expenseForm.value.amount &&
+        expenseForm.value.merchant &&
+        expenseForm.value.description
     })
 
     const isEditFormValid = computed(() => {
-      return editForm.value.date && 
-             editForm.value.amount && 
-             editForm.value.store_name && 
-             editForm.value.description
+      return editForm.value.date &&
+        editForm.value.amount &&
+        editForm.value.store_name &&
+        editForm.value.description
     })
 
     // 파일 선택
@@ -832,7 +728,7 @@ export default {
     // 수정 모달 열기
     const openEditModal = (expense) => {
       editingExpenseId.value = expense.id
-      
+
       // 날짜를 YYYY-MM-DD 형식으로 변환
       const dateObj = new Date(expense.date)
       const year = dateObj.getFullYear()
@@ -907,6 +803,47 @@ export default {
       }
     }
 
+    // PDF 다운로드
+    const downloadPDF = async (expenseId) => {
+      try {
+        console.log('[PDF] 다운로드 시작:', expenseId)
+
+        // API 호출
+        const response = await expenseAPI.downloadPDF(expenseId)
+
+        // PDF 파일 다운로드
+        const blob = await response.blob()
+        const url = window.URL.createObjectURL(blob)
+
+        // 파일명 생성 (Content-Disposition 헤더에서 추출 또는 기본값 사용)
+        let filename = 'expense.pdf'
+        const contentDisposition = response.headers.get('Content-Disposition')
+        if (contentDisposition) {
+          const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/)
+          if (filenameMatch) {
+            filename = filenameMatch[1]
+          }
+        }
+
+        // 다운로드 링크 생성 및 클릭
+        const link = document.createElement('a')
+        link.href = url
+        link.download = filename
+        document.body.appendChild(link)
+        link.click()
+
+        // 정리
+        document.body.removeChild(link)
+        window.URL.revokeObjectURL(url)
+
+        console.log('[PDF] 다운로드 완료:', filename)
+
+      } catch (error) {
+        console.error('[PDF] 다운로드 실패:', error)
+        alert('PDF 다운로드에 실패했습니다: ' + error.message)
+      }
+    }
+
     // 컴포넌트 마운트 시 지출 목록 조회
     onMounted(() => {
       fetchExpenses()
@@ -945,7 +882,8 @@ export default {
       deleteExpense,
       openEditModal,
       closeEditModal,
-      updateExpense
+      updateExpense,
+      downloadPDF
     }
   }
 }

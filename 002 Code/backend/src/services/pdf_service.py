@@ -24,8 +24,10 @@ class PDFService:
             font_paths = [
                 "C:/Windows/Fonts/malgun.ttf",  # 맑은 고딕
                 "C:/Windows/Fonts/gulim.ttc",    # 굴림
+                "C:/Windows/Fonts/NanumGothic.ttf",  # 나눔고딕
                 "/usr/share/fonts/truetype/nanum/NanumGothic.ttf",  # Ubuntu
-                "/System/Library/Fonts/AppleSDGothicNeo.ttc"  # macOS
+                "/System/Library/Fonts/AppleSDGothicNeo.ttc",  # macOS
+                "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"  # Linux fallback
             ]
 
             self.font_name = None
@@ -43,6 +45,7 @@ class PDFService:
             if not self.font_name:
                 print("[PDF] 한글 폰트를 찾을 수 없습니다. 기본 폰트 사용")
                 self.font_name = 'Helvetica'
+                
         except Exception as e:
             print(f"[PDF] 폰트 초기화 오류: {str(e)}")
             self.font_name = 'Helvetica'
@@ -176,28 +179,39 @@ class PDFService:
     def _add_receipt_image(self, image_url: str) -> Optional[RLImage]:
         """영수증 이미지 다운로드 및 추가"""
         try:
+            print(f"[PDF] 이미지 다운로드 시도: {image_url}")
+            
             # 이미지 다운로드
-            response = requests.get(image_url, timeout=10)
+            response = requests.get(image_url, timeout=15, verify=False)
             response.raise_for_status()
 
             # PIL로 이미지 처리
             img = Image.open(io.BytesIO(response.content))
+            
+            # RGB 모드로 변환 (RGBA나 다른 모드일 경우)
+            if img.mode != 'RGB':
+                img = img.convert('RGB')
 
             # 이미지 리사이즈 (A4 용지에 맞게)
-            max_width = 150 * mm
-            max_height = 100 * mm
+            max_width = int(150 * mm * 72 / 25.4)  # mm를 픽셀로 변환
+            max_height = int(100 * mm * 72 / 25.4)
 
             img.thumbnail((max_width, max_height), Image.Resampling.LANCZOS)
 
             # BytesIO로 변환
             img_buffer = io.BytesIO()
-            img.save(img_buffer, format='PNG')
+            img.save(img_buffer, format='JPEG', quality=85)
             img_buffer.seek(0)
 
-            # ReportLab Image 객체 생성
-            rl_img = RLImage(img_buffer, width=img.width, height=img.height)
-
+            # ReportLab Image 객체 생성 (크기 조정)
+            width_mm = img.width * 25.4 / 72  # 픽셀을 mm로 변환
+            height_mm = img.height * 25.4 / 72
+            
+            rl_img = RLImage(img_buffer, width=width_mm*mm, height=height_mm*mm)
+            
+            print(f"[PDF] 이미지 추가 성공: {img.width}x{img.height}")
             return rl_img
+            
         except Exception as e:
             print(f"[PDF] 이미지 로드 실패: {str(e)}")
             return None
