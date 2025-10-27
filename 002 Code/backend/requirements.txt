@@ -24,6 +24,9 @@ httpx==0.26.0
 paddlepaddle==2.6.0
 paddleocr==2.7.0.3
 Pillow==10.2.0
+numpy>=1.21.0,<2.0.0
+opencv-python<=4.6.0.66
+shapely==2.0.2
 
 # Environment Variables
 python-dotenv==1.0.0
