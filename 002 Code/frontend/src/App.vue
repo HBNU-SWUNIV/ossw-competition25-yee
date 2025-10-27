@@ -67,7 +67,7 @@
             class="flex items-center gap-3 px-5 py-4 text-gray-700 hover:bg-gray-50 hover:text-primary-600 transition-colors duration-200"
             :class="{ 'bg-primary-50 text-primary-600 border-r-4 border-primary-600': activeMenu === 'departments' }">
             <span class="text-xl">🏢</span>
-            <span class="font-medium">부서관리</span>
+            <span class="font-medium">자치기구 관리</span>
           </a>
         </li>
         <li>
@@ -177,7 +177,7 @@
             <div class="bg-white rounded-xl p-6 shadow-soft hover:shadow-medium transition-shadow duration-300">
               <div class="flex items-center justify-between">
                 <div>
-                  <p class="text-sm font-medium text-gray-600">활성 부서</p>
+                  <p class="text-sm font-medium text-gray-600">활성 자치 기구</p>
                   <p class="text-2xl font-bold text-gray-900">12개</p>
                 </div>
                 <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center text-2xl">🏢</div>
@@ -185,7 +185,7 @@
               <div class="mt-4">
                 <div class="flex items-center text-sm text-gray-600">
                   <span class="mr-1">→</span>
-                  <span>전체 부서 운영 중</span>
+                  <span>전체 자치기구 운영 중</span>
                 </div>
               </div>
             </div>
@@ -230,8 +230,8 @@
                 <div class="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center text-white text-lg">🏢
                 </div>
                 <div>
-                  <p class="font-medium text-gray-900">부서 관리</p>
-                  <p class="text-sm text-gray-600">부서 정보 확인</p>
+                  <p class="font-medium text-gray-900">자치기구 관리</p>
+                  <p class="text-sm text-gray-600">자치기구 정보 확인</p>
                 </div>
               </button>
             </div>
@@ -278,7 +278,7 @@
             </div>
 
             <div class="bg-white rounded-xl p-6 shadow-soft">
-              <h3 class="text-lg font-semibold text-gray-900 mb-4">부서별 예산 현황</h3>
+              <h3 class="text-lg font-semibold text-gray-900 mb-4">자치기구 별 예산 현황</h3>
               <div class="space-y-4">
                 <div>
                   <div class="flex justify-between items-center mb-2">
@@ -375,7 +375,7 @@ export default {
         budget: '예산관리',
         expenses: '지출내역',
         reports: '리포트',
-        departments: '부서관리',
+        departments: '자치기구 관리',
         settings: '설정'
       }
       return titles[activeMenu.value] || '홈'
