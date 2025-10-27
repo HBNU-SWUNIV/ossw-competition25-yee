@@ -42,13 +42,20 @@ async def ocr_receipt(
 
         ocr_data = ocr_result["data"]
 
+        # 날짜를 YYYY-MM-DD 형식으로 변환
+        date_value = ocr_data.get("date")
+        if isinstance(date_value, datetime):
+            date_str = date_value.strftime("%Y-%m-%d")
+        else:
+            date_str = str(date_value) if date_value else ""
+
         return {
             "status": "success",
             "data": {
                 "store_name": ocr_data.get("store_name", ""),
                 "store_address": ocr_data.get("store_address", ""),
                 "store_phone_number": ocr_data.get("store_phone_number", ""),
-                "date": ocr_data.get("date").isoformat() if hasattr(ocr_data.get("date"), 'isoformat') else str(ocr_data.get("date", "")),
+                "date": date_str,
                 "total_amount": ocr_data.get("total_amount", 0)
             }
         }

@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, Query, Depends
+from fastapi.responses import Response
 from typing import Optional, List
 from datetime import datetime
 from src.schemas.expense import (
@@ -8,6 +9,8 @@ from src.schemas.expense import (
     ExpenseSummary
 )
 from src.services.expense_service import expense_service
+from src.services.receipt_service import receipt_service
+from src.services.pdf_service import pdf_service
 from src.api.dependencies import get_current_user
 
 router = APIRouter(prefix="/expense", tags=["expense"])
@@ -163,3 +166,44 @@ async def delete_expense(expense_id: str):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{expense_id}/pdf")
+async def export_expense_pdf(expense_id: str):
+    """
+    개별 지출 내역 PDF 내보내기
+
+    영수증 이미지, 상호명, 주소, 전화번호, 날짜, 총액 등이 포함된 PDF 생성
+    """
+    try:
+        # 지출 내역 조회
+        expense = await expense_service.get_expense(expense_id)
+        if not expense:
+            raise HTTPException(status_code=404, detail="지출 내역을 찾을 수 없습니다")
+
+        # 영수증 조회 (이미지 포함)
+        receipt = None
+        if expense.get("receipt_id"):
+            receipt = await receipt_service.get_receipt(expense["receipt_id"])
+
+        # PDF 생성
+        pdf_bytes = await pdf_service.generate_expense_pdf(expense, receipt)
+
+        # PDF 파일명 생성
+        date_str = expense.get('date', datetime.now()).strftime('%Y%m%d') if isinstance(expense.get('date'), datetime) else datetime.now().strftime('%Y%m%d')
+        store_name = expense.get('store_name', 'expense')
+        filename = f"expense_{store_name}_{date_str}.pdf"
+
+        # PDF 응답 반환
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f"attachment; filename={filename}"
+            }
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"PDF 생성 실패: {str(e)}")

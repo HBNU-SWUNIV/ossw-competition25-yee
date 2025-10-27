@@ -146,8 +146,12 @@ class OCRService:
         receipt = result.documents[0]
         fields = receipt.fields
 
-        # 1. 상호명 추출
-        store_name = self._get_field_value(fields.get("MerchantName"))
+        # 1. 상호명 추출 (여러 필드 시도 + 원본 텍스트에서 추출)
+        store_name = (
+            self._get_field_value(fields.get("MerchantName")) or
+            self._get_field_value(fields.get("Merchant")) or
+            self._extract_merchant_from_lines(result)
+        )
 
         # 2. 주소 추출
         store_address = self._get_field_value(fields.get("MerchantAddress"))
@@ -163,6 +167,8 @@ class OCRService:
 
         # 5. 총액 추출
         total_amount = self._extract_azure_total(fields.get("Total"))
+
+        print(f"[OCR] 추출 결과 - 상호명: {store_name}, 주소: {store_address}, 전화: {store_phone_number}, 총액: {total_amount}")
 
         return {
             "store_name": store_name or "미지정",
@@ -236,5 +242,52 @@ class OCRService:
         except Exception as e:
             print(f"[OCR] 총액 파싱 오류: {str(e)}")
             return 0.0
+
+    def _extract_merchant_from_lines(self, result: AnalyzeResult) -> Optional[str]:
+        """
+        OCR 원본 텍스트에서 상호명 추출 (fallback)
+        영수증 상단의 첫 번째 텍스트 라인을 상호명으로 추정
+        """
+        try:
+            if not result.pages or len(result.pages) == 0:
+                return None
+
+            page = result.pages[0]
+            if not page.lines or len(page.lines) == 0:
+                return None
+
+            # 제외할 패턴 목록
+            exclude_patterns = [
+                r'^\[.*\]$',  # [영수증], [Receipt] 등 대괄호로 감싸진 텍스트
+                r'^영수증$',  # "영수증" 단독
+                r'^receipt$',  # "receipt" 단독 (대소문자 무시)
+                r'^\d{4}[-/]\d{2}[-/]\d{2}',  # 날짜 패턴
+                r'^[\d,]+원?$',  # 금액 패턴
+                r'^[\d\s\-\(\)]+$',  # 숫자와 특수문자만
+            ]
+
+            # 상위 5개 라인 확인 (영수증은 보통 상단에 상호명이 있음)
+            for line in page.lines[:5]:
+                content = line.content.strip()
+
+                # 빈 문자열이나 너무 짧은 경우 제외
+                if not content or len(content) < 2:
+                    continue
+
+                # 제외 패턴 확인
+                should_exclude = False
+                for pattern in exclude_patterns:
+                    if re.match(pattern, content, re.IGNORECASE):
+                        should_exclude = True
+                        break
+
+                if not should_exclude:
+                    print(f"[OCR] 원본 텍스트에서 상호명 추출: {content}")
+                    return content
+
+            return None
+        except Exception as e:
+            print(f"[OCR] 원본 텍스트 파싱 오류: {str(e)}")
+            return None
 
 ocr_service = OCRService()
