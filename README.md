@@ -51,12 +51,46 @@ Azure Document Intelligence OCR을 활용해 영수증을 자동 인식하고 �
 
 ## 팀원 소개
 
-| 이름 | 학번 | 전공 | 역할 |
-|------|------|------|------|
-| 임동건 | 20211893 | 컴퓨터공학과 | Backend 개발 |
-| 정택준 | 20211929 | 컴퓨터공학과 | Frontend 개발 |
-| 사민경 | 20222562 | 컴퓨터공학과 | Full-stack 개발 |
-| 전준 | 20237142 | 컴퓨터공학과 | UI/UX 디자인 |
+<table>
+  <tr>
+    <td align="center" width="25%">
+      <img src="./assets/사민경.jpg" width="120px" alt="사민경"/><br />
+      <b>사민경</b><br />
+      <sub>20222562</sub><br />
+      <sub>컴퓨터공학과</sub><br />
+      <br />
+      프론트엔드 개발<br />
+      기획
+    </td>
+    <td align="center" width="25%">
+      <img src="./assets/임동건.jpg" width="120px" alt="임동건"/><br />
+      <b>임동건</b><br />
+      <sub>20211893</sub><br />
+      <sub>컴퓨터공학과</sub><br />
+      <br />
+      프론트엔드 개발<br />
+      배포
+    </td>
+    <td align="center" width="25%">
+      <img src="./assets/정택준.jpg" width="120px" alt="정택준"/><br />
+      <b>정택준</b><br />
+      <sub>20211929</sub><br />
+      <sub>컴퓨터공학과</sub><br />
+      <br />
+      백엔드 개발<br />
+      QA
+    </td>
+    <td align="center" width="25%">
+      <img src="./assets/전준.jpg" width="120px" alt="전준"/><br />
+      <b>전준</b><br />
+      <sub>20237142</sub><br />
+      <sub>컴퓨터공학과</sub><br />
+      <br />
+      백엔드 개발<br />
+      QA
+    </td>
+  </tr>
+</table>
 
 ---
 
