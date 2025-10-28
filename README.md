@@ -154,7 +154,7 @@ Azure Document Intelligence OCR을 활용해 영수증을 자동 인식하고 �
 
 <img src="./assets/architecture.png" alt="시스템 구성도" width="80%" />
 
-**사용자 ↔ Vue/Vite → Fast API, OCR API → Firebase**
+**사용자 ↔ Vue/Vite → Fast API, Azure OCR API → Firebase**
 
 </div>
 
