@@ -54,15 +54,6 @@ Azure Document Intelligence OCR을 활용해 영수증을 자동 인식하고 �
 <table>
   <tr>
     <td align="center" width="25%">
-      <img src="./assets/사민경.jpg" width="120px" alt="사민경"/><br />
-      <b>사민경</b><br />
-      <sub>20222562</sub><br />
-      <sub>컴퓨터공학과</sub><br />
-      <br />
-      프론트엔드 개발<br />
-      기획
-    </td>
-    <td align="center" width="25%">
       <img src="./assets/임동건.jpg" width="120px" alt="임동건"/><br />
       <b>임동건</b><br />
       <sub>20211893</sub><br />
@@ -79,6 +70,15 @@ Azure Document Intelligence OCR을 활용해 영수증을 자동 인식하고 �
       <br />
       백엔드 개발<br />
       QA
+    </td>
+    <td align="center" width="25%">
+      <img src="./assets/사민경.jpg" width="120px" alt="사민경"/><br />
+      <b>사민경</b><br />
+      <sub>20222562</sub><br />
+      <sub>컴퓨터공학과</sub><br />
+      <br />
+      프론트엔드 개발<br />
+      기획
     </td>
     <td align="center" width="25%">
       <img src="./assets/전준.jpg" width="120px" alt="전준"/><br />
