@@ -4,6 +4,12 @@
 ### OCR 기반 조직 예산 관리 시스템
 
 <p>
+  <a href="http://ec2-43-203-136-37.ap-northeast-2.compute.amazonaws.com:3000">
+    <img src="https://img.shields.io/badge/Demo-Live-success?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Live Demo"/>
+  </a>
+</p>
+
+<p>
   <img src="https://img.shields.io/badge/Vue.js-4FC08D?style=flat-square&logo=vuedotjs&logoColor=white" />
   <img src="https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white" />
   <img src="https://img.shields.io/badge/Firebase-FFCA28?style=flat-square&logo=firebase&logoColor=black" />
