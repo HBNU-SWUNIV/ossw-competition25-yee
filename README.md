@@ -355,8 +355,6 @@ MIT License
 
 <div align="center">
 
-**Made with ❤️ by YEE Team**
-
 *국립한밭대학교 컴퓨터공학과*
 
 </div>
