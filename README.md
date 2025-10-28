@@ -138,12 +138,6 @@ Azure Document Intelligence OCR을 활용해 영수증을 자동 인식하고 �
 - 반응형 디자인 (모바일 우선)
 - 푸시 알림 지원
 
-### 6. 다중 사용자 지원
-- JWT 기반 사용자 인증 시스템
-- 역할 기반 접근 제어 (관리자/일반 사용자)
-- 부서별 사용자 할당 및 권한 관리
-- 사용자별 활동 로그
-
 ---
 
 ## 시스템 아키텍처
@@ -282,72 +276,6 @@ ossw-competition25-yee/
 ├── README.md
 └── .gitignore
 ```
-
----
-
-## 설치 및 실행
-
-### 사전 요구사항
-- Node.js 18+ & npm
-- Python 3.11+
-- Firebase 프로젝트 설정
-- Azure Document Intelligence API 키
-
-### Frontend 실행
-
-```bash
-cd "002 Code/frontend"
-npm install
-npm run dev
-# http://localhost:3000 에서 실행됩니다
-```
-
-### Backend 실행
-
-```bash
-cd "002 Code/backend"
-
-# 가상환경 생성 (선택사항)
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-
-# 의존성 설치
-pip install -r requirements.txt
-
-# 서버 실행
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
-# http://localhost:8000 에서 실행됩니다
-```
-
-### 환경 변수 설정
-
-**Frontend (`.env`)**
-```env
-VITE_API_BASE_URL=http://localhost:8000
-```
-
-**Backend (`.env`)**
-```env
-# Firebase
-FIREBASE_PROJECT_ID=your-project-id
-FIREBASE_PRIVATE_KEY=your-private-key
-FIREBASE_CLIENT_EMAIL=your-client-email
-FIREBASE_STORAGE_BUCKET=your-storage-bucket
-
-# Azure OCR
-AZURE_OCR_ENDPOINT=your-azure-endpoint
-AZURE_OCR_KEY=your-azure-key
-
-# JWT
-JWT_SECRET_KEY=your-secret-key
-JWT_ALGORITHM=HS256
-```
-
-### API 문서
-- Swagger UI: http://localhost:8000/docs
-- ReDoc: http://localhost:8000/redoc
-
----
 
 ## 주요 기술 특징
 
