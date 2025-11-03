@@ -239,7 +239,7 @@ class BudgetService:
         except Exception as e:
             raise Exception(f"예산 수정 실패: {str(e)}")
 
-    async def delete_budget(self, budget_id: str, user_id: str) -> bool:
+    async def delete_budget(self, budget_id: str, user_id: str, organizationName: Optional[str] = None) -> bool:
         """
         예산 삭제
 
@@ -259,8 +259,11 @@ class BudgetService:
                 raise Exception("예산을 찾을 수 없습니다")
 
             existing_budget = doc.to_dict()
+            # 권한 확인: 예산 소유자이거나 같은 조직 예산이면 삭제 허용
             if existing_budget.get("user_id") != user_id:
-                raise Exception("권한이 없습니다")
+                budget_org = existing_budget.get("organizationName")
+                if not (budget_org and organizationName and budget_org == organizationName):
+                    raise Exception("권한이 없습니다")
 
             # Firestore에서 삭제
             doc_ref.delete()

@@ -120,7 +120,8 @@ async def delete_budget(
     """예산 삭제"""
     try:
         user_id = current_user["user_id"]
-        success = await budget_service.delete_budget(budget_id, user_id)
+        organizationName = current_user.get("organizationName")
+        success = await budget_service.delete_budget(budget_id, user_id, organizationName)
 
         if not success:
             raise HTTPException(status_code=404, detail="예산을 찾을 수 없습니다")
