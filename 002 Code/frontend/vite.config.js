@@ -52,7 +52,7 @@ export default defineConfig({
     open: true,
     host: '0.0.0.0', // 외부 접속 허용
     allowedHosts: [
-      'ec2-43-203-136-37.ap-northeast-2.compute.amazonaws.com', // 허용할 호스트 추가
+      'ec2-3-35-69-197.ap-northeast-2.compute.amazonaws.com', // 허용할 호스트 추가
       'localhost',
       '127.0.0.1'
     ],

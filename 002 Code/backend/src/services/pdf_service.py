@@ -8,7 +8,7 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import mm
 from reportlab.lib.enums import TA_LEFT, TA_CENTER, TA_RIGHT
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image as RLImage
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image as RLImage, KeepTogether, PageBreak
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from PIL import Image
@@ -185,34 +185,42 @@ class PDFService:
         """영수증 이미지 다운로드 및 추가"""
         try:
             print(f"[PDF] 이미지 다운로드 시도: {image_url}")
-            
+
             # 이미지 다운로드
             response = requests.get(image_url, timeout=15, verify=False)
             response.raise_for_status()
 
             # PIL로 이미지 처리
             img = Image.open(io.BytesIO(response.content))
-            
+
+            # EXIF 방향 정보 확인 및 자동 회전
+            try:
+                from PIL import ImageOps
+                img = ImageOps.exif_transpose(img)
+                print(f"[PDF] EXIF 방향 정보 기반 자동 회전 완료")
+            except Exception as e:
+                print(f"[PDF] EXIF 처리 건너뜀: {str(e)}")
+
             # RGB 모드로 변환 (RGBA나 다른 모드일 경우)
             if img.mode != 'RGB':
                 img = img.convert('RGB')
 
-            # 이미지 리사이즈 (A4 용지에 맞게 - 여백 고려하여 더 작게)
+            # 이미지 리사이즈 (같은 페이지에 들어갈 수 있도록 더 작게)
             # A4 페이지 너비에서 좌우 여백(40mm)을 빼면 약 170mm
-            # 안전하게 140mm로 제한
-            max_width_mm = 140  # mm
-            max_height_mm = 180  # mm
+            # 지출 내역과 같은 페이지에 들어가도록 작게 조정
+            max_width_mm = 70  # mm (더 작게 조정)
+            max_height_mm = 90  # mm (더 작게 조정)
 
-            # mm를 픽셀로 변환 (72 DPI 기준)
-            max_width_px = int(max_width_mm * 72 / 25.4)
-            max_height_px = int(max_height_mm * 72 / 25.4)
+            # mm를 픽셀로 변환 (150 DPI 기준으로 높여서 화질 개선)
+            max_width_px = int(max_width_mm * 150 / 25.4)
+            max_height_px = int(max_height_mm * 150 / 25.4)
 
             # 비율 유지하면서 리사이즈
             img.thumbnail((max_width_px, max_height_px), Image.Resampling.LANCZOS)
 
-            # BytesIO로 변환
+            # BytesIO로 변환 (quality를 95로 높여서 화질 개선)
             img_buffer = io.BytesIO()
-            img.save(img_buffer, format='JPEG', quality=85)
+            img.save(img_buffer, format='JPEG', quality=95)
             img_buffer.seek(0)
 
             # ReportLab Image 객체 생성 (thumbnail 후의 실제 크기 사용)
@@ -227,7 +235,7 @@ class PDFService:
 
             print(f"[PDF] 이미지 추가 성공: {actual_width}x{actual_height} (원본에서 리사이즈됨)")
             return rl_img
-            
+
         except Exception as e:
             print(f"[PDF] 이미지 로드 실패: {str(e)}")
             return None
@@ -351,70 +359,16 @@ class PDFService:
             ]))
 
             elements.append(summary_table)
-            elements.append(Spacer(1, 10*mm))
 
-            # 상세 내역 테이블
-            detail_title = Paragraph("상세 내역", styles['CustomTitle'])
-            elements.append(detail_title)
-            elements.append(Spacer(1, 5*mm))
+            # 페이지 나누기 - 지출 내역을 다음 페이지부터 표시
+            elements.append(PageBreak())
 
-            # 테이블 헤더
-            detail_data = [
-                [
-                    Paragraph("날짜", styles['TableHeader']),
-                    Paragraph("상호명", styles['TableHeader']),
-                    Paragraph("카테고리", styles['TableHeader']),
-                    Paragraph("설명", styles['TableHeader']),
-                    Paragraph("금액", styles['TableHeader'])
-                ]
-            ]
-
-            # 데이터 행 추가
-            for expense in expenses:
-                expense_date = expense.get('date')
-                if isinstance(expense_date, datetime):
-                    date_str = expense_date.strftime('%Y-%m-%d')
-                else:
-                    try:
-                        date_obj = datetime.fromisoformat(str(expense_date).replace('Z', '+00:00'))
-                        date_str = date_obj.strftime('%Y-%m-%d')
-                    except:
-                        date_str = str(expense_date)
-
-                detail_data.append([
-                    Paragraph(date_str, styles['TableCell']),
-                    Paragraph(expense.get('store_name', '-'), styles['TableCell']),
-                    Paragraph(expense.get('category', '-'), styles['TableCell']),
-                    Paragraph(expense.get('description', '-'), styles['TableCell']),
-                    Paragraph(f"₩ {expense.get('amount', 0):,.0f}", styles['TableCell'])
-                ])
-
-            detail_table = Table(detail_data, colWidths=[30*mm, 40*mm, 25*mm, 50*mm, 25*mm])
-            detail_table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#3b82f6')),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-                ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-                ('ALIGN', (-1, 0), (-1, -1), 'RIGHT'),  # 금액 컬럼 우측 정렬
-                ('FONTNAME', (0, 0), (-1, -1), self.font_name),
-                ('FONTSIZE', (0, 0), (-1, -1), 9),
-                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-                ('TOPPADDING', (0, 0), (-1, 0), 12),
-                ('GRID', (0, 0), (-1, -1), 1, colors.grey),
-                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-                ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f3f4f6')])
-            ]))
-
-            elements.append(detail_table)
-            elements.append(Spacer(1, 10*mm))
-
-            # 영수증 이미지 섹션 추가
-            receipt_title = Paragraph("영수증 이미지", styles['CustomTitle'])
-            elements.append(receipt_title)
-            elements.append(Spacer(1, 5*mm))
-
-            # 각 지출 내역의 영수증 이미지 추가
+            # 각 지출 내역마다 정보와 영수증을 위아래로 표시
             for idx, expense in enumerate(expenses, 1):
-                # 지출 정보 헤더
+                # 각 지출 내역을 함께 묶을 요소들
+                expense_elements = []
+
+                # 지출 내역 번호
                 expense_date = expense.get('date')
                 if isinstance(expense_date, datetime):
                     date_str = expense_date.strftime('%Y-%m-%d')
@@ -425,26 +379,68 @@ class PDFService:
                     except:
                         date_str = str(expense_date)
 
-                info_text = f"{idx}. {date_str} - {expense.get('store_name', '-')} (₩ {expense.get('amount', 0):,.0f})"
-                info_para = Paragraph(info_text, styles['Korean'])
-                elements.append(info_para)
-                elements.append(Spacer(1, 3*mm))
+                # 지출 내역 헤더
+                header_text = f"{idx}. {date_str} | {expense.get('store_name', '-')} | ₩{expense.get('amount', 0):,}"
+                header_para = Paragraph(header_text, styles['Korean'])
+                expense_elements.append(header_para)
+                expense_elements.append(Spacer(1, 2*mm))
 
-                # 영수증 이미지 추가 (있는 경우)
+                # 영수증 이미지 가져오기
                 receipt_url = expense.get('receipt_url')
+                receipt_img = None
                 if receipt_url:
                     receipt_img = self._add_receipt_image(receipt_url)
-                    if receipt_img:
-                        elements.append(receipt_img)
-                        elements.append(Spacer(1, 5*mm))
-                    else:
-                        no_img_text = Paragraph("영수증 이미지를 불러올 수 없습니다.", styles['TableCell'])
-                        elements.append(no_img_text)
-                        elements.append(Spacer(1, 5*mm))
+
+                # 단일 큰 테이블로 정보와 영수증을 함께 배치
+                # 왼쪽: 정보, 오른쪽: 영수증 이미지
+
+                # 정보 셀 데이터 구성
+                info_rows = [
+                    [Paragraph("카테고리", styles['TableHeader']), Paragraph(expense.get('category', '-'), styles['TableCell'])],
+                    [Paragraph("설명", styles['TableHeader']), Paragraph(expense.get('description', '-'), styles['TableCell'])]
+                ]
+
+                if expense.get('store_address'):
+                    info_rows.append([Paragraph("주소", styles['TableHeader']), Paragraph(expense.get('store_address'), styles['TableCell'])])
+
+                if expense.get('store_phone_number'):
+                    info_rows.append([Paragraph("전화번호", styles['TableHeader']), Paragraph(expense.get('store_phone_number'), styles['TableCell'])])
+
+                # 위아래 배치: 정보 테이블 위, 영수증 이미지 아래
+                info_table = Table(info_rows, colWidths=[30*mm, 140*mm])
+                info_table.setStyle(TableStyle([
+                    ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#3b82f6')),
+                    ('TEXTCOLOR', (0, 0), (0, -1), colors.white),
+                    ('BACKGROUND', (1, 0), (1, -1), colors.white),
+                    ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                    ('FONTNAME', (0, 0), (-1, -1), self.font_name),
+                    ('FONTSIZE', (0, 0), (-1, -1), 9),
+                    ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+                    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                    ('TOPPADDING', (0, 0), (-1, -1), 6),
+                    ('BOTTOMPADDING', (0, 0), (-1, -1), 6)
+                ]))
+                expense_elements.append(info_table)
+
+                # 영수증 이미지 (정보 테이블 아래)
+                if receipt_img:
+                    expense_elements.append(Spacer(1, 3*mm))
+                    # 영수증 이미지 레이블
+                    img_label = Paragraph("영수증 이미지:", styles['Korean'])
+                    expense_elements.append(img_label)
+                    expense_elements.append(Spacer(1, 2*mm))
+                    expense_elements.append(receipt_img)
                 else:
-                    no_receipt_text = Paragraph("영수증 이미지가 없습니다.", styles['TableCell'])
-                    elements.append(no_receipt_text)
-                    elements.append(Spacer(1, 5*mm))
+                    expense_elements.append(Spacer(1, 2*mm))
+                    no_receipt_text = Paragraph("(영수증 이미지 없음)", styles['TableCell'])
+                    expense_elements.append(no_receipt_text)
+
+                # 이 지출 내역의 모든 요소를 KeepTogether로 묶기
+                elements.append(KeepTogether(expense_elements))
+
+                # 항목 간 간격 (구분선 제거, 여백만)
+                if idx < len(expenses):
+                    elements.append(Spacer(1, 8*mm))
 
             # 발행 정보
             footer_text = f"발행일: {datetime.now().strftime('%Y년 %m월 %d일')}"
