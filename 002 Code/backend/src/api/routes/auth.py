@@ -1,4 +1,5 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Query
+from typing import List, Optional
 from src.schemas.user import UserCreate, UserLogin, UserResponse, TokenResponse
 from src.services.auth_service import auth_service
 from src.api.dependencies import get_current_user
@@ -67,5 +68,38 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         return user
     except HTTPException:
         raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/users/organization")
+async def get_users_by_organization(
+    organizationName: str = Query(..., description="조직 이름"),
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    특정 자치기구의 모든 사용자 조회
+
+    - 같은 자치기구의 임원 정보 조회
+    - Authorization 헤더 필요: Bearer {token}
+    """
+    try:
+        users = await auth_service.get_users_by_organization(organizationName)
+        return users
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/users/all-organizations")
+async def get_all_organizations(current_user: dict = Depends(get_current_user)):
+    """
+    모든 자치기구 목록 조회
+
+    - 각 자치기구의 임원 정보 포함
+    - Authorization 헤더 필요: Bearer {token}
+    """
+    try:
+        organizations = await auth_service.get_all_organizations()
+        return organizations
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

@@ -8,6 +8,7 @@ class BudgetBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=100)
     amount: float = Field(..., gt=0)
     category: str = Field(..., min_length=1, max_length=50)
+    organizationName: Optional[str] = Field(None, max_length=200)
 
 
 class BudgetCreate(BudgetBase):
@@ -27,6 +28,7 @@ class BudgetResponse(BudgetBase):
     """예산 응답 스키마"""
     id: str
     user_id: str
+    organizationName: Optional[str] = None
     spent: float
     remaining: float
     created_at: datetime

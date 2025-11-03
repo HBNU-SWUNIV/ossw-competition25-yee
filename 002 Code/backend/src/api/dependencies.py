@@ -66,5 +66,9 @@ async def get_current_user(authorization: str = Header(None)) -> Dict[str, Any]:
     return {
         "user_id": payload["sub"],
         "email": payload.get("email"),
-        "role": payload.get("role", "user")
+        "role": payload.get("role", "user"),
+        "organizationName": payload.get("organizationName"),
+        "organizationType": payload.get("organizationType"),
+        "school": payload.get("school"),
+        "department": payload.get("department")
     }

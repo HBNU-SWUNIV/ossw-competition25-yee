@@ -165,7 +165,7 @@
           </div>
 
           <!-- 사이드바 메뉴 선택 시 컴포넌트 표시 -->
-          <component v-else :is="currentComponent" />
+          <component v-else :is="currentComponent" :userInfo="userInfo" />
         </div>
       </div>
     </main>
@@ -270,8 +270,11 @@ export default {
     const handleLogout = () => {
       localStorage.removeItem('isLoggedIn')
       localStorage.removeItem('userInfo')
+      localStorage.removeItem('access_token')
+      localStorage.removeItem('onboardingCompleted')
       isLoggedIn.value = false
       userInfo.value = null
+      onboardingCompleted.value = false
       activeMenu.value = 'home'
       sidebarOpen.value = false
     }

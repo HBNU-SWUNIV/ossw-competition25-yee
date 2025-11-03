@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from src.core.config import settings
@@ -65,6 +65,12 @@ class AuthService:
             email = user_data["email"]
             password = user_data["password"]
             name = user_data.get("name", "")
+            school = user_data.get("school")
+            department = user_data.get("department")
+            organizationType = user_data.get("organizationType")
+            organizationSubType = user_data.get("organizationSubType")
+            organizationName = user_data.get("organizationName")
+            position = user_data.get("position")
 
             # 1. 이메일 중복 체크
             existing_users = self.db.collection(self.collection)\
@@ -88,6 +94,20 @@ class AuthService:
                 "created_at": datetime.utcnow(),
                 "updated_at": datetime.utcnow()
             }
+            
+            # 학교/학과/조직유형/직책 정보 추가
+            if school:
+                user_doc["school"] = school
+            if department:
+                user_doc["department"] = department
+            if organizationType:
+                user_doc["organizationType"] = organizationType
+            if organizationSubType:
+                user_doc["organizationSubType"] = organizationSubType
+            if organizationName:
+                user_doc["organizationName"] = organizationName
+            if position:
+                user_doc["position"] = position
 
             doc_ref = self.db.collection(self.collection).document()
             doc_ref.set(user_doc)
@@ -145,7 +165,11 @@ class AuthService:
             access_token = self.create_access_token({
                 "sub": user_id,  # user_id를 sub에 저장
                 "email": email,
-                "role": user_doc.get("role", "user")
+                "role": user_doc.get("role", "user"),
+                "organizationName": user_doc.get("organizationName"),
+                "organizationType": user_doc.get("organizationType"),
+                "school": user_doc.get("school"),
+                "department": user_doc.get("department")
             })
 
             # 5. 응답 데이터 생성
@@ -192,6 +216,92 @@ class AuthService:
         except Exception as e:
             print(f"사용자 조회 실패: {str(e)}")
             return None
+
+    async def get_users_by_organization(self, organizationName: str) -> List[Dict[str, Any]]:
+        """
+        특정 자치기구의 모든 사용자 조회
+
+        Args:
+            organizationName: 조직 이름
+
+        Returns:
+            해당 조직의 사용자 목록
+        """
+        try:
+            # 같은 조직의 사용자 조회
+            users_ref = self.db.collection(self.collection)\
+                .where("organizationName", "==", organizationName)\
+                .stream()
+
+            users = []
+            for doc in users_ref:
+                user_data = doc.to_dict()
+                user_data["id"] = doc.id
+
+                # 비밀번호 제외
+                if "hashed_password" in user_data:
+                    del user_data["hashed_password"]
+
+                users.append(user_data)
+
+            return users
+
+        except Exception as e:
+            print(f"조직 사용자 조회 실패: {str(e)}")
+            raise Exception(f"조직 사용자 조회 실패: {str(e)}")
+
+    async def get_all_organizations(self) -> List[Dict[str, Any]]:
+        """
+        모든 자치기구 목록 조회
+
+        Returns:
+            자치기구 목록 및 각 조직의 임원 정보
+        """
+        try:
+            # 모든 사용자 조회
+            users_ref = self.db.collection(self.collection).stream()
+
+            # organizationName별로 그룹화
+            organizations_map = {}
+
+            for doc in users_ref:
+                user_data = doc.to_dict()
+
+                # organizationName이 있는 경우만 처리
+                org_name = user_data.get("organizationName")
+                if not org_name:
+                    continue
+
+                # 비밀번호 제외
+                if "hashed_password" in user_data:
+                    del user_data["hashed_password"]
+
+                if org_name not in organizations_map:
+                    organizations_map[org_name] = {
+                        "name": org_name,
+                        "organizationType": user_data.get("organizationType"),
+                        "organizationSubType": user_data.get("organizationSubType"),
+                        "school": user_data.get("school"),
+                        "department": user_data.get("department"),
+                        "officers": []
+                    }
+
+                # 임원 정보 추가
+                organizations_map[org_name]["officers"].append({
+                    "id": doc.id,
+                    "name": user_data.get("name"),
+                    "position": user_data.get("position"),
+                    "email": user_data.get("email")
+                })
+
+            # 리스트로 변환
+            organizations = list(organizations_map.values())
+
+            return organizations
+
+        except Exception as e:
+            print(f"자치기구 목록 조회 실패: {str(e)}")
+            raise Exception(f"자치기구 목록 조회 실패: {str(e)}")
 
 
 auth_service = AuthService()

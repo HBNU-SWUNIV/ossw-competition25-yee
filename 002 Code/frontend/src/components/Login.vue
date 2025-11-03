@@ -113,6 +113,89 @@
               class="input-field" placeholder="비밀번호를 다시 입력하세요" />
           </div>
 
+          <!-- 학교 선택 -->
+          <div>
+            <label for="register-school" class="block text-sm font-medium text-gray-700 mb-2">
+              학교
+            </label>
+            <select id="register-school" v-model="registerForm.school" @change="handleSchoolChange" class="input-field">
+              <option value="">학교 선택</option>
+              <option v-for="school in universities" :key="school" :value="school">
+                {{ school }}
+              </option>
+            </select>
+          </div>
+
+          <!-- 학과 선택 -->
+          <div>
+            <label for="register-department" class="block text-sm font-medium text-gray-700 mb-2">
+              학과
+            </label>
+            <select id="register-department" v-model="registerForm.department" class="input-field">
+              <option value="">학과 선택</option>
+              <option v-for="dept in departments" :key="dept" :value="dept">
+                {{ dept }}
+              </option>
+            </select>
+          </div>
+
+          <!-- 조직 유형 선택 -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              조직 유형
+            </label>
+            <div class="flex gap-4">
+              <label class="flex items-center">
+                <input type="radio" v-model="registerForm.organizationType" value="자치기구"
+                  class="mr-2 text-primary-600 focus:ring-primary-500" />
+                <span class="text-sm text-gray-700">자치기구</span>
+              </label>
+              <label class="flex items-center">
+                <input type="radio" v-model="registerForm.organizationType" value="학생회"
+                  class="mr-2 text-primary-600 focus:ring-primary-500" />
+                <span class="text-sm text-gray-700">학생회</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- 자치기구 세부 유형 선택 -->
+          <div v-if="registerForm.organizationType === '자치기구'">
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              자치기구 유형
+            </label>
+            <div class="flex gap-4">
+              <label class="flex items-center">
+                <input type="radio" v-model="registerForm.organizationSubType" value="총동아리연합회"
+                  class="mr-2 text-primary-600 focus:ring-primary-500" />
+                <span class="text-sm text-gray-700">총동아리연합회</span>
+              </label>
+              <label class="flex items-center">
+                <input type="radio" v-model="registerForm.organizationSubType" value="총학생회"
+                  class="mr-2 text-primary-600 focus:ring-primary-500" />
+                <span class="text-sm text-gray-700">총학생회</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- 조직 이름 입력 -->
+          <div v-if="registerForm.organizationType">
+            <label for="register-organization-name" class="block text-sm font-medium text-gray-700 mb-2">
+              {{ registerForm.organizationType === '자치기구' ? '자치기구 이름' : '학생회 이름' }}
+            </label>
+            <input id="register-organization-name" v-model="registerForm.organizationName" type="text" 
+              class="input-field"
+              :placeholder="registerForm.organizationType === '자치기구' ? '자치기구 이름을 입력하세요 (예: 한밭대학교 총학생회)' : '학생회 이름을 입력하세요 (예: 컴퓨터공학과 학생회)'" />
+          </div>
+
+          <!-- 직책명 입력 -->
+          <div>
+            <label for="register-position" class="block text-sm font-medium text-gray-700 mb-2">
+              직책명
+            </label>
+            <input id="register-position" v-model="registerForm.position" type="text" class="input-field"
+              placeholder="직책명을 입력하세요 (예: 회장, 총무)" />
+          </div>
+
           <!-- 회원가입 버튼 -->
           <button type="submit" :disabled="isLoading" class="w-full btn-primary flex items-center justify-center gap-2"
             :class="{ 'opacity-50 cursor-not-allowed': isLoading }">
@@ -144,8 +227,8 @@
 </template>
 
 <script>
-import { ref, reactive } from 'vue'
-import { authAPI } from '../api/auth'
+import { ref, reactive, onMounted } from 'vue'
+import { authAPI, dataAPI } from '../services/api'
 
 export default {
   name: 'Login',
@@ -163,13 +246,60 @@ export default {
       name: '',
       email: '',
       password: '',
-      passwordConfirm: ''
+      passwordConfirm: '',
+      school: '',
+      department: '',
+      organizationType: '', // 자치기구 or 학생회
+      organizationSubType: '', // 총동아리연합회 or 총학생회
+      organizationName: '', // 조직 이름
+      position: ''
     })
 
+    const universities = ref([])
+    const departments = ref([])
     const showPassword = ref(false)
     const isLoading = ref(false)
     const errorMessage = ref('')
     const successMessage = ref('')
+
+    // 데이터 로드
+    onMounted(async () => {
+      try {
+        const data = await dataAPI.getAll()
+        universities.value = data.universities || []
+        departments.value = data.departments || []
+      } catch (error) {
+        console.error('데이터 로드 실패:', error)
+      }
+    })
+
+    // 학교 변경 시 해당 학교 학과 로드
+    const handleSchoolChange = async () => {
+      // 학과 선택 초기화
+      registerForm.department = ''
+      
+      if (!registerForm.school) {
+        // 학교가 선택되지 않았으면 기본 목록 유지
+        try {
+          const data = await dataAPI.getAll()
+          departments.value = data.departments || []
+        } catch (error) {
+          console.error('데이터 로드 실패:', error)
+        }
+        return
+      }
+
+      // 선택된 학교의 학과 로드
+      try {
+        console.log('선택된 학교:', registerForm.school)
+        const deptList = await dataAPI.getDepartments(registerForm.school)
+        console.log('불러온 학과 목록:', deptList)
+        departments.value = deptList
+      } catch (error) {
+        console.error('학과 로드 실패:', error)
+        // 실패 시 기본 목록 유지
+      }
+    }
 
     const handleLogin = async () => {
       isLoading.value = true
@@ -179,36 +309,27 @@ export default {
         // 백엔드 API 호출
         const result = await authAPI.login(loginForm.email, loginForm.password)
 
-        if (!result.success) {
-          errorMessage.value = result.error
-          return
-        }
-
         // JWT 토큰 저장
-        localStorage.setItem('access_token', result.data.access_token)
+        localStorage.setItem('access_token', result.access_token)
         localStorage.setItem('isLoggedIn', 'true')
 
         // 사용자 정보 조회
-        const userResult = await authAPI.getCurrentUser()
+        const userResult = await authAPI.getMe()
 
-        if (userResult.success) {
-          const userInfo = {
-            ...userResult.data,
-            loginTime: new Date().toISOString(),
-            remember: loginForm.remember
-          }
-
-          // 로컬 스토리지에 사용자 정보 저장
-          localStorage.setItem('userInfo', JSON.stringify(userInfo))
-
-          // 부모 컴포넌트에 로그인 성공 알림
-          emit('login-success', userInfo)
-        } else {
-          errorMessage.value = '사용자 정보를 가져오는데 실패했습니다.'
+        const userInfo = {
+          ...userResult,
+          loginTime: new Date().toISOString(),
+          remember: loginForm.remember
         }
 
+        // 로컬 스토리지에 사용자 정보 저장
+        localStorage.setItem('userInfo', JSON.stringify(userInfo))
+
+        // 부모 컴포넌트에 로그인 성공 알림
+        emit('login-success', userInfo)
+
       } catch (error) {
-        errorMessage.value = '로그인 중 오류가 발생했습니다.'
+        errorMessage.value = error.message || '로그인 중 오류가 발생했습니다.'
       } finally {
         isLoading.value = false
       }
@@ -227,16 +348,33 @@ export default {
         }
 
         // 백엔드 API 호출
-        const result = await authAPI.register({
+        const registerData = {
           name: registerForm.name,
           email: registerForm.email,
           password: registerForm.password
-        })
-
-        if (!result.success) {
-          errorMessage.value = result.error
-          return
         }
+        
+        // 선택 입력된 경우에만 추가
+        if (registerForm.school) {
+          registerData.school = registerForm.school
+        }
+        if (registerForm.department) {
+          registerData.department = registerForm.department
+        }
+        if (registerForm.organizationType) {
+          registerData.organizationType = registerForm.organizationType
+        }
+        if (registerForm.organizationSubType) {
+          registerData.organizationSubType = registerForm.organizationSubType
+        }
+        if (registerForm.organizationName) {
+          registerData.organizationName = registerForm.organizationName
+        }
+        if (registerForm.position) {
+          registerData.position = registerForm.position
+        }
+        
+        await authAPI.register(registerData)
 
         // 회원가입 성공
         successMessage.value = '회원가입이 완료되었습니다. 로그인 해주세요.'
@@ -246,6 +384,12 @@ export default {
         registerForm.email = ''
         registerForm.password = ''
         registerForm.passwordConfirm = ''
+        registerForm.school = ''
+        registerForm.department = ''
+        registerForm.organizationType = ''
+        registerForm.organizationSubType = ''
+        registerForm.organizationName = ''
+        registerForm.position = ''
 
         // 3초 후 로그인 탭으로 전환
         setTimeout(() => {
@@ -264,12 +408,15 @@ export default {
       isRegistering,
       loginForm,
       registerForm,
+      universities,
+      departments,
       showPassword,
       isLoading,
       errorMessage,
       successMessage,
       handleLogin,
-      handleRegister
+      handleRegister,
+      handleSchoolChange
     }
   }
 }

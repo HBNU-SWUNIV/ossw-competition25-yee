@@ -7,6 +7,12 @@ class UserBase(BaseModel):
     """사용자 기본 스키마"""
     email: EmailStr
     name: str = Field(..., min_length=1, max_length=100)
+    school: Optional[str] = Field(None, max_length=200)
+    department: Optional[str] = Field(None, max_length=200)
+    organizationType: Optional[str] = Field(None, max_length=50)
+    organizationSubType: Optional[str] = Field(None, max_length=50)
+    organizationName: Optional[str] = Field(None, max_length=200)
+    position: Optional[str] = Field(None, max_length=100)
 
 
 class UserCreate(UserBase):
@@ -24,6 +30,12 @@ class UserUpdate(BaseModel):
     """사용자 정보 수정 스키마"""
     name: Optional[str] = Field(None, min_length=1, max_length=100)
     password: Optional[str] = Field(None, min_length=8, max_length=100)
+    school: Optional[str] = Field(None, max_length=200)
+    department: Optional[str] = Field(None, max_length=200)
+    organizationType: Optional[str] = Field(None, max_length=50)
+    organizationSubType: Optional[str] = Field(None, max_length=50)
+    organizationName: Optional[str] = Field(None, max_length=200)
+    position: Optional[str] = Field(None, max_length=100)
 
 
 class UserResponse(UserBase):

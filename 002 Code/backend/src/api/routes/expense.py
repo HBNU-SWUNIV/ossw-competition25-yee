@@ -60,17 +60,20 @@ async def get_expenses(
     지출 내역 목록 조회
 
     - 카테고리, 날짜 범위로 필터링 가능
+    - 조직 공유 지출인 경우 조직 멤버 전체 지출 조회
     """
     try:
         # 인증된 사용자 ID 가져오기
         user_id = current_user["user_id"]
+        organizationName = current_user.get("organizationName")
 
         expenses = await expense_service.get_expenses(
             user_id=user_id,
             category=category,
             start_date=start_date,
             end_date=end_date,
-            limit=limit
+            limit=limit,
+            organizationName=organizationName
         )
 
         return expenses
@@ -88,15 +91,18 @@ async def get_expense_statistics(
     지출 통계 조회 (재무제표용)
 
     - 카테고리별 금액, 건수, 비율을 반환합니다
+    - 조직 공유 지출인 경우 조직 멤버 전체 지출 통계
     """
     try:
         # 인증된 사용자 ID 가져오기
         user_id = current_user["user_id"]
+        organizationName = current_user.get("organizationName")
 
         statistics = await expense_service.get_statistics(
             user_id=user_id,
             start_date=start_date,
-            end_date=end_date
+            end_date=end_date,
+            organizationName=organizationName
         )
 
         return statistics

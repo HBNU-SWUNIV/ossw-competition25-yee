@@ -65,6 +65,16 @@ export const authAPI = {
     localStorage.removeItem('userInfo')
     localStorage.removeItem('isLoggedIn')
     return await apiRequest('/auth/logout', { method: 'POST' })
+  },
+
+  // 특정 자치기구의 사용자 조회
+  getUsersByOrganization: async (organizationName) => {
+    return await apiRequest(`/auth/users/organization?organizationName=${encodeURIComponent(organizationName)}`)
+  },
+
+  // 모든 자치기구 목록 조회
+  getAllOrganizations: async () => {
+    return await apiRequest('/auth/users/all-organizations')
   }
 }
 
@@ -225,9 +235,29 @@ export const receiptAPI = {
   }
 }
 
+// 데이터 관련 API (학교, 학과 목록)
+export const dataAPI = {
+  // 대학교 목록 조회
+  getUniversities: async () => {
+    return await apiRequest('/data/universities')
+  },
+
+  // 학과 목록 조회 (학교 선택 시 해당 학교 학과)
+  getDepartments: async (school = null) => {
+    const endpoint = school ? `/data/departments?school=${encodeURIComponent(school)}` : '/data/departments'
+    return await apiRequest(endpoint)
+  },
+
+  // 모든 데이터 한번에 조회
+  getAll: async () => {
+    return await apiRequest('/data/all')
+  }
+}
+
 export default {
   authAPI,
   budgetAPI,
   expenseAPI,
-  receiptAPI
+  receiptAPI,
+  dataAPI
 }

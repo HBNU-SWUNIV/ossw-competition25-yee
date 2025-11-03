@@ -11,33 +11,61 @@ class BudgetService:
         self.collection = "budgets"
         self.expense_collection = "expenses"
 
-    async def get_all_budgets(self, user_id: str) -> List[Dict[str, Any]]:
+    async def get_all_budgets(self, user_id: str, organizationName: Optional[str] = None) -> List[Dict[str, Any]]:
         """
         사용자의 모든 예산 조회
 
         Args:
             user_id: 사용자 ID
+            organizationName: 조직 이름 (조직별 예산 조회용)
 
         Returns:
             예산 목록 (spent, remaining 포함)
         """
         try:
-            # Firestore에서 사용자 예산 조회
-            budgets_ref = self.db.collection(self.collection)\
+            budgets: List[Dict[str, Any]] = []
+
+            # 1) 개인 예산 조회
+            user_budgets_ref = self.db.collection(self.collection)\
                 .where("user_id", "==", user_id)\
                 .stream()
 
-            budgets = []
-            for doc in budgets_ref:
+            for doc in user_budgets_ref:
                 budget_data = doc.to_dict()
                 budget_data["id"] = doc.id
 
-                # 실제 지출 금액 계산
-                spent = await self._calculate_spent(user_id, budget_data.get("category"))
+                spent = await self._calculate_spent(
+                    user_id,
+                    budget_data.get("category"),
+                    budget_data.get("organizationName")
+                )
                 budget_data["spent"] = spent
                 budget_data["remaining"] = budget_data["amount"] - spent
-
                 budgets.append(budget_data)
+
+            # 2) 조직 예산 추가 조회 (조직 이름이 있는 경우)
+            if organizationName:
+                org_budgets_ref = self.db.collection(self.collection)\
+                    .where("organizationName", "==", organizationName)\
+                    .stream()
+
+                # 중복 방지를 위한 ID 집합
+                existing_ids = {b["id"] for b in budgets}
+
+                for doc in org_budgets_ref:
+                    if doc.id in existing_ids:
+                        continue
+                    budget_data = doc.to_dict()
+                    budget_data["id"] = doc.id
+
+                    spent = await self._calculate_spent(
+                        user_id,
+                        budget_data.get("category"),
+                        budget_data.get("organizationName") or organizationName
+                    )
+                    budget_data["spent"] = spent
+                    budget_data["remaining"] = budget_data["amount"] - spent
+                    budgets.append(budget_data)
 
             return budgets
 
@@ -80,13 +108,14 @@ class BudgetService:
         except Exception as e:
             raise Exception(f"예산 조회 실패: {str(e)}")
 
-    async def create_budget(self, user_id: str, budget_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def create_budget(self, user_id: str, budget_data: Dict[str, Any], organizationName: Optional[str] = None) -> Dict[str, Any]:
         """
         예산 생성
 
         Args:
             user_id: 사용자 ID
-            budget_data: 예산 데이터 (name, amount, category)
+            budget_data: 예산 데이터 (name, amount, category, organizationName)
+            organizationName: 조직 이름 (옵션)
 
         Returns:
             생성된 예산 정보
@@ -101,6 +130,11 @@ class BudgetService:
                 "created_at": datetime.utcnow(),
                 "updated_at": datetime.utcnow()
             }
+            
+            # 조직 이름 추가 (있는 경우)
+            org_name = budget_data.get("organizationName") or organizationName
+            if org_name:
+                new_budget["organizationName"] = org_name
 
             # Firestore에 저장
             doc_ref = self.db.collection(self.collection).document()
@@ -115,6 +149,35 @@ class BudgetService:
 
         except Exception as e:
             raise Exception(f"예산 생성 실패: {str(e)}")
+
+    async def migrate_budgets_to_organization(self, user_id: str, organizationName: str) -> int:
+        """
+        기존 개인 예산을 조직 예산으로 변환 (organizationName 설정)
+
+        Returns:
+            업데이트된 예산 문서 수
+        """
+        try:
+            updated = 0
+            budgets_ref = self.db.collection(self.collection)\
+                .where("user_id", "==", user_id)\
+                .stream()
+
+            for doc in budgets_ref:
+                data = doc.to_dict()
+                # 이미 조직 예산이면 스킵
+                if data.get("organizationName"):
+                    continue
+                # 조직 이름 설정
+                self.db.collection(self.collection).document(doc.id).update({
+                    "organizationName": organizationName,
+                    "updated_at": datetime.utcnow()
+                })
+                updated += 1
+
+            return updated
+        except Exception as e:
+            raise Exception(f"예산 조직 마이그레이션 실패: {str(e)}")
 
     async def update_budget(
         self,
@@ -205,38 +268,69 @@ class BudgetService:
         except Exception as e:
             raise Exception(f"예산 삭제 실패: {str(e)}")
 
-    async def _calculate_spent(self, user_id: str, category: Optional[str] = None) -> float:
+    async def _calculate_spent(self, user_id: str, category: Optional[str] = None, organizationName: Optional[str] = None) -> float:
         """
         카테고리별 지출 금액 계산
 
         Args:
             user_id: 사용자 ID
             category: 카테고리 (None이면 전체)
+            organizationName: 조직 이름 (있는 경우 조직 멤버 전체 지출 합산)
 
         Returns:
             총 지출 금액
         """
         try:
-            # Expense 컬렉션에서 사용자 지출 조회
-            expenses_ref = self.db.collection(self.expense_collection)\
-                .where("user_id", "==", user_id)
+            # 조직 공유 예산인 경우
+            if organizationName:
+                # 같은 조직의 모든 사용자 ID 가져오기
+                users_ref = self.db.collection("users")\
+                    .where("organizationName", "==", organizationName)\
+                    .stream()
+                
+                user_ids = []
+                for user_doc in users_ref:
+                    user_ids.append(user_doc.id)
+                
+                # 모든 사용자의 지출 합산
+                total_spent = 0.0
+                for org_user_id in user_ids:
+                    expenses_ref = self.db.collection(self.expense_collection)\
+                        .where("user_id", "==", org_user_id)
+                    
+                    # 카테고리 필터 (있는 경우)
+                    if category and category != "전체":
+                        expenses_ref = expenses_ref.where("category", "==", category)
+                    
+                    expenses = expenses_ref.stream()
+                    
+                    for expense_doc in expenses:
+                        expense_data = expense_doc.to_dict()
+                        total_spent += expense_data.get("amount", 0.0)
+                
+                return total_spent
+            else:
+                # 개인 예산인 경우
+                expenses_ref = self.db.collection(self.expense_collection)\
+                    .where("user_id", "==", user_id)
 
-            # 카테고리 필터 (있는 경우)
-            if category and category != "전체":
-                expenses_ref = expenses_ref.where("category", "==", category)
+                # 카테고리 필터 (있는 경우)
+                if category and category != "전체":
+                    expenses_ref = expenses_ref.where("category", "==", category)
 
-            expenses = expenses_ref.stream()
+                expenses = expenses_ref.stream()
 
-            # 총 지출 금액 계산
-            total_spent = 0.0
-            for expense_doc in expenses:
-                expense_data = expense_doc.to_dict()
-                total_spent += expense_data.get("amount", 0.0)
+                # 총 지출 금액 계산
+                total_spent = 0.0
+                for expense_doc in expenses:
+                    expense_data = expense_doc.to_dict()
+                    total_spent += expense_data.get("amount", 0.0)
 
-            return total_spent
+                return total_spent
 
         except Exception as e:
             # 에러가 나도 0 반환 (지출 계산 실패해도 예산 조회는 가능하게)
+            print(f"지출 계산 실패: {str(e)}")
             return 0.0
 
 

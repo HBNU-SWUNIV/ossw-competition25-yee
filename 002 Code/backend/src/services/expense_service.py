@@ -87,7 +87,8 @@ class ExpenseService:
         category: str = None,
         start_date: datetime = None,
         end_date: datetime = None,
-        limit: int = 100
+        limit: int = 100,
+        organizationName: Optional[str] = None
     ) -> List[Dict[str, Any]]:
         """
         지출 내역 목록 조회
@@ -98,31 +99,62 @@ class ExpenseService:
             start_date: 시작 날짜 (선택)
             end_date: 종료 날짜 (선택)
             limit: 최대 결과 수
+            organizationName: 조직 이름 (있는 경우 조직 멤버 전체 지출 조회)
 
         Returns:
             지출 내역 리스트
         """
         try:
-            # 기본 쿼리 (Firestore 인덱스 불필요)
-            query = self.db.collection(self.collection).where("user_id", "==", user_id)
+            # 조직 공유 조회인 경우
+            if organizationName:
+                # 같은 조직의 모든 사용자 ID 가져오기
+                users_ref = self.db.collection("users")\
+                    .where("organizationName", "==", organizationName)\
+                    .stream()
+                
+                user_ids = []
+                for user_doc in users_ref:
+                    user_ids.append(user_doc.id)
+                
+                # 모든 사용자의 지출 조회
+                docs_list = []
+                for org_user_id in user_ids:
+                    query = self.db.collection(self.collection).where("user_id", "==", org_user_id)
+                    docs = query.stream()
+                    docs_list.extend(docs)
+                
+                expenses = []
+                for doc in docs_list:
+                    expense_data = doc.to_dict()
+                    expense_data["id"] = doc.id
 
-            # Firestore 인덱스 에러 방지를 위해 간단한 쿼리만 사용
-            # 복잡한 필터링은 Python에서 처리
-            docs = query.stream()
-            expenses = []
-            for doc in docs:
-                expense_data = doc.to_dict()
-                expense_data["id"] = doc.id
+                    # Python에서 필터링
+                    if category and expense_data.get("category") != category:
+                        continue
+                    if start_date and expense_data.get("date") and expense_data["date"] < start_date:
+                        continue
+                    if end_date and expense_data.get("date") and expense_data["date"] > end_date:
+                        continue
 
-                # Python에서 필터링
-                if category and expense_data.get("category") != category:
-                    continue
-                if start_date and expense_data.get("date") and expense_data["date"] < start_date:
-                    continue
-                if end_date and expense_data.get("date") and expense_data["date"] > end_date:
-                    continue
+                    expenses.append(expense_data)
+            else:
+                # 개인 지출만 조회
+                query = self.db.collection(self.collection).where("user_id", "==", user_id)
+                docs = query.stream()
+                expenses = []
+                for doc in docs:
+                    expense_data = doc.to_dict()
+                    expense_data["id"] = doc.id
 
-                expenses.append(expense_data)
+                    # Python에서 필터링
+                    if category and expense_data.get("category") != category:
+                        continue
+                    if start_date and expense_data.get("date") and expense_data["date"] < start_date:
+                        continue
+                    if end_date and expense_data.get("date") and expense_data["date"] > end_date:
+                        continue
+
+                    expenses.append(expense_data)
 
             # Python에서 정렬 (날짜 기준 내림차순)
             expenses.sort(key=lambda x: x.get("date", datetime.min), reverse=True)
@@ -194,7 +226,8 @@ class ExpenseService:
         self,
         user_id: str,
         start_date: datetime = None,
-        end_date: datetime = None
+        end_date: datetime = None,
+        organizationName: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         지출 통계 조회 (재무제표용)
@@ -203,6 +236,7 @@ class ExpenseService:
             user_id: 사용자 ID
             start_date: 시작 날짜 (기본: 이번 달 1일)
             end_date: 종료 날짜 (기본: 오늘)
+            organizationName: 조직 이름 (있는 경우 조직 멤버 전체 지출 통계)
 
         Returns:
             카테고리별 통계 및 전체 요약
@@ -219,7 +253,8 @@ class ExpenseService:
                 user_id=user_id,
                 start_date=start_date,
                 end_date=end_date,
-                limit=10000
+                limit=10000,
+                organizationName=organizationName
             )
 
             # 카테고리별 집계

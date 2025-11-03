@@ -13,7 +13,7 @@ export const budgetAPI = {
       const response = await apiClient.get('/budget/')
       return {
         success: true,
-        data: response.data
+        data: response.data || response
       }
     } catch (error) {
       return {
@@ -33,7 +33,7 @@ export const budgetAPI = {
       const response = await apiClient.get(`/budget/${budgetId}`)
       return {
         success: true,
-        data: response.data
+        data: response.data || response
       }
     } catch (error) {
       return {
@@ -53,7 +53,7 @@ export const budgetAPI = {
       const response = await apiClient.post('/budget/', budgetData)
       return {
         success: true,
-        data: response.data
+        data: response.data || response
       }
     } catch (error) {
       return {
@@ -74,7 +74,7 @@ export const budgetAPI = {
       const response = await apiClient.put(`/budget/${budgetId}`, budgetData)
       return {
         success: true,
-        data: response.data
+        data: response.data || response
       }
     } catch (error) {
       return {
@@ -94,7 +94,7 @@ export const budgetAPI = {
       const response = await apiClient.delete(`/budget/${budgetId}`)
       return {
         success: true,
-        data: response.data
+        data: response.data || response
       }
     } catch (error) {
       return {
