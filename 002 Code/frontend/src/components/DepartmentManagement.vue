@@ -212,29 +212,33 @@ export default {
 
     const fetchMonthlyExpenses = async () => {
       try {
-        // 공유 모드에서는 토큰 없이 공개 API 사용
-        const start = new Date(selectedYear.value, selectedMonth.value-1, 1)
+        const start = new Date(selectedYear.value, selectedMonth.value - 1, 1)
         const end = new Date(selectedYear.value, selectedMonth.value, 0)
-        // FastAPI가 안전하게 파싱할 수 있도록 YYYY-MM-DD 형식으로 전달
-        const yyyyMmDd = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
-        const startStr = yyyyMmDd(start)
-        const endStr = yyyyMmDd(end)
+        const inRange = (d) => d && d >= new Date(start.getFullYear(), start.getMonth(), 1) && d <= new Date(end.getFullYear(), end.getMonth(), end.getDate(), 23, 59, 59)
+
         if (readOnly.value) {
           const base = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
           const url = new URL(`${base}/public/expenses`)
           url.searchParams.set('token', shareToken)
-          url.searchParams.set('start_date', startStr)
-          url.searchParams.set('end_date', endStr)
-          url.searchParams.set('limit', '10000')
+          url.searchParams.set('limit', '1000')
           const res = await fetch(url.toString())
           const arr = await res.json()
-          selectedOrgExpenses.value = Array.isArray(arr) ? arr : []
+          const list = Array.isArray(arr) ? arr : []
+          selectedOrgExpenses.value = list.filter(x => {
+            const d = x.date ? new Date(x.date) : null
+            return inRange(d)
+          })
         } else {
           if (!props.userInfo?.organizationName) { selectedOrgExpenses.value = []; return }
-          const { expenseAPI } = await import('../services/api.js')
-          const params = { start_date: startStr, end_date: endStr, limit: 10000 }
-          const expenses = await expenseAPI.getAll(params)
-          selectedOrgExpenses.value = Array.isArray(expenses) ? expenses : []
+          const base = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+          const token = localStorage.getItem('access_token')
+          const res = await fetch(`${base}/expense/?limit=1000`, { headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) } })
+          if (!res.ok) throw new Error(`expense fetch failed: ${res.status}`)
+          const list = await res.json()
+          selectedOrgExpenses.value = (Array.isArray(list) ? list : []).filter(x => {
+            const d = x.date ? new Date(x.date) : null
+            return inRange(d)
+          })
         }
       } catch (e) {
         console.error('월별 지출 조회 실패:', e)
