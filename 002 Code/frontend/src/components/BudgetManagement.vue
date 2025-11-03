@@ -3,10 +3,15 @@
     <!-- 페이지 헤더 -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
       <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">예산 관리</h2>
-      <button class="btn-primary flex items-center gap-2 w-full sm:w-auto" @click="showAddModal = true">
-        <span class="text-lg">+</span>
-        새 예산 추가
-      </button>
+      <div class="flex gap-2 w-full sm:w-auto">
+        <button class="btn-secondary flex items-center gap-2" @click="migrateToOrganization" v-if="budgets.length > 0">
+          🔄 조직 공유로 전환
+        </button>
+        <button class="btn-primary flex items-center gap-2" @click="showAddModal = true">
+          <span class="text-lg">+</span>
+          새 예산 추가
+        </button>
+      </div>
     </div>
 
     <!-- 통계 카드 -->
@@ -238,6 +243,26 @@ export default {
       }
     }
 
+    // 조직 공유로 전환
+    const migrateToOrganization = async () => {
+      if (!confirm('기존 개인 예산을 조직 예산으로 전환하시겠습니까? 조직 멤버들과 공유됩니다.')) {
+        return
+      }
+
+      try {
+        const result = await budgetAPI.migrateToOrganization()
+        if (result.success) {
+          alert(`총 ${result.data.updated}개의 예산이 조직 공유 예산으로 전환되었습니다.`)
+          await fetchBudgets()
+        } else {
+          alert('조직 공유 전환 실패: ' + result.error)
+        }
+      } catch (error) {
+        console.error('조직 공유 전환 중 오류:', error)
+        alert('조직 공유 전환 중 오류가 발생했습니다.')
+      }
+    }
+
     // 모달 닫기
     const closeModal = () => {
       showAddModal.value = false
@@ -280,6 +305,7 @@ export default {
       saveBudget,
       editBudget,
       deleteBudget,
+      migrateToOrganization,
       closeModal
     }
   }

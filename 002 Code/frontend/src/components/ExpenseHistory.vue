@@ -300,6 +300,17 @@
             </div>
 
             <div>
+              <label class="block text-sm font-semibold text-gray-900 mb-2">예산 항목 (선택)</label>
+              <select v-model="expenseForm.budget_id" class="input-field">
+                <option value="">예산 미지정</option>
+                <option v-for="budget in budgets" :key="budget.id" :value="budget.id">
+                  {{ budget.name }} ({{ budget.category }})
+                </option>
+              </select>
+              <p class="text-xs text-gray-500 mt-1">예산 항목을 선택하면 해당 예산에서 지출이 계산됩니다.</p>
+            </div>
+
+            <div>
               <label class="block text-sm font-semibold text-gray-900 mb-2">주소</label>
               <input type="text" v-model="expenseForm.address" class="input-field" placeholder="주소 (OCR 또는 수동 입력)">
             </div>
@@ -413,6 +424,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { expenseAPI } from '../api/expense'
 import { receiptAPI } from '../api/receipt'
+import { budgetAPI } from '../api/budget'
 
 export default {
   name: 'ExpenseHistory',
@@ -443,8 +455,12 @@ export default {
       description: '',
       receipt_id: '',
       address: '',
-      phone: ''
+      phone: '',
+      budget_id: ''
     })
+
+    // 예산 목록
+    const budgets = ref([])
 
     const editForm = ref({
       date: '',
@@ -472,6 +488,18 @@ export default {
         console.error('지출 목록 조회 중 오류:', error)
       } finally {
         isLoading.value = false
+      }
+    }
+
+    // 예산 목록 조회
+    const fetchBudgets = async () => {
+      try {
+        const result = await budgetAPI.getBudgets()
+        if (result.success) {
+          budgets.value = result.data || []
+        }
+      } catch (error) {
+        console.error('예산 목록 조회 중 오류:', error)
       }
     }
 
@@ -676,7 +704,7 @@ export default {
 
         // 백엔드 API를 통해 지출 등록
         const expenseData = {
-          receipt_id: 'manual-' + Date.now(),
+          receipt_id: expenseForm.value.receipt_id || 'manual-' + Date.now(),
           store_name: expenseForm.value.merchant,
           store_address: expenseForm.value.address || '',
           store_phone_number: expenseForm.value.phone || '',
@@ -684,7 +712,8 @@ export default {
           date: isoDate,  // ISO 형식으로 변환
           item_name: '',
           category: expenseForm.value.category,
-          description: expenseForm.value.description || `${expenseForm.value.merchant}에서 구매`
+          description: expenseForm.value.description || `${expenseForm.value.merchant}에서 구매`,
+          budget_id: expenseForm.value.budget_id || null
         }
 
         console.log('[registerExpense] 전송 데이터:', expenseData)
@@ -875,9 +904,10 @@ export default {
       }
     }
 
-    // 컴포넌트 마운트 시 지출 목록 조회
+    // 컴포넌트 마운트 시 지출 목록 및 예산 목록 조회
     onMounted(() => {
       fetchExpenses()
+      fetchBudgets()
     })
 
     return {
@@ -887,6 +917,7 @@ export default {
       searchQuery,
       selectedCategory,
       expenses,
+      budgets,
       isLoading,
       totalExpense,
       avgExpense,

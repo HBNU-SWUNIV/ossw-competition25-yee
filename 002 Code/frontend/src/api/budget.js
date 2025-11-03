@@ -102,5 +102,24 @@ export const budgetAPI = {
         error: error.response?.data?.detail || '예산 삭제에 실패했습니다.'
       }
     }
+  },
+
+  /**
+   * 기존 개인 예산을 조직 예산으로 마이그레이션
+   * @returns {Promise}
+   */
+  async migrateToOrganization() {
+    try {
+      const response = await apiClient.post('/budget/migrate-to-organization')
+      return {
+        success: true,
+        data: response.data || response
+      }
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.detail || '조직 공유 전환에 실패했습니다.'
+      }
+    }
   }
 }

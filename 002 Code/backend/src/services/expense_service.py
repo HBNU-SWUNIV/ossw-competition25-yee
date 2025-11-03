@@ -22,7 +22,8 @@ class ExpenseService:
         store_phone_number: str = None,
         item_name: str = None,
         category: str = None,
-        description: str = None
+        description: str = None,
+        budget_id: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         지출 내역 생성 (카테고리 자동 분류)
@@ -70,6 +71,10 @@ class ExpenseService:
                 "created_at": datetime.utcnow(),
                 "updated_at": datetime.utcnow()
             }
+            
+            # budget_id 추가 (있는 경우)
+            if budget_id:
+                expense_data["budget_id"] = budget_id
 
             # Firestore에 저장
             doc_ref = self.db.collection(self.collection).document()

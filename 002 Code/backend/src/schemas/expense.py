@@ -13,6 +13,7 @@ class ExpenseBase(BaseModel):
     store_phone_number: Optional[str] = Field(None, max_length=50)
     description: Optional[str] = Field(None, max_length=500)
     item_name: Optional[str] = Field(None, max_length=200)
+    budget_id: Optional[str] = Field(None, max_length=100, description="연결된 예산 ID")
 
 
 class ExpenseCreate(ExpenseBase):
@@ -37,6 +38,7 @@ class ExpenseResponse(ExpenseBase):
     id: str
     user_id: str
     receipt_id: Optional[str]
+    budget_id: Optional[str] = None
     classification_method: str
     classification_confidence: Optional[float] = None
     created_at: datetime

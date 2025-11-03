@@ -36,6 +36,7 @@ class BudgetService:
 
                 spent = await self._calculate_spent(
                     user_id,
+                    budget_data.get("id"),  # budget_id
                     budget_data.get("category"),
                     budget_data.get("organizationName")
                 )
@@ -60,6 +61,7 @@ class BudgetService:
 
                     spent = await self._calculate_spent(
                         user_id,
+                        budget_data.get("id"),  # budget_id
                         budget_data.get("category"),
                         budget_data.get("organizationName") or organizationName
                     )
@@ -99,7 +101,7 @@ class BudgetService:
                 raise Exception("권한이 없습니다")
 
             # 실제 지출 금액 계산
-            spent = await self._calculate_spent(user_id, budget_data.get("category"))
+            spent = await self._calculate_spent(user_id, budget_id, budget_data.get("category"))
             budget_data["spent"] = spent
             budget_data["remaining"] = budget_data["amount"] - spent
 
@@ -228,7 +230,7 @@ class BudgetService:
             existing_budget["id"] = budget_id
 
             # 실제 지출 금액 계산
-            spent = await self._calculate_spent(user_id, existing_budget.get("category"))
+            spent = await self._calculate_spent(user_id, budget_id, existing_budget.get("category"))
             existing_budget["spent"] = spent
             existing_budget["remaining"] = existing_budget["amount"] - spent
 
@@ -268,19 +270,64 @@ class BudgetService:
         except Exception as e:
             raise Exception(f"예산 삭제 실패: {str(e)}")
 
-    async def _calculate_spent(self, user_id: str, category: Optional[str] = None, organizationName: Optional[str] = None) -> float:
+    async def _calculate_spent(self, user_id: str, budget_id: Optional[str] = None, category: Optional[str] = None, organizationName: Optional[str] = None) -> float:
         """
-        카테고리별 지출 금액 계산
+        예산별 지출 금액 계산 (budget_id 우선, 없으면 category 기반)
 
         Args:
             user_id: 사용자 ID
-            category: 카테고리 (None이면 전체)
+            budget_id: 예산 ID (우선 사용)
+            category: 카테고리 (budget_id가 없을 때 fallback)
             organizationName: 조직 이름 (있는 경우 조직 멤버 전체 지출 합산)
 
         Returns:
             총 지출 금액
         """
         try:
+            # budget_id가 있으면 해당 예산에 연결된 지출만 계산
+            if budget_id:
+                # 조직 공유 예산인 경우
+                if organizationName:
+                    # 같은 조직의 모든 사용자 ID 가져오기
+                    users_ref = self.db.collection("users")\
+                        .where("organizationName", "==", organizationName)\
+                        .stream()
+                    
+                    user_ids = []
+                    for user_doc in users_ref:
+                        user_ids.append(user_doc.id)
+                    
+                    # 모든 사용자의 해당 예산 지출 합산
+                    total_spent = 0.0
+                    for org_user_id in user_ids:
+                        expenses_ref = self.db.collection(self.expense_collection)\
+                            .where("user_id", "==", org_user_id)\
+                            .where("budget_id", "==", budget_id)
+                        
+                        expenses = expenses_ref.stream()
+                        
+                        for expense_doc in expenses:
+                            expense_data = expense_doc.to_dict()
+                            total_spent += expense_data.get("amount", 0.0)
+                    
+                    return total_spent
+                else:
+                    # 개인 예산인 경우
+                    expenses_ref = self.db.collection(self.expense_collection)\
+                        .where("user_id", "==", user_id)\
+                        .where("budget_id", "==", budget_id)
+
+                    expenses = expenses_ref.stream()
+
+                    # 총 지출 금액 계산
+                    total_spent = 0.0
+                    for expense_doc in expenses:
+                        expense_data = expense_doc.to_dict()
+                        total_spent += expense_data.get("amount", 0.0)
+
+                    return total_spent
+            
+            # budget_id가 없으면 기존 category 기반 로직 (하위 호환)
             # 조직 공유 예산인 경우
             if organizationName:
                 # 같은 조직의 모든 사용자 ID 가져오기
