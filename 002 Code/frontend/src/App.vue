@@ -5,10 +5,10 @@
   <!-- 로그인 화면 -->
   <Login v-else-if="!isLoggedIn" @login-success="handleLoginSuccess" />
 
-  <!-- 메인 애플리케이션 -->
-  <div v-else id="app" class="min-h-screen bg-gray-50">
+  <!-- 메인 애플리케이션 (공유 링크는 로그인 없이 표시) -->
+  <div v-else-if="isLoggedIn || publicMode" id="app" class="min-h-screen bg-gray-50">
     <!-- 햄버거 메뉴 버튼 -->
-    <button
+    <button v-if="!publicMode"
       class="fixed top-6 left-6 z-50 bg-white hover:bg-gray-50 text-gray-700 w-12 h-12 rounded-2xl flex flex-col justify-center items-center gap-1 transition-all duration-300 shadow-medium border border-gray-200"
       @click="toggleSidebar" :class="{ 'active': sidebarOpen }">
       <span class="w-5 h-0.5 bg-gray-600 rounded transition-all duration-300"
@@ -20,11 +20,11 @@
     </button>
 
     <!-- 사이드바 오버레이 -->
-    <div v-if="sidebarOpen" class="fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity duration-300"
+    <div v-if="sidebarOpen && !publicMode" class="fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity duration-300"
       @click="closeSidebar"></div>
 
     <!-- 사이드바 -->
-    <nav
+    <nav v-if="!publicMode"
       class="fixed top-0 left-0 h-full w-80 bg-white shadow-toss z-50 sidebar-transition transform border-r border-gray-100 flex flex-col"
       :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'">
       <div class="flex items-center justify-between p-6 border-b border-gray-100 flex-shrink-0">
@@ -99,11 +99,11 @@
     </nav>
 
     <!-- 메인 콘텐츠 -->
-    <main class="min-h-screen transition-all duration-300" :class="{ 'ml-0': !sidebarOpen, 'lg:ml-80': sidebarOpen }">
+    <main class="min-h-screen transition-all duration-300" :class="{ 'ml-0': publicMode || !sidebarOpen, 'lg:ml-80': !publicMode && sidebarOpen }">
       <div class="flex justify-center px-4 sm:px-6 lg:px-8 pt-20 sm:pt-24 pb-12">
         <div class="w-full max-w-6xl">
           <!-- 대시보드 메인 화면 -->
-          <div v-if="activeMenu === 'home'" class="space-y-8">
+          <div v-if="activeMenu === 'home' && !publicMode" class="space-y-8">
             <!-- 환영 메시지 -->
             <div
               class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-3xl p-8 text-white relative overflow-hidden">
@@ -199,6 +199,7 @@ export default {
     const isLoggedIn = ref(false)
     const userInfo = ref(null)
     const onboardingCompleted = ref(false)
+    const publicMode = ref(false)
 
     const toggleSidebar = () => {
       sidebarOpen.value = !sidebarOpen.value
@@ -209,6 +210,7 @@ export default {
     }
 
     const selectMenu = (menu) => {
+      if (publicMode.value) return // 공유 모드에서는 메뉴 전환 금지
       activeMenu.value = menu
       closeSidebar()
     }
@@ -283,6 +285,12 @@ export default {
     onMounted(() => {
       checkOnboardingStatus()
       checkLoginStatus()
+      // 공유 링크 모드 감지
+      const sp = new URLSearchParams(window.location.search)
+      if (sp.get('share')) {
+        publicMode.value = true
+        activeMenu.value = 'departments' // 자치기구관리만 노출
+      }
     })
 
     return {
@@ -291,6 +299,7 @@ export default {
       isLoggedIn,
       userInfo,
       onboardingCompleted,
+      publicMode,
       toggleSidebar,
       closeSidebar,
       selectMenu,

@@ -291,7 +291,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
-import { expenseAPI } from '../services/api'
+import { expenseAPI, budgetAPI } from '../services/api'
 
 export default {
   name: 'Reports',
@@ -457,12 +457,23 @@ export default {
           trend: 0 // 트렌드는 이전 기간 데이터와 비교해서 계산 필요
         }))
 
+        // 예산 데이터 조회 (조직 공유 반영)
+        let budgetUsagePercent = 0
+        try {
+          const budgets = await budgetAPI.getAll()
+          const totalBudgetAmount = (budgets || []).reduce((sum, b) => sum + (b.amount || 0), 0)
+          const totalBudgetSpent = (budgets || []).reduce((sum, b) => sum + (b.spent || 0), 0)
+          budgetUsagePercent = totalBudgetAmount > 0 ? Math.round((totalBudgetSpent / totalBudgetAmount) * 100) : 0
+        } catch (e) {
+          budgetUsagePercent = 0
+        }
+
         // 현재 데이터 업데이트
         currentData.value = {
           totalExpense: statistics.value.total_amount || 0,
           averageExpense: calculateAverage(statistics.value.total_amount),
           transactionCount: statistics.value.total_count || 0,
-          budgetUsage: 75, // TODO: 예산 기능 구현 시 실제 값으로 대체
+          budgetUsage: budgetUsagePercent,
           expenseChange: 0 // TODO: 이전 기간과 비교
         }
 

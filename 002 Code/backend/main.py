@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from src.core.config import settings
-from src.api.routes import budget, receipt, auth, expense, department, admin, data
+from src.api.routes import budget, receipt, auth, expense, department, admin, data, report, public
 
 # FastAPI 앱 초기화
 app = FastAPI(
@@ -29,6 +29,8 @@ app.include_router(expense.router)
 app.include_router(department.router)
 app.include_router(admin.router)
 app.include_router(data.router)
+app.include_router(report.router)
+app.include_router(public.router)
 
 
 @app.get("/")

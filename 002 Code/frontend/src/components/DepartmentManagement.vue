@@ -17,18 +17,18 @@
       <div class="my-org-section">
         <h3 class="section-header">내 자치기구</h3>
         <div class="organization-card my-org-card">
-          <!-- 카드 헤더 -->
-          <div class="card-header">
-            <div class="org-main-info">
-              <div class="org-details">
+        <!-- 카드 헤더 -->
+        <div class="card-header">
+          <div class="org-main-info">
+            <div class="org-details">
                 <h3 class="org-name">{{ userInfo.organizationName }}</h3>
                 <p class="org-subtitle">{{ getSubtitle() }}</p>
-              </div>
-            </div>
-            <div class="budget-status">
-              <span class="status-badge">소속</span>
             </div>
           </div>
+            <div class="budget-status">
+              <span class="status-badge">소속</span>
+          </div>
+        </div>
 
           <!-- 조직 정보 -->
           <div class="org-info-section">
@@ -36,39 +36,55 @@
               <div class="info-item">
                 <span class="info-label">조직 유형</span>
                 <span class="info-value">{{ userInfo.organizationType || '-' }}</span>
-              </div>
+            </div>
               <div class="info-item" v-if="userInfo.organizationSubType">
                 <span class="info-label">세부 유형</span>
                 <span class="info-value">{{ userInfo.organizationSubType }}</span>
-              </div>
+            </div>
               <div class="info-item">
                 <span class="info-label">학교</span>
                 <span class="info-value">{{ userInfo.school || '-' }}</span>
-              </div>
+          </div>
               <div class="info-item">
                 <span class="info-label">학과</span>
                 <span class="info-value">{{ userInfo.department || '-' }}</span>
-              </div>
+            </div>
               <div class="info-item">
                 <span class="info-label">내 직책</span>
                 <span class="info-value">{{ userInfo.position || '-' }}</span>
-              </div>
             </div>
-          </div>
-
-          <!-- 임원 정보 -->
-          <div class="officers-section">
-            <h4 class="section-title">임원 정보</h4>
-            <div class="officers-list" v-if="myOrgOfficers.length > 0">
-              <div v-for="officer in myOrgOfficers" :key="officer.id" class="officer-item">
-                <span class="officer-name">{{ officer.name }}</span>
-                <span class="officer-role">{{ officer.position || '직책 없음' }}</span>
-              </div>
-            </div>
-            <div v-else class="loading-text">로딩 중...</div>
           </div>
         </div>
+
+        <!-- 임원 정보 -->
+        <div class="officers-section">
+          <h4 class="section-title">임원 정보</h4>
+            <div class="officers-list" v-if="myOrgOfficers.length > 0">
+              <div v-for="officer in myOrgOfficers" :key="officer.id" class="officer-item">
+              <span class="officer-name">{{ officer.name }}</span>
+                <span class="officer-role">{{ officer.position || '직책 없음' }}</span>
+            </div>
+          </div>
+            <div v-else class="loading-text">로딩 중...</div>
+        </div>
+
+          <!-- 월 선택 + PDF 내보내기 -->
+          <div class="p-4 flex flex-col sm:flex-row gap-3 sm:items-center">
+            <div class="flex gap-2 items-center">
+              <select v-model="selectedYear" class="input-field w-28">
+                <option v-for="y in [new Date().getFullYear(), new Date().getFullYear()-1, new Date().getFullYear()-2]" :key="y" :value="y">{{ y }}년</option>
+              </select>
+              <select v-model="selectedMonth" class="input-field w-24">
+                <option v-for="m in 12" :key="m" :value="m">{{ m }}월</option>
+              </select>
+              <button class="btn-secondary" @click="fetchMonthlyExpenses">조회</button>
+            </div>
+            <div class="flex gap-2">
+              <button class="btn-primary" @click="createShareQR" v-if="!readOnly">🔗 QR 공유</button>
+            </div>
+        </div>
       </div>
+    </div>
 
       <!-- 다른 자치기구 목록 -->
       <div class="other-orgs-section">
@@ -80,8 +96,8 @@
                 <div class="org-details">
                   <h3 class="org-name">{{ org.name }}</h3>
                   <p class="org-subtitle">{{ org.school }} {{ org.department }}</p>
-                </div>
-              </div>
+        </div>
+            </div>
             </div>
 
             <div class="org-info-section">
@@ -94,8 +110,8 @@
                   <span class="info-label">세부 유형</span>
                   <span class="info-value">{{ org.organizationSubType }}</span>
                 </div>
-              </div>
             </div>
+          </div>
 
             <!-- 임원 정보 -->
             <div class="officers-section">
@@ -104,15 +120,15 @@
                 <div v-for="officer in org.officers" :key="officer.id" class="officer-item">
                   <span class="officer-name">{{ officer.name }}</span>
                   <span class="officer-role">{{ officer.position || '직책 없음' }}</span>
-                </div>
-              </div>
-              <div v-else class="empty-officers">임원 정보 없음</div>
             </div>
+            </div>
+              <div v-else class="empty-officers">임원 정보 없음</div>
           </div>
         </div>
+      </div>
         <div v-else class="empty-state">
           <p>다른 자치기구가 없습니다.</p>
-        </div>
+    </div>
       </div>
     </template>
   </div>
@@ -120,7 +136,9 @@
 
 <script>
 import { ref, computed, onMounted } from 'vue'
-import { authAPI } from '../services/api.js'
+import { authAPI, expenseAPI } from '../services/api.js'
+import html2canvas from 'html2canvas'
+import jsPDF from 'jspdf'
 
 export default {
   name: 'DepartmentManagement',
@@ -134,6 +152,15 @@ export default {
     const myOrgOfficers = ref([])
     const otherOrganizations = ref([])
     const isLoading = ref(true)
+    const expensePreviewRef = ref(null)
+    const now = new Date()
+    const selectedYear = ref(now.getFullYear())
+    const selectedMonth = ref(now.getMonth()+1)
+    const selectedOrgExpenses = ref([])
+    // 공유 링크로 접근 시 읽기 전용 모드
+    const shareToken = new URLSearchParams(window.location.search).get('share')
+    const hasAccessToken = !!localStorage.getItem('access_token')
+    const readOnly = ref(!hasAccessToken && !!shareToken)
 
     const getSubtitle = () => {
       if (!props.userInfo) return ''
@@ -180,13 +207,157 @@ export default {
         loadMyOrgOfficers(),
         loadOtherOrganizations()
       ])
+      await fetchMonthlyExpenses()
     })
+
+    const fetchMonthlyExpenses = async () => {
+      try {
+        // 공유 모드에서는 토큰 없이 공개 API 사용
+        const start = new Date(selectedYear.value, selectedMonth.value-1, 1)
+        const end = new Date(selectedYear.value, selectedMonth.value, 0)
+        // FastAPI가 안전하게 파싱할 수 있도록 YYYY-MM-DD 형식으로 전달
+        const yyyyMmDd = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+        const startStr = yyyyMmDd(start)
+        const endStr = yyyyMmDd(end)
+        if (readOnly.value) {
+          const base = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+          const url = new URL(`${base}/public/expenses`)
+          url.searchParams.set('token', shareToken)
+          url.searchParams.set('start_date', startStr)
+          url.searchParams.set('end_date', endStr)
+          url.searchParams.set('limit', '10000')
+          const res = await fetch(url.toString())
+          const arr = await res.json()
+          selectedOrgExpenses.value = Array.isArray(arr) ? arr : []
+        } else {
+          if (!props.userInfo?.organizationName) { selectedOrgExpenses.value = []; return }
+          const { expenseAPI } = await import('../services/api.js')
+          const params = { start_date: startStr, end_date: endStr, limit: 10000 }
+          const expenses = await expenseAPI.getAll(params)
+          selectedOrgExpenses.value = Array.isArray(expenses) ? expenses : []
+        }
+      } catch (e) {
+        console.error('월별 지출 조회 실패:', e)
+        selectedOrgExpenses.value = []
+      }
+    }
+
+    const openExpensePreview = async () => {
+      try {
+        await fetchMonthlyExpenses()
+        const pdf = new jsPDF('p', 'mm', 'a4')
+        const pageWidth = pdf.internal.pageSize.getWidth()
+        const margin = 14
+        pdf.setFontSize(16)
+        pdf.text(`${props.userInfo.organizationName || ''} 사용내역서`, margin, 20)
+        pdf.setFontSize(11)
+        pdf.text(`${selectedYear.value}년 ${String(selectedMonth.value).padStart(2,'0')}월`, margin, 28)
+        const total = selectedOrgExpenses.value.reduce((s,e)=>s+(e.amount||0),0)
+        pdf.setFontSize(12)
+        pdf.text(`총 지출: ₩${total.toLocaleString()}`, margin, 36)
+        let y = 46
+        pdf.setFontSize(11)
+        pdf.text('날짜', margin, y)
+        pdf.text('내용', margin+35, y)
+        pdf.text('금액', pageWidth - margin - 5, y, { align: 'right' })
+        y += 6
+        pdf.setLineWidth(0.2)
+        pdf.line(margin, y, pageWidth - margin, y)
+        y += 6
+        pdf.setFontSize(10)
+        for (const e of selectedOrgExpenses.value) {
+          const d = e.date ? new Date(e.date) : null
+          const dateStr = d ? `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}` : '-'
+          const desc = e.description || e.item_name || e.store_name || '-'
+          const amt = `₩${(e.amount||0).toLocaleString()}`
+          if (y > 280) { pdf.addPage(); y = 20 }
+          pdf.text(dateStr, margin, y)
+          pdf.text((desc+'').slice(0,60), margin+35, y)
+          pdf.text(amt, pageWidth - margin - 5, y, { align: 'right' })
+          y += 6
+        }
+
+        // 1) 새 탭 미리보기
+        const blob = pdf.output('blob')
+        const blobUrl = URL.createObjectURL(blob)
+        window.open(blobUrl, '_blank')
+
+        // 2) 서버 업로드 후 QR 표시 (공유용)
+        const form = new FormData()
+        const filename = `org-report-${Date.now()}.pdf`
+        form.append('file', new File([blob], filename, { type: 'application/pdf' }))
+
+        const token = localStorage.getItem('access_token')
+        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}/report/upload`, {
+          method: 'POST',
+          headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {})
+          },
+          body: form
+        })
+        if (!res.ok) throw new Error('업로드 실패')
+        const data = await res.json()
+        const publicUrl = data.url
+
+        // 간단한 QR 모달 오픈 (외부 QR 서비스 사용)
+        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(publicUrl)}`
+        const w = window.open('', '_blank')
+        if (w) {
+          w.document.write(`<div style="font-family:sans-serif;text-align:center;padding:20px">
+            <h3>PDF 공유용 QR 코드</h3>
+            <p><a href="${publicUrl}" target="_blank">직접 열기</a></p>
+            <img src="${qrUrl}" alt="QR Code" />
+            <p style="margin-top:10px;font-size:12px;color:#666">URL: ${publicUrl}</p>
+          </div>`)
+          w.document.close()
+        }
+      } catch (e) {
+        console.error('PDF 미리보기 실패:', e)
+        alert('PDF 미리보기에 실패했습니다.')
+      }
+    }
+
+    const createShareQR = async () => {
+      try {
+        const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+        const token = localStorage.getItem('access_token')
+        const res = await fetch(`${apiBase}/public/share/create`, {
+          method: 'POST',
+          headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) }
+        })
+        if (!res.ok) throw new Error('공유 링크 생성 실패')
+        const data = await res.json()
+        const share = data.token
+        const shareUrl = `${window.location.origin}${window.location.pathname}?share=${encodeURIComponent(share)}`
+        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(shareUrl)}`
+        const w = window.open('', '_blank')
+        if (w) {
+          w.document.write(`<div style="font-family:sans-serif;text-align:center;padding:20px">
+            <h3>자치기구관리 QR 공유</h3>
+            <p><a href="${shareUrl}" target="_blank">링크 열기</a></p>
+            <img src="${qrUrl}" alt="QR Code" />
+            <p style="margin-top:10px;font-size:12px;color:#666">URL: ${shareUrl}</p>
+          </div>`)
+          w.document.close()
+        }
+      } catch (e) {
+        console.error('QR 생성 실패:', e)
+        alert('QR 생성에 실패했습니다.')
+      }
+    }
 
     return {
       myOrgOfficers,
       otherOrganizations,
       isLoading,
-      getSubtitle
+      getSubtitle,
+      expensePreviewRef,
+      selectedYear,
+      selectedMonth,
+      selectedOrgExpenses,
+      fetchMonthlyExpenses,
+      createShareQR,
+      readOnly
     }
   }
 }
