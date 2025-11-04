@@ -52,9 +52,9 @@ async def create_expense(
 @router.get("/", response_model=List[ExpenseResponse])
 async def get_expenses(
     category: Optional[str] = Query(None, description="카테고리 필터"),
-    start_date: Optional[datetime] = Query(None, description="시작 날짜"),
-    end_date: Optional[datetime] = Query(None, description="종료 날짜"),
-    limit: int = Query(100, ge=1, le=1000, description="최대 결과 수"),
+    start_date: Optional[str] = Query(None, description="시작 날짜"),
+    end_date: Optional[str] = Query(None, description="종료 날짜"),
+    limit: int = Query(100, ge=1, le=10000, description="최대 결과 수"),
     current_user: dict = Depends(get_current_user)
 ):
     """
@@ -68,17 +68,36 @@ async def get_expenses(
         user_id = current_user["user_id"]
         organizationName = current_user.get("organizationName")
 
+        # 문자열 날짜를 datetime으로 파싱
+        parsed_start_date = None
+        parsed_end_date = None
+        if start_date:
+            try:
+                parsed_start_date = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
+            except ValueError:
+                raise HTTPException(status_code=400, detail="잘못된 start_date 형식")
+        if end_date:
+            try:
+                parsed_end_date = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
+            except ValueError:
+                raise HTTPException(status_code=400, detail="잘못된 end_date 형식")
+
         expenses = await expense_service.get_expenses(
             user_id=user_id,
             category=category,
-            start_date=start_date,
-            end_date=end_date,
+            start_date=parsed_start_date,
+            end_date=parsed_end_date,
             limit=limit,
             organizationName=organizationName
         )
 
         return expenses
+    except HTTPException:
+        raise
     except Exception as e:
+        print(f"[ERROR] get_expenses 실패: {str(e)}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
 

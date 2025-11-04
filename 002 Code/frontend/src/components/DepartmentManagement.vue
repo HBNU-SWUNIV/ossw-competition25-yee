@@ -77,7 +77,7 @@
               <select v-model="selectedMonth" class="input-field w-24">
                 <option v-for="m in 12" :key="m" :value="m">{{ m }}월</option>
               </select>
-              <button class="btn-secondary" @click="fetchMonthlyExpenses">조회</button>
+              <button class="btn-secondary" @click="openExpensePreview">조회</button>
             </div>
             <div class="flex gap-2">
               <button class="btn-primary" @click="createShareQR" v-if="!readOnly">🔗 QR 공유</button>
@@ -135,10 +135,8 @@
 </template>
 
 <script>
-import { ref, computed, onMounted } from 'vue'
-import { authAPI, expenseAPI } from '../services/api.js'
-import html2canvas from 'html2canvas'
-import jsPDF from 'jspdf'
+import { ref, onMounted } from 'vue'
+import { authAPI } from '../services/api.js'
 
 export default {
   name: 'DepartmentManagement',
@@ -214,26 +212,36 @@ export default {
       try {
         // 공유 모드에서는 토큰 없이 공개 API 사용
         const start = new Date(selectedYear.value, selectedMonth.value-1, 1)
-        const end = new Date(selectedYear.value, selectedMonth.value, 0)
-        // FastAPI가 안전하게 파싱할 수 있도록 YYYY-MM-DD 형식으로 전달
-        const yyyyMmDd = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
-        const startStr = yyyyMmDd(start)
-        const endStr = yyyyMmDd(end)
+        const end = new Date(selectedYear.value, selectedMonth.value, 0, 23, 59, 59)
+        // FastAPI datetime 타입을 위해 ISO 8601 형식으로 전달 (URL 인코딩 하지 않음)
+        const startStr = start.toISOString()
+        const endStr = end.toISOString()
+
+        const token = localStorage.getItem('access_token')
+        const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+
         if (readOnly.value) {
-          const base = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
-          const url = new URL(`${base}/public/expenses`)
-          url.searchParams.set('token', shareToken)
-          url.searchParams.set('start_date', startStr)
-          url.searchParams.set('end_date', endStr)
-          url.searchParams.set('limit', '10000')
-          const res = await fetch(url.toString())
+          // 공유 모드
+          const url = `${apiBase}/public/expenses?token=${encodeURIComponent(shareToken)}&start_date=${startStr}&end_date=${endStr}&limit=10000`
+          const res = await fetch(url)
+          if (!res.ok) throw new Error('조회 실패')
           const arr = await res.json()
           selectedOrgExpenses.value = Array.isArray(arr) ? arr : []
         } else {
+          // 로그인 모드
           if (!props.userInfo?.organizationName) { selectedOrgExpenses.value = []; return }
-          const { expenseAPI } = await import('../services/api.js')
-          const params = { start_date: startStr, end_date: endStr, limit: 10000 }
-          const expenses = await expenseAPI.getAll(params)
+          const url = `${apiBase}/expense/?start_date=${startStr}&end_date=${endStr}&limit=10000`
+          const res = await fetch(url, {
+            headers: {
+              ...(token ? { Authorization: `Bearer ${token}` } : {})
+            }
+          })
+          if (!res.ok) {
+            const errorText = await res.text()
+            console.error('API 에러 응답:', errorText)
+            throw new Error(`조회 실패: ${res.status}`)
+          }
+          const expenses = await res.json()
           selectedOrgExpenses.value = Array.isArray(expenses) ? expenses : []
         }
       } catch (e) {
@@ -245,72 +253,40 @@ export default {
     const openExpensePreview = async () => {
       try {
         await fetchMonthlyExpenses()
-        const pdf = new jsPDF('p', 'mm', 'a4')
-        const pageWidth = pdf.internal.pageSize.getWidth()
-        const margin = 14
-        pdf.setFontSize(16)
-        pdf.text(`${props.userInfo.organizationName || ''} 사용내역서`, margin, 20)
-        pdf.setFontSize(11)
-        pdf.text(`${selectedYear.value}년 ${String(selectedMonth.value).padStart(2,'0')}월`, margin, 28)
-        const total = selectedOrgExpenses.value.reduce((s,e)=>s+(e.amount||0),0)
-        pdf.setFontSize(12)
-        pdf.text(`총 지출: ₩${total.toLocaleString()}`, margin, 36)
-        let y = 46
-        pdf.setFontSize(11)
-        pdf.text('날짜', margin, y)
-        pdf.text('내용', margin+35, y)
-        pdf.text('금액', pageWidth - margin - 5, y, { align: 'right' })
-        y += 6
-        pdf.setLineWidth(0.2)
-        pdf.line(margin, y, pageWidth - margin, y)
-        y += 6
-        pdf.setFontSize(10)
-        for (const e of selectedOrgExpenses.value) {
-          const d = e.date ? new Date(e.date) : null
-          const dateStr = d ? `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}` : '-'
-          const desc = e.description || e.item_name || e.store_name || '-'
-          const amt = `₩${(e.amount||0).toLocaleString()}`
-          if (y > 280) { pdf.addPage(); y = 20 }
-          pdf.text(dateStr, margin, y)
-          pdf.text((desc+'').slice(0,60), margin+35, y)
-          pdf.text(amt, pageWidth - margin - 5, y, { align: 'right' })
-          y += 6
+
+        if (selectedOrgExpenses.value.length === 0) {
+          alert('해당 월에 지출 내역이 없습니다.')
+          return
         }
 
-        // 1) 새 탭 미리보기
-        const blob = pdf.output('blob')
+        // 백엔드 API를 사용하여 영수증 이미지 포함 PDF 생성
+        const expenseIds = selectedOrgExpenses.value.map(e => e.id).filter(Boolean)
+        if (expenseIds.length === 0) {
+          alert('유효한 지출 내역이 없습니다.')
+          return
+        }
+
+        const token = localStorage.getItem('access_token')
+        const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+
+        const res = await fetch(`${apiBase}/expense/report/pdf`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {})
+          },
+          body: JSON.stringify(expenseIds)
+        })
+
+        if (!res.ok) {
+          throw new Error('PDF 생성 실패')
+        }
+
+        // PDF blob을 받아서 새 탭에서 열기
+        const blob = await res.blob()
         const blobUrl = URL.createObjectURL(blob)
         window.open(blobUrl, '_blank')
 
-        // 2) 서버 업로드 후 QR 표시 (공유용)
-        const form = new FormData()
-        const filename = `org-report-${Date.now()}.pdf`
-        form.append('file', new File([blob], filename, { type: 'application/pdf' }))
-
-        const token = localStorage.getItem('access_token')
-        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}/report/upload`, {
-          method: 'POST',
-          headers: {
-            ...(token ? { Authorization: `Bearer ${token}` } : {})
-          },
-          body: form
-        })
-        if (!res.ok) throw new Error('업로드 실패')
-        const data = await res.json()
-        const publicUrl = data.url
-
-        // 간단한 QR 모달 오픈 (외부 QR 서비스 사용)
-        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(publicUrl)}`
-        const w = window.open('', '_blank')
-        if (w) {
-          w.document.write(`<div style="font-family:sans-serif;text-align:center;padding:20px">
-            <h3>PDF 공유용 QR 코드</h3>
-            <p><a href="${publicUrl}" target="_blank">직접 열기</a></p>
-            <img src="${qrUrl}" alt="QR Code" />
-            <p style="margin-top:10px;font-size:12px;color:#666">URL: ${publicUrl}</p>
-          </div>`)
-          w.document.close()
-        }
       } catch (e) {
         console.error('PDF 미리보기 실패:', e)
         alert('PDF 미리보기에 실패했습니다.')
@@ -356,6 +332,7 @@ export default {
       selectedMonth,
       selectedOrgExpenses,
       fetchMonthlyExpenses,
+      openExpensePreview,
       createShareQR,
       readOnly
     }
