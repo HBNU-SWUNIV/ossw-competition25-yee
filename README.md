@@ -106,8 +106,8 @@ Azure Document Intelligence OCR을 활용해 영수증을 자동 인식하고 �
 
 ### Technology - Budgetly의 적용 기술
 
-<img src="./assets/features.png" alt="Budgetly 주요 기능" width="100%" />
-
+<img src="./assets/fe1.png" alt="Budgetly 주요 기능" width="100%" />
+<img src="./assets/fe2.png" alt="Budgetly 주요 기능" width="100%" />
 </div>
 
 ### 1. OCR 기반 영수증 자동 인식
